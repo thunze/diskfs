@@ -6,7 +6,7 @@ See https://wiki.osdev.org/Partition_Table.
 
 import struct
 from enum import IntEnum
-from typing import TYPE_CHECKING, Iterable
+from typing import TYPE_CHECKING, Any, Iterable
 
 from .._base import ParseError, SectorSize
 from ._base import TableType, check_alignment, check_bounds, check_overlapping
@@ -244,22 +244,19 @@ class PartitionEntry:
         """Get ``bytes`` representation of partition entry."""
         if self.empty:
             return b'\x00' * self.SIZE
-
         status = STATUS_ACTIVE if self._bootable else STATUS_INACTIVE
-        start_lba = self._start_lba
-        end_lba = self._start_lba + self._length_lba - 1
 
         # only include each CHS address if it's unambiguous
-        if start_lba > CHS_MAX_ADDRESSABLE:
+        if self._start_lba > CHS_MAX_ADDRESSABLE:
             start_chs_packed = _pack_chs_address(*CHS_OVERFLOW, check_validity=False)
         else:
-            start_chs = _lba_to_chs(start_lba, HEADS, SECTORS_PER_TRACK)
+            start_chs = _lba_to_chs(self._start_lba, HEADS, SECTORS_PER_TRACK)
             start_chs_packed = _pack_chs_address(*start_chs)
 
-        if end_lba > CHS_MAX_ADDRESSABLE:
+        if self.end_lba > CHS_MAX_ADDRESSABLE:
             end_chs_packed = _pack_chs_address(*CHS_OVERFLOW, check_validity=False)
         else:
-            end_chs = _lba_to_chs(end_lba, HEADS, SECTORS_PER_TRACK)
+            end_chs = _lba_to_chs(self.end_lba, HEADS, SECTORS_PER_TRACK)
             end_chs_packed = _pack_chs_address(*end_chs)
 
         return struct.pack(
@@ -295,6 +292,22 @@ class PartitionEntry:
     @property
     def bootable(self) -> bool:
         return self._bootable
+
+    def __eq__(self, other: Any) -> bool:
+        if isinstance(other, PartitionEntry):
+            return (
+                self._start_lba == other._start_lba
+                and self._length_lba == other._length_lba
+                and self._type == other._type
+                and self._bootable == other._bootable
+            )
+        return NotImplemented
+
+    def __repr__(self) -> str:
+        return (
+            f'mbr.{self.__class__.__name__}(start_lba={self._start_lba}, '
+            f'end_lba={self.end_lba}, type={self._type}, bootable={self._bootable})'
+        )
 
 
 class Table:
@@ -431,3 +444,16 @@ class Table:
     @property
     def boot_code(self) -> bytes:
         return self._boot_code
+
+    def __eq__(self, other: Any) -> bool:
+        if isinstance(other, Table):
+            boot_code_self = self._boot_code.rstrip(b'\x00')
+            boot_code_other = other._boot_code.rstrip(b'\x00')
+            return (
+                self._partitions == other._partitions
+                and boot_code_self == boot_code_other
+            )
+        return NotImplemented
+
+    def __repr__(self) -> str:
+        return f'mbr.{self.__class__.__name__}({len(self._partitions)})'

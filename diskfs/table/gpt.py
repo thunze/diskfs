@@ -6,7 +6,7 @@ See https://uefi.org/specifications.
 import struct
 import warnings
 from enum import Enum, IntFlag
-from typing import TYPE_CHECKING, Iterable, Optional
+from typing import TYPE_CHECKING, Any, Iterable, Optional
 from uuid import UUID, uuid4
 from zlib import crc32
 
@@ -319,6 +319,25 @@ class PartitionEntry:
     @property
     def name(self) -> str:
         return self._name
+
+    def __eq__(self, other: Any) -> bool:
+        if isinstance(other, PartitionEntry):
+            return (
+                self._start_lba == other._start_lba
+                and self._end_lba == other._end_lba
+                and self._type == other._type
+                and self._attributes == other._attributes
+                and self._guid == other._guid
+                and self._name == other._name
+            )
+        return NotImplemented
+
+    def __repr__(self) -> str:
+        return (
+            f'gpt.{self.__class__.__name__}(start_lba={self._start_lba}, '
+            f'end_lba={self._end_lba}, type={self._type!r}, '
+            f'attributes={self._attributes}, guid={self._guid!r}, name={self._name!r})'
+        )
 
 
 class Table:
@@ -721,3 +740,18 @@ class Table:
     @property
     def custom_mbr(self) -> Optional[mbr.Table]:
         return self._custom_mbr
+
+    def __eq__(self, other: Any) -> bool:
+        if isinstance(other, Table):
+            return (
+                self._partitions == other._partitions
+                and self._disk_guid == other._disk_guid
+                and self._custom_mbr == other._custom_mbr
+            )
+        return NotImplemented
+
+    def __repr__(self) -> str:
+        return (
+            f'gpt.{self.__class__.__name__}({len(self._partitions)}, '
+            f'disk_guid={self._disk_guid!r})'
+        )

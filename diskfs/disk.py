@@ -7,7 +7,7 @@ import os
 import sys
 from stat import S_ISBLK, S_ISREG
 from types import TracebackType
-from typing import BinaryIO, Optional, Type
+from typing import Any, BinaryIO, Optional, Type
 
 from ._base import ParseError, SectorSize
 from .table import Table, gpt, mbr
@@ -312,3 +312,11 @@ class Disk:
     def _check_writable(self) -> None:
         if not self.writable:
             raise ValueError('Disk is not writable')
+
+    def __eq__(self, other: Any) -> bool:
+        if isinstance(other, Disk):
+            return self._file.name == other._file.name
+        return NotImplemented
+
+    def __repr__(self) -> str:
+        return f'{self.__class__.__name__}({self._file.name!r}, size={self._size})'
