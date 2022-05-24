@@ -6,7 +6,7 @@ See https://wiki.osdev.org/Partition_Table.
 
 import struct
 from enum import IntEnum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Iterable
 
 from .._base import ParseError, SectorSize
 from ._base import TableType, check_alignment, check_bounds, check_overlapping
@@ -306,16 +306,17 @@ class Table:
 
     SIZE = 512
 
-    def __init__(self, partitions: tuple[PartitionEntry, ...], boot_code: bytes):
+    def __init__(self, partitions: Iterable[PartitionEntry], boot_code: bytes):
         check_overlapping(partitions, warn=True)
-        self._partitions = partitions
+        self._partitions = tuple(partitions)
         self._boot_code = boot_code
 
     @classmethod
     def new(
-        cls, partitions: tuple[PartitionEntry, ...], *, boot_code: bytes = b''
+        cls, partitions: Iterable[PartitionEntry], *, boot_code: bytes = b''
     ) -> 'Table':
         """New partition table."""
+        partitions = tuple(partitions)
         if len(partitions) > PARTITION_ENTRIES_COUNT:
             raise ValueError(
                 f'Can only create a maximum of {PARTITION_ENTRIES_COUNT} partitions, '
@@ -327,7 +328,7 @@ class Table:
                 f'{len(boot_code)} bytes'
             )
         # strip empty partition entries
-        stripped_entries = tuple(filter(lambda p: not p.empty, partitions))
+        stripped_entries = filter(lambda p: not p.empty, partitions)
         return cls(stripped_entries, boot_code)
 
     @classmethod
@@ -352,7 +353,7 @@ class Table:
                 partitions.append(entry)
 
         boot_code = b[:BOOT_CODE_SIZE]
-        return cls(tuple(partitions), boot_code)
+        return cls(partitions, boot_code)
 
     @classmethod
     def from_disk(cls, disk: 'Disk') -> 'Table':

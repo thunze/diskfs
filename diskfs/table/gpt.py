@@ -6,7 +6,7 @@ See https://uefi.org/specifications.
 import struct
 import warnings
 from enum import Enum, IntFlag
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Iterable, Optional
 from uuid import UUID, uuid4
 from zlib import crc32
 
@@ -333,26 +333,26 @@ class Table:
 
     def __init__(
         self,
-        partitions: tuple[PartitionEntry, ...],
+        partitions: Iterable[PartitionEntry],
         disk_guid: UUID,
         custom_mbr: Optional[mbr.Table],
     ):
         check_overlapping(partitions, warn=True)
-        self._partitions = partitions
+        self._partitions = tuple(partitions)
         self._disk_guid = disk_guid
         self._custom_mbr = custom_mbr
 
     @classmethod
     def new(
         cls,
-        partitions: tuple[PartitionEntry, ...],
+        partitions: Iterable[PartitionEntry],
         *,
         disk_guid: UUID = None,
         custom_mbr: mbr.Table = None,
     ) -> 'Table':
         """New partition table."""
         # strip empty partition entries
-        stripped_entries = tuple(filter(lambda p: not p.empty, partitions))
+        stripped_entries = filter(lambda p: not p.empty, partitions)
 
         if disk_guid is None:
             disk_guid = uuid4()
@@ -565,7 +565,7 @@ class Table:
             custom_mbr = mbr_
 
         disk_guid = UUID(bytes_le=disk_guid_bytes)
-        table = cls(tuple(partitions), disk_guid, custom_mbr)
+        table = cls(partitions, disk_guid, custom_mbr)
 
         # checks
         first_usable, last_usable = table.usable_lba(disk.size, disk.sector_size)

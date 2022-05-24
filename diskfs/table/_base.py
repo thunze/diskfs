@@ -1,8 +1,8 @@
-"""Protocols implemented in the ``table`` package."""
+"""Protocols implemented in the ``table`` package and several partition checks."""
 
 import warnings
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Protocol
+from typing import TYPE_CHECKING, Any, Iterable, Protocol
 
 from .._base import AlignmentWarning, BoundsError, BoundsWarning, SectorSize
 
@@ -85,7 +85,7 @@ class Table(Protocol):
 
 
 def check_overlapping(
-    partitions: tuple[PartitionEntry, ...], *, warn: bool = False
+    partitions: Iterable[PartitionEntry], *, warn: bool = False
 ) -> None:
     """Check if the partitions' bounds don't overlap with each other.
 
