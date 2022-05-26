@@ -344,6 +344,8 @@ class Table:
     ) -> 'Table':
         """New partition table."""
         partitions = tuple(partitions)
+        boot_code = boot_code.rstrip(b'\x00')
+
         if len(partitions) > PARTITION_ENTRIES_COUNT:
             raise ValueError(
                 f'Can only create a maximum of {PARTITION_ENTRIES_COUNT} partitions, '
@@ -379,7 +381,7 @@ class Table:
             if not entry.empty:
                 partitions.append(entry)
 
-        boot_code = b[:BOOT_CODE_SIZE]
+        boot_code = b[:BOOT_CODE_SIZE].rstrip(b'\x00')
         return cls(partitions, boot_code)
 
     @classmethod
@@ -461,11 +463,9 @@ class Table:
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Table):
-            boot_code_self = self._boot_code.rstrip(b'\x00')
-            boot_code_other = other._boot_code.rstrip(b'\x00')
             return (
                 self._partitions == other._partitions
-                and boot_code_self == boot_code_other
+                and self._boot_code == other._boot_code
             )
         return NotImplemented
 

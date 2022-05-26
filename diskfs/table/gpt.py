@@ -229,7 +229,7 @@ class PartitionEntry:
 
         if guid is None:
             guid = uuid4()
-        name = name.strip('\x00')
+        name = name.rstrip('\x00')
 
         return cls(start_lba, end_lba, type_uuid, attributes_int, guid, name)
 
@@ -279,7 +279,7 @@ class PartitionEntry:
             )
 
         guid = UUID(bytes_le=guid_bytes)
-        name = name_bytes.decode('utf-16le').strip('\x00')
+        name = name_bytes.decode('utf-16le').rstrip('\x00')
         return cls(start_lba, end_lba, type_, attributes, guid, name)
 
     def __bytes__(self) -> bytes:
