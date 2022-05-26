@@ -145,8 +145,8 @@ class PartitionAttributes(IntFlag):
 class PartitionEntry:
     """GPT partition entry.
 
-    Do not use ``__init__`` directly. Use ``PartitionEntry.new()``,
-    ``PartitionEntry.new_empty()`` or ``PartitionEntry.from_bytes()`` instead.
+    Do not use ``__init__`` directly. Use ``PartitionEntry.new()`` or
+    ``PartitionEntry.new_empty()`` instead.
     """
 
     SIZE = 128
@@ -179,7 +179,7 @@ class PartitionEntry:
         guid: UUID = None,
         name: str = '',
     ) -> 'PartitionEntry':
-        """New non-empty partition entry."""
+        """New partition entry."""
         if isinstance(type_, PartitionType):
             type_uuid = type_.value
         else:
@@ -264,7 +264,7 @@ class PartitionEntry:
 
         if start_lba > end_lba:
             raise ParseError(
-                f'Starting sector of partition must be greater or equal the ending '
+                f'Starting sector of partition must be greater or equal to the ending '
                 f'sector (got starting sector {start_lba}, ending sector {end_lba})'
             )
 
@@ -343,8 +343,7 @@ class PartitionEntry:
 class Table:
     """GPT partition table.
 
-    Do not use ``__init__`` directly, use ``Table.new()`` or ``Table.from_bytes()``
-    instead.
+    Do not use ``__init__`` directly, use ``Table.new()`` instead.
     """
 
     HEADER_SIZE = 92
@@ -423,15 +422,14 @@ class Table:
 
         if header_lba != expected_header_lba:
             raise ParseError(
-                f'Header sector specified in GPT header does not match actual GPT '
-                f'header sector (expected {PRIMARY_HEADER_LBA}, got {header_lba})'
+                f'Header sector does not match (expected LBA {expected_header_lba}, '
+                f'got LBA {header_lba})'
             )
 
         if alternate_header_lba != expected_alternate_header_lba:
             raise ParseError(
-                f'Alternate GPT header does not reside where it was expected '
-                f'(expected LBA {expected_alternate_header_lba}, got LBA '
-                f'{alternate_header_lba})'
+                f'Alternate header sector does not match (expected LBA '
+                f'{expected_alternate_header_lba}, got LBA {alternate_header_lba})'
             )
 
         if partition_entry_size < PartitionEntry.SIZE:
@@ -447,7 +445,7 @@ class Table:
 
         if partition_entries_count < MIN_PARTITION_ENTRIES:
             raise ParseError(
-                f'GPT Partition entry array must hold a minimum of '
+                f'GPT partition entry array must hold a minimum of '
                 f'{MIN_PARTITION_ENTRIES} partition entries, got '
                 f'{partition_entries_count}'
             )
@@ -506,11 +504,12 @@ class Table:
         if len(partition_array) != expected_array_size:
             raise ValueError(
                 f'Calculated partition array size does not match passed partition '
-                f'array (expected {expected_array_size}, got {len(partition_array)})'
+                f'array (expected {expected_array_size} bytes, got '
+                f'{len(partition_array)} bytes)'
             )
 
         if crc32(partition_array) != array_crc32:
-            raise ParseError('CRC32 of GPT partition array does not match')
+            raise ParseError('CRC32 of partition entry array does not match')
 
     @classmethod
     def from_disk(cls, disk: 'Disk') -> 'Table':

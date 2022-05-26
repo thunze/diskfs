@@ -166,8 +166,8 @@ class PartitionType(IntEnum):
 class PartitionEntry:
     """MBR partition entry.
 
-    Do not use ``__init__`` directly. Use ``PartitionEntry.new()``,
-    ``PartitionEntry.new_empty()`` or ``PartitionEntry.from_bytes()`` instead.
+    Do not use ``__init__`` directly. Use ``PartitionEntry.new()`` or
+    ``PartitionEntry.new_empty()`` instead.
     """
 
     SIZE = 16
@@ -188,7 +188,7 @@ class PartitionEntry:
         *,
         bootable: bool = False,
     ) -> 'PartitionEntry':
-        """New non-empty partition entry."""
+        """New partition entry."""
         if type_ == PartitionType.EMPTY:
             return cls.new_empty()
 
@@ -313,8 +313,7 @@ class PartitionEntry:
 class Table:
     """MBR partition table.
 
-    Do not use ``__init__`` directly, use ``Table.new()`` or ``Table.from_bytes()``
-    instead.
+    Do not use ``__init__`` directly, use ``Table.new()`` instead.
     """
 
     SIZE = 512
