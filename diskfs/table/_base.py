@@ -93,6 +93,7 @@ def check_overlapping(
     each other. If ``warn`` is ``True``, ``BoundsWarning`` is emitted instead of
     raising an exception.
     """
+    partitions = tuple(partitions)
     # sort by starting sector
     partitions_sorted = sorted(partitions, key=lambda p: p.start_lba)
     prev_partition_end_lba = 0  # last sector of previous partition

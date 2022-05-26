@@ -324,8 +324,9 @@ class Table:
     SIZE = 512
 
     def __init__(self, partitions: Iterable[PartitionEntry], boot_code: bytes):
+        partitions = tuple(partitions)
         check_overlapping(partitions, warn=True)
-        self._partitions = tuple(partitions)
+        self._partitions = partitions
         self._boot_code = boot_code
 
     @classmethod

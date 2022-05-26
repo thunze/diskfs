@@ -360,8 +360,9 @@ class Table:
         disk_guid: UUID,
         custom_mbr: Optional[mbr.Table],
     ):
+        partitions = tuple(partitions)
         check_overlapping(partitions, warn=True)
-        self._partitions = tuple(partitions)
+        self._partitions = partitions
         self._disk_guid = disk_guid
         self._custom_mbr = custom_mbr
 
