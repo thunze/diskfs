@@ -5,7 +5,7 @@ See https://uefi.org/specifications.
 
 import struct
 import warnings
-from enum import Enum, IntFlag
+from enum import Enum, Flag
 from typing import TYPE_CHECKING, Any, Iterable, Optional
 from uuid import UUID, uuid4
 from zlib import crc32
@@ -129,7 +129,7 @@ class PartitionType(Enum):
     VMWARE_VMFS = UUID('AA31E02A-400F-11DB-9590-000C2911D1B8')
 
 
-class PartitionAttributes(IntFlag):
+class PartitionAttributes(Flag):
     """GPT partition attribute flags.
 
     - Bits 0-2 are defined for all partition types.
@@ -157,7 +157,7 @@ class PartitionEntry:
         start_lba: int,
         end_lba: int,
         type_: UUID,
-        attributes: PartitionAttributes,
+        attributes: int,
         guid: UUID,
         name: str,
     ):
@@ -181,7 +181,8 @@ class PartitionEntry:
     ) -> 'PartitionEntry':
         """New non-empty partition entry.
 
-        ``PartitionType.UNUSED`` must not be passed as argument ``type_``.
+        ``PartitionType.UNUSED`` must not be passed as ``type_``, use
+        ``PartitionEntry.new_empty()`` instead.
         """
         if isinstance(type_, PartitionType):
             type_uuid = type_.value
@@ -192,6 +193,11 @@ class PartitionEntry:
             raise ValueError(
                 'Use PartitionEntry.new_empty() to create an empty partition entry'
             )
+
+        if isinstance(attributes, PartitionAttributes):
+            attributes_int = attributes.value
+        else:
+            attributes_int = attributes
 
         eight_byte_max = 1 << 64
         end_lba = start_lba + length_lba - 1
@@ -210,9 +216,10 @@ class PartitionEntry:
                 f'Invalid partition ending sector {end_lba}, must be an 8-byte value '
                 f'value greater than 2'
             )
-        if not 0 <= attributes < eight_byte_max:
+        if not 0 <= attributes_int < eight_byte_max:
             raise ValueError(
-                f'Invalid partition attributes {attributes}, must be an 8-byte value'
+                f'Invalid partition attributes {hex(attributes_int)}, must be an '
+                f'8-byte value'
             )
         if len(name) > PARTITION_NAME_MAX_LEN:
             raise ValueError(
@@ -220,18 +227,16 @@ class PartitionEntry:
                 f'characters, got {name!r}'
             )
 
-        attributes = PartitionAttributes(attributes)
         if guid is None:
             guid = uuid4()
         name = name.strip('\x00')
 
-        return cls(start_lba, end_lba, type_uuid, attributes, guid, name)
+        return cls(start_lba, end_lba, type_uuid, attributes_int, guid, name)
 
     @classmethod
     def new_empty(cls) -> 'PartitionEntry':
         """New empty / unused partition entry."""
-        attributes = PartitionAttributes(0)
-        return cls(0, 0, PartitionType.UNUSED.value, attributes, uuid4(), '')
+        return cls(0, 0, PartitionType.UNUSED.value, 0, uuid4(), '')
 
     @classmethod
     def from_bytes(cls, b: bytes) -> 'PartitionEntry':
@@ -254,7 +259,7 @@ class PartitionEntry:
             guid_bytes,
             start_lba,
             end_lba,
-            attributes_int,
+            attributes,
             name_bytes,
         ) = struct.unpack(cls.FORMAT, b[: cls.SIZE])
 
@@ -274,7 +279,6 @@ class PartitionEntry:
             )
 
         guid = UUID(bytes_le=guid_bytes)
-        attributes = PartitionAttributes(attributes_int)
         name = name_bytes.decode('utf-16le').strip('\x00')
         return cls(start_lba, end_lba, type_, attributes, guid, name)
 
@@ -314,7 +318,7 @@ class PartitionEntry:
         return self._type == PartitionType.UNUSED.value
 
     @property
-    def attributes(self) -> PartitionAttributes:
+    def attributes(self) -> int:
         return self._attributes
 
     @property
@@ -341,12 +345,13 @@ class PartitionEntry:
         return (
             f'gpt.{self.__class__.__name__}(start_lba={self._start_lba}, '
             f'end_lba={self._end_lba}, type={self._type!r}, '
-            f'attributes={self._attributes}, guid={self._guid!r}, name={self._name!r})'
+            f'attributes={hex(self._attributes)}, guid={self._guid!r}, '
+            f'name={self._name!r})'
         )
 
 
 class Table:
-    """GPT partition table.
+    """GUID partition table.
 
     Do not use ``__init__`` directly, use ``Table.new()`` instead.
     """
@@ -556,9 +561,8 @@ class Table:
                 cls._validate_header(header_sector, last_sector_lba, PRIMARY_HEADER_LBA)
                 partition_array = get_partition_array(header_sector)
                 cls._validate_partition_array(header_sector, partition_array)
-
             except ParseError:
-                raise ParseError('No valid GPT partition table found')
+                raise ParseError('No valid GPT found')
 
         _h = struct.unpack(cls.HEADER_FORMAT, header_sector[: cls.HEADER_SIZE])
         _, _, _, _, _, _, _, _, _, disk_guid_bytes, _, entries_count, entry_size, _ = _h
@@ -582,7 +586,7 @@ class Table:
 
         if (
             len(mbr_.partitions) == 1
-            and mbr_.partitions[0].type == mbr.PartitionType.GPT_PROTECTIVE
+            and mbr_.partitions[0].type == mbr.PartitionType.GPT_PROTECTIVE.value
         ):
             custom_mbr = None  # standard protective MBR
         else:

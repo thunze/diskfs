@@ -5,7 +5,7 @@ See https://wiki.osdev.org/Partition_Table.
 """
 
 import struct
-from enum import IntEnum
+from enum import Enum
 from typing import TYPE_CHECKING, Any, Iterable
 
 from .._base import ParseError, SectorSize
@@ -133,7 +133,7 @@ def _check_lss(lss: int) -> None:
         )
 
 
-class PartitionType(IntEnum):
+class PartitionType(Enum):
     """Common MBR partition type."""
 
     EMPTY = 0x00
@@ -190,9 +190,15 @@ class PartitionEntry:
     ) -> 'PartitionEntry':
         """New non-empty partition entry.
 
-        ``PartitionType.EMPTY`` must not be passed as argument ``type_``.
+        ``PartitionType.EMPTY`` must not be passed as ``type_``, use
+        ``PartitionEntry.new_empty()`` instead.
         """
-        if type_ == PartitionType.EMPTY:
+        if isinstance(type_, PartitionType):
+            type_int = type_.value
+        else:
+            type_int = type_
+
+        if type_int == PartitionType.EMPTY.value:
             raise ValueError(
                 'Use PartitionEntry.new_empty() to create an empty partition entry'
             )
@@ -200,8 +206,10 @@ class PartitionEntry:
         byte_max = 1 << 8
         four_byte_max = 1 << 32
 
-        if not 0 <= type_ < byte_max:
-            raise ValueError(f'Invalid partition type {type_}, must be a 1-byte value')
+        if not 0 <= type_int < byte_max:
+            raise ValueError(
+                f'Invalid partition type {hex(type_int)}, must be a 1-byte value'
+            )
 
         # LBA 0 is invalid because the partition table resides at LBA 0
         if not 0 < start_lba < four_byte_max:
@@ -214,12 +222,12 @@ class PartitionEntry:
                 f'Invalid partition length {length_lba} sectors, must be a 4-byte '
                 f'value greater than 0'
             )
-        return cls(start_lba, length_lba, type_, bootable)
+        return cls(start_lba, length_lba, type_int, bootable)
 
     @classmethod
     def new_empty(cls) -> 'PartitionEntry':
         """New empty / unused partition entry."""
-        return cls(0, 0, PartitionType.EMPTY, False)
+        return cls(0, 0, PartitionType.EMPTY.value, False)
 
     @classmethod
     def from_bytes(cls, b: bytes) -> 'PartitionEntry':
@@ -236,7 +244,7 @@ class PartitionEntry:
         )
 
         # check if entry can be ignored
-        if type_ == PartitionType.EMPTY or length_lba == 0:
+        if type_ == PartitionType.EMPTY.value or length_lba == 0:
             return cls.new_empty()
 
         if start_lba == 0:
@@ -292,7 +300,7 @@ class PartitionEntry:
 
     @property
     def empty(self) -> bool:
-        return self._type == PartitionType.EMPTY
+        return self._type == PartitionType.EMPTY.value
 
     @property
     def bootable(self) -> bool:
@@ -311,7 +319,8 @@ class PartitionEntry:
     def __repr__(self) -> str:
         return (
             f'mbr.{self.__class__.__name__}(start_lba={self._start_lba}, '
-            f'end_lba={self.end_lba}, type={self._type}, bootable={self._bootable})'
+            f'end_lba={self.end_lba}, type={hex(self._type)}, '
+            f'bootable={self._bootable})'
         )
 
 
