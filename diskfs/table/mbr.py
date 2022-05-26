@@ -188,9 +188,14 @@ class PartitionEntry:
         *,
         bootable: bool = False,
     ) -> 'PartitionEntry':
-        """New partition entry."""
+        """New non-empty partition entry.
+
+        ``PartitionType.EMPTY`` must not be passed as argument ``type_``.
+        """
         if type_ == PartitionType.EMPTY:
-            return cls.new_empty()
+            raise ValueError(
+                'Use PartitionEntry.new_empty() to create an empty partition entry'
+            )
 
         byte_max = 1 << 8
         four_byte_max = 1 << 32

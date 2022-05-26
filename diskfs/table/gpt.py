@@ -179,14 +179,19 @@ class PartitionEntry:
         guid: UUID = None,
         name: str = '',
     ) -> 'PartitionEntry':
-        """New partition entry."""
+        """New non-empty partition entry.
+
+        ``PartitionType.UNUSED`` must not be passed as argument ``type_``.
+        """
         if isinstance(type_, PartitionType):
             type_uuid = type_.value
         else:
             type_uuid = type_
 
         if type_uuid == PartitionType.UNUSED.value:
-            return cls.new_empty()
+            raise ValueError(
+                'Use PartitionEntry.new_empty() to create an empty partition entry'
+            )
 
         eight_byte_max = 1 << 64
         end_lba = start_lba + length_lba - 1
