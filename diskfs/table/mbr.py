@@ -20,9 +20,7 @@ __all__ = ['Table', 'PartitionEntry', 'PartitionType']
 MIN_LSS = 512  # minimum logical sector size required for MBR partitioning
 
 BOOT_CODE_SIZE = 446
-PARTITION_ENTRIES_START = 446
 PARTITION_ENTRIES_COUNT = 4
-SIGNATURE_START = 510
 
 SIGNATURE = b'\x55\xaa'
 STATUS_ACTIVE = 0x80
@@ -331,6 +329,7 @@ class Table:
     """
 
     SIZE = 512
+    FORMAT = '<446s16s16s16s16s2s'
 
     def __init__(self, partitions: Iterable[PartitionEntry], boot_code: bytes):
         partitions = tuple(partitions)
@@ -368,20 +367,16 @@ class Table:
                 f'MBR partition table must be {cls.SIZE} bytes long, got {len(b)} bytes'
             )
 
-        signature = b[SIGNATURE_START:]
+        boot_code, p1, p2, p3, p4, signature = struct.unpack(cls.FORMAT, b)
+
         if signature != SIGNATURE:
             raise ParseError(f'Invalid MBR signature {signature!r}')
 
-        partitions: list[PartitionEntry] = []
-        for i in range(PARTITION_ENTRIES_COUNT):
-            start = PARTITION_ENTRIES_START + PartitionEntry.SIZE * i
-            end = start + PartitionEntry.SIZE
-            entry_bytes = b[start:end]
-            entry = PartitionEntry.from_bytes(entry_bytes)
-            if not entry.empty:
-                partitions.append(entry)
+        partitions = filter(
+            lambda p: not p.empty, map(PartitionEntry.from_bytes, [p1, p2, p3, p4])
+        )
+        boot_code = boot_code.rstrip(b'\x00')
 
-        boot_code = b[:BOOT_CODE_SIZE].rstrip(b'\x00')
         return cls(partitions, boot_code)
 
     @classmethod
@@ -413,19 +408,9 @@ class Table:
         empty_entries_count = PARTITION_ENTRIES_COUNT - len(self._partitions)
         empty_entries = [PartitionEntry.new_empty() for _ in range(empty_entries_count)]
         entries = self._partitions + tuple(empty_entries)
-        entries_bytes = b''.join(bytes(entry) for entry in entries)
+        entries_bytes = [bytes(entry) for entry in entries]
 
-        # fill up with zeroes
-        boot_code_zeroes = b'\x00' * (BOOT_CODE_SIZE - len(self._boot_code))
-        boot_code = self._boot_code + boot_code_zeroes
-
-        b = boot_code + entries_bytes + SIGNATURE
-        if len(b) != self.SIZE:
-            raise RuntimeError(
-                f'Failed to convert MBR partition table to bytes: Expected '
-                f'{self.SIZE} bytes, got {len(b)} bytes'
-            )
-        return b
+        return struct.pack(self.FORMAT, self._boot_code, *entries_bytes, SIGNATURE)
 
     def _write_to_disk(self, disk: 'Disk') -> None:
         """Write partition table to ``disk``."""
