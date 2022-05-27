@@ -3,6 +3,7 @@
 A disk represents either a file or block device that one can access and manipulate.
 """
 
+import logging
 import os
 import sys
 from stat import S_ISBLK, S_ISREG
@@ -25,6 +26,9 @@ else:
 __all__ = ['Disk']
 
 
+log = logging.getLogger(__name__)
+
+
 SECTOR_SIZE_DEFAULT = 512
 
 
@@ -44,6 +48,9 @@ class Disk:
         self._size = size
         self._sector_size = sector_size
         self._table: Optional[Table] = None
+
+        log.info(f'Opened disk {self}')
+        log.info(f'{self} - Size: {size} bytes, {sector_size}')
         self.read_table()
 
     @classmethod
@@ -106,6 +113,7 @@ class Disk:
         Uses the logical sector size of the disk.
         """
         self._check_closed()
+        log.debug(f'{self} - Reading {size} sectors starting at sector {pos}')
 
         if pos < 0:
             raise ValueError('Position to read from must be zero or positive')
@@ -156,6 +164,7 @@ class Disk:
         """
         self._check_closed()
         self._check_writable()
+        log.debug(f'{self} - Writing {len(b)} bytes starting at sector {pos}')
 
         pos_bytes = pos * self.sector_size.logical
 
@@ -203,6 +212,11 @@ class Disk:
                 # no valid partition table found
                 self._table = None
 
+        if self._table is None:
+            log.info(f'{self} - No valid partition table found')
+        else:
+            log.info(f'{self} - Found partition table {self._table}')
+
     def clear(self) -> None:
         """Clear the disk by overwriting specific parts of the disk with zeroes.
 
@@ -212,6 +226,7 @@ class Disk:
         """
         self._check_closed()
         self._check_writable()
+        log.info(f'{self} - Clearing disk')
         self.flush()
         raise NotImplementedError
 
@@ -230,6 +245,7 @@ class Disk:
             raise ValueError(
                 'Disk is already partitioned; clear disk first to re-partition'
             )
+        log.info(f'{self} - Partitioning disk using partition table {table}')
 
         # noinspection PyProtectedMember
         table._write_to_disk(self)
@@ -258,6 +274,7 @@ class Disk:
         self._check_closed()
         if not self._device:
             raise ValueError('Can only dismount volumes of block devices')
+        log.info(f'{self} - Dismounting volumes')
         raise NotImplementedError
 
     def close(self) -> None:
@@ -266,6 +283,7 @@ class Disk:
         This method has no effect if the IO object is already closed.
         """
         self._file.close()
+        log.info(f'Closed disk {self}')
 
     def __enter__(self) -> 'Disk':
         """Context management protocol."""
@@ -317,6 +335,9 @@ class Disk:
         if isinstance(other, Disk):
             return self._file.name == other._file.name
         return NotImplemented
+
+    def __str__(self) -> str:
+        return self._file.name
 
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}({self._file.name!r}, size={self._size})'

@@ -3,6 +3,7 @@
 See https://uefi.org/specifications.
 """
 
+import logging
 import struct
 import warnings
 from enum import Enum, Flag
@@ -18,6 +19,9 @@ if TYPE_CHECKING:
     from ..disk import Disk
 
 __all__ = ['Table', 'PartitionEntry', 'PartitionAttributes', 'PartitionType']
+
+
+log = logging.getLogger(__name__)
 
 
 MIN_LSS = 512  # minimum logical sector size required for GPT partitioning
@@ -145,7 +149,7 @@ class PartitionAttributes(Flag):
 class PartitionEntry:
     """GPT partition entry.
 
-    Do not use ``__init__`` directly. Use ``PartitionEntry.new()`` or
+    Do not use ``__init__`` directly, use ``PartitionEntry.new()`` or
     ``PartitionEntry.new_empty()`` instead.
     """
 
@@ -552,8 +556,9 @@ class Table:
             partition_array = get_partition_array(header_sector)
             cls._validate_partition_array(header_sector, partition_array)
 
-        except ParseError:
+        except ParseError as e:
             # parsing of primary table failed, try backup table
+            log.debug(f'Failed to parse primary GPT: {e}')
             header_sector = disk.read_at(last_sector_lba, 1)
 
             try:
@@ -561,7 +566,9 @@ class Table:
                 cls._validate_header(header_sector, last_sector_lba, PRIMARY_HEADER_LBA)
                 partition_array = get_partition_array(header_sector)
                 cls._validate_partition_array(header_sector, partition_array)
-            except ParseError:
+
+            except ParseError as e2:
+                log.debug(f'Failed to parse secondary GPT: {e2}')
                 raise ParseError('No valid GPT found')
 
         _h = struct.unpack(cls.HEADER_FORMAT, header_sector[: cls.HEADER_SIZE])

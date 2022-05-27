@@ -4,6 +4,7 @@ See https://en.wikipedia.org/wiki/Master_boot_record.
 See https://wiki.osdev.org/Partition_Table.
 """
 
+import logging
 import struct
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Iterable
@@ -15,6 +16,9 @@ if TYPE_CHECKING:
     from ..disk import Disk
 
 __all__ = ['Table', 'PartitionEntry', 'PartitionType']
+
+
+log = logging.getLogger(__name__)
 
 
 MIN_LSS = 512  # minimum logical sector size required for MBR partitioning
@@ -164,7 +168,7 @@ class PartitionType(Enum):
 class PartitionEntry:
     """MBR partition entry.
 
-    Do not use ``__init__`` directly. Use ``PartitionEntry.new()`` or
+    Do not use ``__init__`` directly, use ``PartitionEntry.new()`` or
     ``PartitionEntry.new_empty()`` instead.
     """
 
@@ -389,7 +393,12 @@ class Table:
             )
         first_sector = disk.read_at(0, 1)
         table_bytes = first_sector[: cls.SIZE]
-        table = cls.from_bytes(table_bytes)
+
+        try:
+            table = cls.from_bytes(table_bytes)
+        except ParseError as e:
+            log.debug(f'Failed to parse MBR: {e}')
+            raise
 
         # checks
         first_usable, last_usable = table.usable_lba(disk.size, disk.sector_size)
