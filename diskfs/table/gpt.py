@@ -527,7 +527,6 @@ class Table:
             the partition entry array was read from.
         :param partition_array: All bytes of the partition entry array to validate.
         """
-
         _h = struct.unpack(cls.HEADER_FORMAT, header_sector[: cls.HEADER_SIZE])
         _, _, _, _, _, _, _, _, _, _, _, entries_count, entry_size, array_crc32 = _h
 

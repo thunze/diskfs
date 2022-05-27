@@ -63,7 +63,7 @@ class Disk:
         if sector_size <= 0:
             raise ValueError('Sector size must be greater than 0')
 
-        file = open(path, 'xb+')  # skipcq: PYL-W6004
+        file = open(path, 'xb+')  # skipcq: PTC-W6004
         try:
             file.truncate(size)
             return cls(file, False, size, SectorSize(sector_size, sector_size))
