@@ -5,13 +5,12 @@ See https://uefi.org/specifications.
 
 import logging
 import struct
-import warnings
 from enum import Enum, Flag
 from typing import TYPE_CHECKING, Any, Iterable, Optional
 from uuid import UUID, uuid4
 from zlib import crc32
 
-from .._base import BoundsWarning, ParseError, SectorSize
+from .._base import ParseError, SectorSize
 from . import mbr
 from ._base import TableType, check_alignment, check_bounds, check_overlapping
 
@@ -585,11 +584,7 @@ class Table:
                 partitions.append(entry)
 
         # parse MBR
-        with warnings.catch_warnings():
-            # partition defined in protective MBR might exceed disk bounds, even
-            # though this is not recommended by the UEFI standard
-            warnings.simplefilter('ignore', BoundsWarning)
-            mbr_ = mbr.Table.from_disk(disk)
+        mbr_ = mbr.Table.from_disk(disk)
 
         if (
             len(mbr_.partitions) == 1
