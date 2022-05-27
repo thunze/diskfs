@@ -2,7 +2,7 @@
 
 import sys
 
-assert sys.platform == 'darwin'
+assert sys.platform == 'darwin'  # skipcq: BAN-B101
 
 import io
 from fcntl import ioctl
@@ -35,9 +35,5 @@ def device_sector_size(file: BinaryIO) -> SectorSize:
     return SectorSize(logical, physical)
 
 
-# noinspection PyUnusedLocal
-def reread_partition_table(file: BinaryIO) -> None:
-    """Force kernel to re-read the partition table on a block device.
-
-    :param file: IO handle for the block device.
-    """
+def reread_partition_table(_file: BinaryIO) -> None:
+    """Force kernel to re-read the partition table on a block device."""

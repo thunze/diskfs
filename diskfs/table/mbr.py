@@ -286,22 +286,27 @@ class PartitionEntry:
 
     @property
     def start_lba(self) -> int:
+        """Starting sector of the partition. Inclusive."""
         return self._start_lba
 
     @property
     def length_lba(self) -> int:
+        """Length of the partition in logical sectors."""
         return self._length_lba
 
     @property
     def end_lba(self) -> int:
+        """Ending sector of the partition. Inclusive."""
         return self._start_lba + self._length_lba - 1
 
     @property
     def type(self) -> int:
+        """Partition type."""
         return self._type
 
     @property
     def empty(self) -> bool:
+        """Whether the partition entry is considered empty / unused."""
         return self._type == PartitionType.EMPTY.value
 
     @property
@@ -433,10 +438,11 @@ class Table:
 
         disk.write_at(0, bytes(self), fill_zeroes=True)
 
+    # skipcq: PYL-R0201
     # noinspection PyMethodMayBeStatic
     def usable_lba(self, disk_size: int, sector_size: SectorSize) -> tuple[int, int]:
         """Return a ``tuple`` of the first and last logical sector which may be used
-        by a partition described by a partition entry of this partition table.
+        by a partition of this partition table.
         """
         lss = sector_size.logical
         _check_lss(lss)
@@ -445,6 +451,7 @@ class Table:
 
     @property
     def type(self) -> TableType:
+        """Partition table type."""
         return TableType.MBR
 
     @property

@@ -63,7 +63,7 @@ class Disk:
         if sector_size <= 0:
             raise ValueError('Sector size must be greater than 0')
 
-        file = open(path, 'xb+')
+        file = open(path, 'xb+')  # skipcq: PYL-W6004
         try:
             file.truncate(size)
             return cls(file, False, size, SectorSize(sector_size, sector_size))
@@ -193,6 +193,7 @@ class Disk:
             )
 
     def flush(self) -> None:
+        """Flush write buffers of the underlying file or block device, if applicable."""
         self._check_closed()
         self._file.flush()
 
@@ -247,6 +248,7 @@ class Disk:
             )
         log.info(f'{self} - Partitioning disk using partition table {table}')
 
+        # skipcq: PYL-W0212
         # noinspection PyProtectedMember
         table._write_to_disk(self)
         self.flush()
@@ -271,6 +273,7 @@ class Disk:
         raise NotImplementedError
 
     def dismount_volumes(self) -> None:
+        """Dismount all volumes associated with the disk."""
         self._check_closed()
         if not self._device:
             raise ValueError('Can only dismount volumes of block devices')
@@ -301,33 +304,44 @@ class Disk:
 
     @property
     def device(self) -> bool:
+        """Whether the disk's data resides on a block device instead of a file."""
         return self._device
 
     @property
     def size(self) -> int:
+        """Size of the disk in bytes."""
         return self._size
 
     @property
     def sector_size(self) -> SectorSize:
+        """Logical and physical sector size of the disk, each in bytes."""
         return self._sector_size
 
     @property
     def table(self) -> Optional[Table]:
+        """Partition table last detected on the disk.
+
+        ``None`` if no partition table was detected at that time.
+        """
         return self._table
 
     @property
     def closed(self) -> bool:
+        """Whether the underlying file or block device is closed."""
         return self._file.closed
 
     @property
     def writable(self) -> bool:
+        """Whether the underlying file or block device supports writing."""
         return self._file.writable()
 
     def _check_closed(self) -> None:
+        """Raise ``ValueError`` if the underlying file or block device is closed."""
         if self.closed:
             raise ValueError('I/O operation on closed file')
 
     def _check_writable(self) -> None:
+        """Raise ``ValueError`` if the underlying file or block device is read-only."""
         if not self.writable:
             raise ValueError('Disk is not writable')
 

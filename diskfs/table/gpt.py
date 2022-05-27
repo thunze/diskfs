@@ -302,22 +302,27 @@ class PartitionEntry:
 
     @property
     def start_lba(self) -> int:
+        """Starting sector of the partition. Inclusive."""
         return self._start_lba
 
     @property
     def end_lba(self) -> int:
+        """Ending sector of the partition. Inclusive."""
         return self._end_lba
 
     @property
     def length_lba(self) -> int:
+        """Length of the partition in logical sectors."""
         return self._end_lba - self._start_lba + 1
 
     @property
     def type(self) -> UUID:
+        """Partition type."""
         return self._type
 
     @property
     def empty(self) -> bool:
+        """Whether the partition entry is considered empty / unused."""
         return self._type == PartitionType.UNUSED.value
 
     @property
@@ -397,6 +402,12 @@ class Table:
         expected_header_lba: int,
         expected_alternate_header_lba: int,
     ) -> None:
+        """Validate a GPT header.
+
+        :param header_sector: All bytes of the sector the header was read from.
+        :param expected_header_lba: LBA of the sector the header was read from.
+        :param expected_alternate_header_lba: Where the other GPT header is expected.
+        """
         lss = len(header_sector)
 
         (
@@ -510,6 +521,12 @@ class Table:
     def _validate_partition_array(
         cls, header_sector: bytes, partition_array: bytes
     ) -> None:
+        """Validate a GPT partition entry array.
+
+        :param header_sector: All bytes of the sector the GPT header which points to
+            the partition entry array was read from.
+        :param partition_array: All bytes of the partition entry array to validate.
+        """
 
         _h = struct.unpack(cls.HEADER_FORMAT, header_sector[: cls.HEADER_SIZE])
         _, _, _, _, _, _, _, _, _, _, _, entries_count, entry_size, array_crc32 = _h
@@ -721,7 +738,7 @@ class Table:
 
     def usable_lba(self, disk_size: int, sector_size: SectorSize) -> tuple[int, int]:
         """Return a ``tuple`` of the first and last logical sector which may be used
-        by a partition described by a partition entry of this partition table.
+        by a partition of this partition table.
         """
         lss = sector_size.logical
         _check_lss(lss)
@@ -738,6 +755,7 @@ class Table:
 
     @property
     def type(self) -> TableType:
+        """Partition table type."""
         return TableType.GPT
 
     @property
@@ -750,6 +768,10 @@ class Table:
 
     @property
     def custom_mbr(self) -> Optional[mbr.Table]:
+        """Custom MBR supplied along with the GPT.
+
+        ``None`` if a typical protective MBR was supplied.
+        """
         return self._custom_mbr
 
     def __eq__(self, other: Any) -> bool:

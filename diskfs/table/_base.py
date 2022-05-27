@@ -20,6 +20,7 @@ __all__ = [
 
 
 class TableType(Enum):
+    """Partition table type."""
 
     MBR = 0
     GPT = 1
@@ -31,33 +32,41 @@ class PartitionEntry(Protocol):
 
     @classmethod
     def new_empty(cls) -> 'PartitionEntry':
+        """New empty / unused partition entry."""
         ...
 
     @classmethod
     def from_bytes(cls, b: bytes) -> 'PartitionEntry':
+        """Parse partition entry from ``bytes``."""
         ...
 
     def __bytes__(self) -> bytes:
+        """Get ``bytes`` representation of partition entry."""
         ...
 
     @property
     def start_lba(self) -> int:
+        """Starting sector of the partition. Inclusive."""
         ...
 
     @property
     def end_lba(self) -> int:
+        """Ending sector of the partition. Inclusive."""
         ...
 
     @property
     def length_lba(self) -> int:
+        """Length of the partition in logical sectors."""
         ...
 
     @property
     def type(self) -> Any:
+        """Partition type."""
         ...
 
     @property
     def empty(self) -> bool:
+        """Whether the partition entry is considered empty / unused."""
         ...
 
 
@@ -67,16 +76,22 @@ class Table(Protocol):
 
     @classmethod
     def from_disk(cls, disk: 'Disk') -> 'Table':
+        """Parse partition table from ``disk``."""
         ...
 
     def _write_to_disk(self, disk: 'Disk') -> None:
+        """Write partition table to ``disk``."""
         ...
 
     def usable_lba(self, disk_size: int, sector_size: SectorSize) -> tuple[int, int]:
+        """Return a ``tuple`` of the first and last logical sector which may be used
+        by a partition of this partition table.
+        """
         ...
 
     @property
     def type(self) -> TableType:
+        """Partition table type."""
         ...
 
     @property

@@ -2,7 +2,7 @@
 
 import sys
 
-assert sys.platform == 'win32'
+assert sys.platform == 'win32'  # skipcq: BAN-B101
 
 import msvcrt
 from ctypes import (
@@ -51,12 +51,16 @@ PROPERTY_STANDARD_QUERY = 0  # value of enum STORAGE_QUERY_TYPE
 
 # noinspection PyPep8Naming
 class GET_LENGTH_INFORMATION(Structure):
+    """Input structure for ``IOCTL_DISK_GET_LENGTH_INFO``."""
+
     _fields_ = [('Length', LARGE_INTEGER)]
     Length: int
 
 
 # noinspection PyPep8Naming
 class STORAGE_PROPERTY_QUERY(Structure):
+    """Input structure for ``IOCTL_STORAGE_QUERY_PROPERTY``."""
+
     _fields_ = [
         ('PropertyId', c_uint),  # enum STORAGE_PROPERTY_ID
         ('QueryType', c_uint),  # enum STORAGE_QUERY_TYPE
@@ -66,6 +70,10 @@ class STORAGE_PROPERTY_QUERY(Structure):
 
 # noinspection PyPep8Naming
 class STORAGE_ACCESS_ALIGNMENT_DESCRIPTOR(Structure):
+    """Output structure for ``IOCTL_STORAGE_QUERY_PROPERTY`` when requesting
+    ``StorageAccessAlignmentProperty``.
+    """
+
     _fields_ = [
         ('Version', DWORD),
         ('Size', DWORD),
@@ -159,9 +167,5 @@ def device_sector_size(file: BinaryIO) -> SectorSize:
     )
 
 
-# noinspection PyUnusedLocal
-def reread_partition_table(file: BinaryIO) -> None:
-    """Force kernel to re-read the partition table on a block device.
-
-    :param file: IO handle for the block device.
-    """
+def reread_partition_table(_file: BinaryIO, /) -> None:
+    """Force kernel to re-read the partition table on a block device."""
