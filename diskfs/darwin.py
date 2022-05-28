@@ -35,5 +35,7 @@ def device_sector_size(file: BinaryIO) -> SectorSize:
     return SectorSize(logical, physical)
 
 
-def reread_partition_table(_file: BinaryIO) -> None:
+# skipcq: PYL-W0613
+# noinspection PyUnusedLocal
+def reread_partition_table(file: BinaryIO) -> None:
     """Force kernel to re-read the partition table on a block device."""
