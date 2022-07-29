@@ -250,7 +250,12 @@ class Disk:
         self.check_closed()
         self.check_writable()
         log.info(f'{self} - Clearing disk')
+
         self.flush()
+        self._table = None
+
+        if self._device:
+            reread_partition_table(self._file)
         raise NotImplementedError
 
     def partition(self, table: Table) -> None:
