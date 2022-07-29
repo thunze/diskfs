@@ -81,7 +81,7 @@ class Disk:
 
     @classmethod
     def open(
-        cls, path: str, *, sector_size: int = None, readonly: bool = False
+        cls, path: str, *, sector_size: int = None, readonly: bool = True
     ) -> 'Disk':
         """Open block device or disk image at ``path``."""
         file: BufferedReader | BufferedRandom
