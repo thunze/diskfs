@@ -10,7 +10,7 @@ from stat import S_ISBLK, S_ISREG
 from types import TracebackType
 from typing import Any, BinaryIO, Optional, Type
 
-from ._base import ParseError, SectorSize
+from .base import SectorSize, ValidationError
 from .table import Table, gpt, mbr
 
 if sys.platform == 'win32':
@@ -206,10 +206,10 @@ class Disk:
         self._check_closed()
         try:
             self._table = gpt.Table.from_disk(self)
-        except ParseError:
+        except ValidationError:
             try:
                 self._table = mbr.Table.from_disk(self)
-            except ParseError:
+            except ValidationError:
                 # no valid partition table found
                 self._table = None
 

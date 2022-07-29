@@ -9,8 +9,8 @@ import struct
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Iterable
 
-from .._base import ParseError, SectorSize
-from ._base import TableType, check_alignment, check_bounds, check_overlapping
+from ..base import SectorSize, ValidationError
+from .base import TableType, check_alignment, check_bounds, check_overlapping
 
 if TYPE_CHECKING:
     from ..disk import Disk
@@ -250,7 +250,7 @@ class PartitionEntry:
             return cls.new_empty()
 
         if start_lba == 0:
-            raise ParseError('Starting sector of partition must not be 0')
+            raise ValidationError('Starting sector of partition must not be 0')
 
         bootable = bool(status & STATUS_ACTIVE)  # only check bit 7
         return cls(start_lba, length_lba, type_, bootable)
@@ -379,7 +379,7 @@ class Table:
         boot_code, p1, p2, p3, p4, signature = struct.unpack(cls.FORMAT, b)
 
         if signature != SIGNATURE:
-            raise ParseError(f'Invalid MBR signature {signature!r}')
+            raise ValidationError(f'Invalid MBR signature {signature!r}')
 
         partitions = filter(
             lambda p: not p.empty, map(PartitionEntry.from_bytes, [p1, p2, p3, p4])
@@ -401,7 +401,7 @@ class Table:
 
         try:
             table = cls.from_bytes(table_bytes)
-        except ParseError as e:
+        except ValidationError as e:
             log.debug(f'Failed to parse MBR: {e}')
             raise
 

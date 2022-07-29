@@ -8,7 +8,7 @@ import io
 from fcntl import ioctl
 from typing import BinaryIO
 
-from ._base import SectorSize
+from .base import SectorSize
 
 __all__ = ['device_size', 'device_sector_size', 'reread_partition_table']
 

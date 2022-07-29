@@ -10,9 +10,9 @@ from typing import TYPE_CHECKING, Any, Iterable, Optional
 from uuid import UUID, uuid4
 from zlib import crc32
 
-from .._base import ParseError, SectorSize
+from ..base import SectorSize, ValidationError, is_power_of_two
 from . import mbr
-from ._base import TableType, check_alignment, check_bounds, check_overlapping
+from .base import TableType, check_alignment, check_bounds, check_overlapping
 
 if TYPE_CHECKING:
     from ..disk import Disk
@@ -34,19 +34,6 @@ MIN_PARTITION_ENTRIES = 128
 PARTITION_NAME_MAX_LEN = 36  # 36 characters, 72 bytes with encoding UTF-16LE
 
 
-def _is_power_of_two(value: int) -> bool:
-    """Check if ``value`` is a power of two.
-
-    ``value`` must be an ``int`` greater than zero.
-
-    Returns whether ``value`` can be expressed as 2 to the power of x, while x is an
-    integer greater than or equal to zero.
-    """
-    if value <= 0:
-        raise ValueError('Value must be greater than 0')
-    return value & (value - 1) == 0
-
-
 def _check_lss(lss: int) -> None:
     """Check if a logical sector size of ``lss`` works with GPT partitioning."""
     if lss < MIN_LSS:
@@ -54,7 +41,7 @@ def _check_lss(lss: int) -> None:
             f'GPT partitioning requires a logical sector size of at least '
             f'{MIN_LSS} bytes'
         )
-    if not _is_power_of_two(lss):
+    if not is_power_of_two(lss):
         raise ValueError(
             'Logical sector size must be a power of 2 for GPT partitioning'
         )
@@ -252,7 +239,7 @@ class PartitionEntry:
                 f'GPT partition entry must be a minimum of {cls.SIZE} bytes long, '
                 f'got {len(b)} bytes'
             )
-        if not _is_power_of_two(len(b)):
+        if not is_power_of_two(len(b)):
             raise ValueError(
                 f'GPT partition entry size must be a power of 2, got {len(b)} bytes'
             )
@@ -273,10 +260,10 @@ class PartitionEntry:
             return cls.new_empty()
 
         if start_lba <= 2:
-            raise ParseError('Starting sector of partition must be greater than 2')
+            raise ValidationError('Starting sector of partition must be greater than 2')
 
         if start_lba > end_lba:
-            raise ParseError(
+            raise ValidationError(
                 f'Starting sector of partition must be greater or equal to the ending '
                 f'sector (got starting sector {start_lba}, ending sector {end_lba})'
             )
@@ -428,13 +415,13 @@ class Table:
         ) = struct.unpack(cls.HEADER_FORMAT, header_sector[: cls.HEADER_SIZE])
 
         if signature != SIGNATURE:
-            raise ParseError(f'Invalid GPT signature {signature!r}')
+            raise ValidationError(f'Invalid GPT signature {signature!r}')
 
         if revision != REVISION:
-            raise ParseError(f'Invalid GPT header revision number {revision}')
+            raise ValidationError(f'Invalid GPT header revision number {revision}')
 
         if not cls.HEADER_SIZE <= header_size <= lss:
-            raise ParseError(
+            raise ValidationError(
                 f'Header size specified in GPT header must be in range '
                 f'({cls.HEADER_SIZE}, {lss}), got {header_size}'
             )
@@ -443,33 +430,33 @@ class Table:
         header_for_crc32 = header[:16] + b'\x00' * 4 + header[20:]
 
         if crc32(header_for_crc32) != header_crc32:
-            raise ParseError('CRC32 of GPT header does not match')
+            raise ValidationError('CRC32 of GPT header does not match')
 
         if header_lba != expected_header_lba:
-            raise ParseError(
+            raise ValidationError(
                 f'Header sector does not match (expected LBA {expected_header_lba}, '
                 f'got LBA {header_lba})'
             )
 
         if alternate_header_lba != expected_alternate_header_lba:
-            raise ParseError(
+            raise ValidationError(
                 f'Alternate header sector does not match (expected LBA '
                 f'{expected_alternate_header_lba}, got LBA {alternate_header_lba})'
             )
 
         if partition_entry_size < PartitionEntry.SIZE:
-            raise ParseError(
+            raise ValidationError(
                 f'GPT partition entry size must be a minimum of {PartitionEntry.SIZE} '
                 f'bytes, got {partition_entry_size} bytes'
             )
-        if not _is_power_of_two(partition_entry_size):
-            raise ParseError(
+        if not is_power_of_two(partition_entry_size):
+            raise ValidationError(
                 f'GPT partition entry size must be a power of 2, got '
                 f'{partition_entry_size} bytes'
             )
 
         if partition_entries_count < MIN_PARTITION_ENTRIES:
-            raise ParseError(
+            raise ValidationError(
                 f'GPT partition entry array must hold a minimum of '
                 f'{MIN_PARTITION_ENTRIES} partition entries, got '
                 f'{partition_entries_count}'
@@ -494,7 +481,7 @@ class Table:
                 < alt_partition_array_end_lba
                 < alternate_header_lba
             ):
-                raise ParseError(
+                raise ValidationError(
                     'Invalid combination of logical block addresses found in primary '
                     'GPT header'
                 )
@@ -512,7 +499,7 @@ class Table:
                 < partition_array_end_lba
                 < header_lba
             ):
-                raise ParseError(
+                raise ValidationError(
                     'Invalid combination of logical block addresses found in '
                     'secondary GPT header'
                 )
@@ -539,7 +526,7 @@ class Table:
             )
 
         if crc32(partition_array) != array_crc32:
-            raise ParseError('CRC32 of partition entry array does not match')
+            raise ValidationError('CRC32 of partition entry array does not match')
 
     @classmethod
     def from_disk(cls, disk: 'Disk') -> 'Table':
@@ -571,7 +558,7 @@ class Table:
             partition_array = get_partition_array(header_sector)
             cls._validate_partition_array(header_sector, partition_array)
 
-        except ParseError as e:
+        except ValidationError as e:
             # parsing of primary table failed, try backup table
             log.debug(f'Failed to parse primary GPT: {e}')
             header_sector = disk.read_at(last_sector_lba, 1)
@@ -582,9 +569,9 @@ class Table:
                 partition_array = get_partition_array(header_sector)
                 cls._validate_partition_array(header_sector, partition_array)
 
-            except ParseError as e2:
+            except ValidationError as e2:
                 log.debug(f'Failed to parse secondary GPT: {e2}')
-                raise ParseError('No valid GPT found')
+                raise ValidationError('No valid GPT found')
 
         _h = struct.unpack(cls.HEADER_FORMAT, header_sector[: cls.HEADER_SIZE])
         _, _, _, _, _, _, _, _, _, disk_guid_bytes, _, entries_count, entry_size, _ = _h

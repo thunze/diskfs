@@ -1,17 +1,19 @@
-"""Classes used across the modules of the ``disk`` package."""
+"""Classes and functions used across the ``disk`` package."""
 
 from typing import NamedTuple
 
 __all__ = [
-    'ParseError',
-    'AlignmentWarning',
+    'ValidationError',
+    # 'ValidationWarning',
     'BoundsError',
     'BoundsWarning',
+    'AlignmentWarning',
     'SectorSize',
+    'is_power_of_two',
 ]
 
 
-class ParseError(ValueError):
+class ValidationError(ValueError):
     """Exception raised if a specific structure -- for example a partition table or a
     file system header -- could not be created because the passed data does not
     conform to the standard of the structure to parse.
@@ -39,3 +41,16 @@ class SectorSize(NamedTuple):
 
     logical: int
     physical: int
+
+
+def is_power_of_two(value: int) -> bool:
+    """Check if ``value`` is a power of two.
+
+    ``value`` must be an ``int`` greater than zero.
+
+    Returns whether ``value`` can be expressed as 2 to the power of x, while x is an
+    integer greater than or equal to zero.
+    """
+    if value <= 0:
+        raise ValueError('Value must be greater than 0')
+    return value & (value - 1) == 0
