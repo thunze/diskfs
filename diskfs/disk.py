@@ -1,4 +1,4 @@
-"""Disk manipulation.
+"""Disk access.
 
 A disk represents either a file or block device that one can access and manipulate.
 """
@@ -112,7 +112,7 @@ class Disk:
 
         Uses the logical sector size of the disk.
         """
-        self._check_closed()
+        self.check_closed()
         log.debug(f'{self} - Reading {size} sectors starting at sector {pos}')
 
         if pos < 0:
@@ -162,8 +162,8 @@ class Disk:
         :param fill_zeroes: Whether to fill up the last sector to write at with zeroes
             if b doesn't cover the whole sector.
         """
-        self._check_closed()
-        self._check_writable()
+        self.check_closed()
+        self.check_writable()
         log.debug(f'{self} - Writing {len(b)} bytes starting at sector {pos}')
 
         pos_bytes = pos * self.sector_size.logical
@@ -194,7 +194,7 @@ class Disk:
 
     def flush(self) -> None:
         """Flush write buffers of the underlying file or block device, if applicable."""
-        self._check_closed()
+        self.check_closed()
         self._file.flush()
 
     def read_table(self) -> None:
@@ -203,7 +203,7 @@ class Disk:
 
         If no partition table can be parsed, the disk is considered unpartitioned.
         """
-        self._check_closed()
+        self.check_closed()
         try:
             self._table = gpt.Table.from_disk(self)
         except ValidationError:
@@ -226,8 +226,8 @@ class Disk:
         the disk, they will very likely be destroyed as well. Always create a backup
         of your data before clearing a disk.
         """
-        self._check_closed()
-        self._check_writable()
+        self.check_closed()
+        self.check_writable()
         log.info(f'{self} - Clearing disk')
         self.flush()
         raise NotImplementedError
@@ -241,8 +241,8 @@ class Disk:
 
         If the disk is already partitioned, ``ValueError`` will be raised.
         """
-        self._check_closed()
-        self._check_writable()
+        self.check_closed()
+        self.check_writable()
 
         if self._table is not None:
             raise ValueError(
@@ -265,7 +265,7 @@ class Disk:
         If ``partition`` is not specified, it is tried to parse a standalone file
         system from the unpartitioned disk.
         """
-        self._check_closed()
+        self.check_closed()
         if partition is None and self._table is not None:
             raise ValueError('Disk is partitioned; please specify a partition number')
         if partition is not None and self._table is None:
@@ -276,7 +276,7 @@ class Disk:
 
     def dismount_volumes(self) -> None:
         """Dismount all volumes associated with the disk."""
-        self._check_closed()
+        self.check_closed()
         if not self._device:
             raise ValueError('Can only dismount volumes of block devices')
         log.info(f'{self} - Dismounting volumes')
@@ -292,7 +292,7 @@ class Disk:
 
     def __enter__(self) -> 'Disk':
         """Context management protocol."""
-        self._check_closed()
+        self.check_closed()
         return self
 
     def __exit__(
@@ -337,12 +337,12 @@ class Disk:
         """Whether the underlying file or block device supports writing."""
         return self._file.writable()
 
-    def _check_closed(self) -> None:
+    def check_closed(self) -> None:
         """Raise ``ValueError`` if the underlying file or block device is closed."""
         if self.closed:
             raise ValueError('I/O operation on closed disk')
 
-    def _check_writable(self) -> None:
+    def check_writable(self) -> None:
         """Raise ``ValueError`` if the underlying file or block device is read-only."""
         if not self.writable:
             raise ValueError('Disk is not writable')
