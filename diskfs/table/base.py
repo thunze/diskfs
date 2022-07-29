@@ -1,4 +1,4 @@
-"""Protocols implemented in the ``table`` package and several partition checks."""
+"""Protocols implemented in the ``table`` package and various partition entry checks."""
 
 import warnings
 from enum import Enum
@@ -10,8 +10,8 @@ if TYPE_CHECKING:
     from ..disk import Disk
 
 __all__ = [
-    'TableType',
     'Table',
+    'TableType',
     'PartitionEntry',
     'check_alignment',
     'check_bounds',

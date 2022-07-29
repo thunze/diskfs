@@ -126,7 +126,7 @@ class Disk:
         size_bytes = size * self.sector_size.logical
 
         if pos_bytes + size_bytes > self._size:
-            raise ValueError('Sector range out of bounds')
+            raise ValueError('Sector range out of disk bounds')
 
         try:
             self._file.seek(pos_bytes)
@@ -221,9 +221,10 @@ class Disk:
     def clear(self) -> None:
         """Clear the disk by overwriting specific parts of the disk with zeroes.
 
-        This will remove the disk's partition table and thus remove access to any
-        partitions residing on the disk. If a standalone file system resides on the
-        disk instead, it will very likely be destroyed as well.
+        **Caution:** This will overwrite the disk's partition table and thus remove
+        access to any partitions residing on the disk. If any file systems reside on
+        the disk, they will very likely be destroyed as well. Always create a backup
+        of your data before clearing a disk.
         """
         self._check_closed()
         self._check_writable()
@@ -234,8 +235,9 @@ class Disk:
     def partition(self, table: Table) -> None:
         """Apply a partition table to the disk.
 
-        *Caution:* If a standalone file system resides on the disk, it will very
-        likely be partially overwritten and thus be rendered unusable.
+        **Caution:** If a file system resides on the unpartitioned disk, it will very
+        likely be overwritten and thus be rendered unusable. Always create a backup
+        of your data before (re-)partitioning a disk.
 
         If the disk is already partitioned, ``ValueError`` will be raised.
         """
@@ -338,7 +340,7 @@ class Disk:
     def _check_closed(self) -> None:
         """Raise ``ValueError`` if the underlying file or block device is closed."""
         if self.closed:
-            raise ValueError('I/O operation on closed file')
+            raise ValueError('I/O operation on closed disk')
 
     def _check_writable(self) -> None:
         """Raise ``ValueError`` if the underlying file or block device is read-only."""
@@ -354,4 +356,4 @@ class Disk:
         return self._file.name
 
     def __repr__(self) -> str:
-        return f'{self.__class__.__name__}({self._file.name!r}, size={self._size})'
+        return f'{self.__class__.__name__}({self._file.name}, size={self._size})'

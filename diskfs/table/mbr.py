@@ -375,7 +375,6 @@ class Table:
             raise ValueError(
                 f'MBR partition table must be {cls.SIZE} bytes long, got {len(b)} bytes'
             )
-
         boot_code, p1, p2, p3, p4, signature = struct.unpack(cls.FORMAT, b)
 
         if signature != SIGNATURE:
