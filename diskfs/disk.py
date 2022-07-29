@@ -6,9 +6,10 @@ A disk represents either a file or block device that one can access and manipula
 import logging
 import os
 import sys
+from io import BufferedRandom, BufferedReader
 from stat import S_ISBLK, S_ISREG
 from types import TracebackType
-from typing import Any, BinaryIO, Optional, Type
+from typing import TYPE_CHECKING, Any, Optional, Type
 
 from .base import SectorSize, ValidationError
 from .table import Table, gpt, mbr
@@ -22,6 +23,8 @@ elif sys.platform == 'darwin':
 else:
     raise RuntimeError(f'Unspported platform {sys.platform!r}')
 
+if TYPE_CHECKING:
+    from .typing import ReadableBuffer
 
 __all__ = ['Disk']
 
@@ -41,7 +44,11 @@ class Disk:
     """
 
     def __init__(
-        self, file: BinaryIO, device: bool, size: int, sector_size: SectorSize
+        self,
+        file: BufferedReader | BufferedRandom,
+        device: bool,
+        size: int,
+        sector_size: SectorSize,
     ):
         self._file = file
         self._device = device
@@ -63,7 +70,8 @@ class Disk:
         if sector_size <= 0:
             raise ValueError('Sector size must be greater than 0')
 
-        file = open(path, 'xb+')  # skipcq: PTC-W6004
+        # noinspection PyTypeChecker
+        file: BufferedRandom = open(path, 'xb+')  # skipcq: PTC-W6004
         try:
             file.truncate(size)
             return cls(file, False, size, SectorSize(sector_size, sector_size))
@@ -76,9 +84,12 @@ class Disk:
         cls, path: str, *, sector_size: int = None, readonly: bool = False
     ) -> 'Disk':
         """Open block device or disk image at ``path``."""
+        file: BufferedReader | BufferedRandom
         if readonly:
+            # noinspection PyTypeChecker
             file = open(path, 'rb')
         else:
+            # noinspection PyTypeChecker
             file = open(path, 'rb+')
 
         try:
@@ -152,7 +163,9 @@ class Disk:
             )
         return b
 
-    def write_at(self, pos: int, b: bytes, *, fill_zeroes: bool = False) -> None:
+    def write_at(
+        self, pos: int, b: 'ReadableBuffer', *, fill_zeroes: bool = False
+    ) -> None:
         """Write raw bytes ``b`` to the disk while starting at sector ``pos``.
 
         Uses the logical sector size of the disk.
@@ -164,17 +177,17 @@ class Disk:
         """
         self.check_closed()
         self.check_writable()
-        log.debug(f'{self} - Writing {len(b)} bytes starting at sector {pos}')
-
-        pos_bytes = pos * self.sector_size.logical
 
         if pos < 0:
             raise ValueError('Position to write at must be zero or positive')
-        if pos_bytes + len(b) > self._size:
-            raise ValueError('Sector range out of bounds')
+        if not isinstance(b, memoryview):
+            b = memoryview(b).cast('B')
+        size = b.nbytes
+        if size == 0:
+            return
 
         lss = self._sector_size.logical
-        remainder = len(b) % lss
+        remainder = size % lss
 
         if remainder != 0:
             if not fill_zeroes:
@@ -182,13 +195,21 @@ class Disk:
                     f'Can only write in multiples of {lss} bytes (logical sector size)'
                 )
             zeroes = b'\x00' * (lss - remainder)
-            b += zeroes
+            b = bytes(b) + zeroes
+            size = len(b)
+
+        size_sectors = size // lss
+        log.debug(f'{self} - Writing {size_sectors} sectors starting at sector {pos}')
+
+        pos_bytes = pos * self.sector_size.logical
+        if pos_bytes + size > self._size:
+            raise ValueError('Sector range out of disk bounds')
 
         self._file.seek(pos_bytes)
         bytes_written = self._file.write(b)
-        if len(b) != bytes_written:
+        if bytes_written != size:
             raise ValueError(
-                f'Did not write the expected amount of bytes (expected {len(b)} '
+                f'Did not write the expected amount of bytes (expected {size} '
                 f'bytes, wrote {bytes_written} bytes)'
             )
 
