@@ -1,0 +1,60 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    branches:
+      - '**'
+
+jobs:
+  tests:
+    strategy:
+      matrix:
+        os: ['Windows', 'macOS', 'Ubuntu']
+        include:
+          - os: Windows
+            image: windows-latest
+          - os: macOS
+            image: macos-latest
+          - os: Ubuntu
+            image: ubuntu-latest
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.image }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.10.2'
+
+      - name: Install Poetry
+        run: curl -sSL https://install.python-poetry.org | python -
+
+      - name: Update PATH
+        if: ${{ matrix.os != 'Windows' }}
+        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Update PATH (Windows)
+        if: ${{ matrix.os == 'Windows' }}
+        run: echo "$APPDATA\Python\Scripts" >> $GITHUB_PATH
+
+      - name: Install dependencies
+        run: poetry install
+
+      - name: Install pytest annotation plugin
+        run: poetry run pip install pytest-github-actions-annotate-failures
+
+      - name: Run tests with coverage
+        run: poetry run pytest --cov=diskfs tests/
+
+      - name: Upload coverage data to Coveralls
+        run: poetry run coveralls --service=github
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
