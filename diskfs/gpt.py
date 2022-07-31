@@ -10,12 +10,12 @@ from typing import TYPE_CHECKING, Any, Iterable, Optional
 from uuid import UUID, uuid4
 from zlib import crc32
 
-from ..base import SectorSize, ValidationError, is_power_of_two
 from . import mbr
-from .base import TableType, check_alignment, check_bounds, check_overlapping
+from .base import SectorSize, ValidationError, is_power_of_two
+from .table import TableType, check_alignment, check_bounds, check_overlapping
 
 if TYPE_CHECKING:
-    from ..disk import Disk
+    from .disk import Disk
 
 __all__ = ['Table', 'PartitionEntry', 'PartitionAttributes', 'PartitionType']
 

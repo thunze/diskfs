@@ -4,10 +4,10 @@ import warnings
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Iterable, Protocol
 
-from ..base import AlignmentWarning, BoundsError, BoundsWarning, SectorSize
+from .base import AlignmentWarning, BoundsError, BoundsWarning, SectorSize
 
 if TYPE_CHECKING:
-    from ..disk import Disk
+    from .disk import Disk
 
 __all__ = [
     'Table',

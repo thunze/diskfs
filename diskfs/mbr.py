@@ -9,11 +9,11 @@ import struct
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Iterable
 
-from ..base import SectorSize, ValidationError
-from .base import TableType, check_alignment, check_bounds, check_overlapping
+from .base import SectorSize, ValidationError
+from .table import TableType, check_alignment, check_bounds, check_overlapping
 
 if TYPE_CHECKING:
-    from ..disk import Disk
+    from .disk import Disk
 
 __all__ = ['Table', 'PartitionEntry', 'PartitionType']
 

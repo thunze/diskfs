@@ -11,8 +11,9 @@ from stat import S_ISBLK, S_ISREG
 from types import TracebackType
 from typing import TYPE_CHECKING, Any, Optional, Type
 
+from . import gpt, mbr
 from .base import SectorSize, ValidationError
-from .table import Table, gpt, mbr
+from .table import Table
 
 if sys.platform == 'win32':
     from .win32 import device_sector_size, device_size, reread_partition_table
