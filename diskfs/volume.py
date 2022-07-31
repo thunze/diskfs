@@ -3,13 +3,15 @@
 A volume represents a contiguous part of a disk and may hold a file system.
 """
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Optional
 
-from .base import SectorSize
+from . import fat
+from .base import SectorSize, ValidationError
+from .filesystem import CLUSTER_SIZE_DEFAULT, FileSystem, FsType
 
 if TYPE_CHECKING:
     from .disk import Disk
-    from .typing_ import ReadableBuffer
+    from .typing import ReadableBuffer
 
 __all__ = ['Volume']
 
@@ -86,6 +88,53 @@ class Volume:
         self._disk.check_writable()
         self._disk.flush()
         raise NotImplementedError
+
+    def format(
+        self,
+        fs: FsType,
+        size_lba: int = None,
+        cluster_size: int = CLUSTER_SIZE_DEFAULT,
+        label: str = '',
+    ) -> FileSystem:
+        """Create a new file system of type ``fs`` and size ``size`` on the volume.
+
+        **Caution:** If any file system already resides on the volume, it will be
+        overwritten and thus be rendered unusable. Always create a backup of your
+        data before formatting a volume.
+
+        This typically corresponds to a "quick format" of the volume.
+
+        :param fs: Type of the file system to create.
+        :param size_lba: Amount of logical sectors the file system may use. Defaults
+            to the amount of sectors the volume provides.
+        :param cluster_size: Allocation unit size in logical sectors. Must be a power
+            of two. Defaults to CLUSTER_SIZE_DEFAULT.
+        :param label: Volume label to set.
+        """
+        # TODO: alignment warning for cluster_size
+        # self.check_closed()
+        # self.check_writable()
+        raise NotImplementedError
+
+    def filesystem(self) -> Optional[FileSystem]:
+        """Detect and parse a file system present on the volume.
+
+        If a file system is detected which this library can handle, an object is
+        returned which coheres to the ``FileSystem`` protocol. This object can then
+        be used to modify the file system.
+
+        If no file system is detected, ``None`` is returned. Note that this does not
+        necessarily mean that there is no file system present on the volume.
+        """
+        self.check_closed()
+        try:
+            # try any FAT file system
+            filesystem = fat.FileSystem.from_volume(self)
+        except ValidationError:
+            # no file system found
+            filesystem = None
+
+        return filesystem
 
     @property
     def disk(self) -> 'Disk':

@@ -4,7 +4,7 @@ from typing import NamedTuple
 
 __all__ = [
     'ValidationError',
-    # 'ValidationWarning',
+    'ValidationWarning',
     'BoundsError',
     'BoundsWarning',
     'AlignmentWarning',
@@ -16,7 +16,13 @@ __all__ = [
 class ValidationError(ValueError):
     """Exception raised if a specific structure -- for example a partition table or a
     file system header -- could not be created because the passed data does not
-    conform to the standard of the structure to parse.
+    conform to the standard of the structure.
+    """
+
+
+class ValidationWarning(UserWarning):
+    """Warning emitted if a value of a specific structure does not conform to the
+    structure's standard but might still be usable.
     """
 
 
