@@ -26,7 +26,7 @@ else:
     raise RuntimeError(f'Unspported platform {sys.platform!r}')
 
 if TYPE_CHECKING:
-    from .typing_ import ReadableBuffer
+    from .typing import ReadableBuffer
 
 __all__ = ['Disk']
 
