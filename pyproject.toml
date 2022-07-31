@@ -30,8 +30,8 @@ exclude_lines = [
 ]
 
 [tool.black]
-target-version = ['py310']
-skip-string-normalization = true  # maybe disable this later on
+target-version = ["py310"]
+skip-string-normalization = true
 include = '\.pyi?$'
 exclude = '''
 /(
