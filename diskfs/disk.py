@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Any, Optional, Type
 from . import gpt, mbr
 from .base import SectorSize, ValidationError
 from .table import Table
+from .volume import Volume
 
 if sys.platform == 'win32':
     from .win32 import device_sector_size, device_size, reread_partition_table
@@ -286,20 +287,31 @@ class Disk:
         if self._device:
             reread_partition_table(self._file)
 
-    def get_filesystem(self, partition: int = None) -> None:
-        """Get a specific file system residing on the disk.
+    def volume(self, partition: int = None) -> Volume:
+        """Get the volume corresponding to partition ``partition`` on the disk.
 
-        If ``partition`` is not specified, it is tried to parse a standalone file
-        system from the unpartitioned disk.
+        If ``partition`` is not specified and the disk is unpartitioned, a volume
+        spanning the whole disk is returned.
         """
         self.check_closed()
-        if partition is None and self._table is not None:
-            raise ValueError('Disk is partitioned; please specify a partition number')
-        if partition is not None and self._table is None:
-            raise ValueError(
-                'Disk is unpartitioned; you cannot specify a partition number'
-            )
-        raise NotImplementedError
+        if partition is None:
+            if self._table is not None:
+                raise ValueError(
+                    'Disk is partitioned; please specify a partition number'
+                )
+            disk_end = self._size // self.sector_size.logical - 1
+            return Volume(self, 0, disk_end)
+
+        if partition is not None:
+            if self._table is None:
+                raise ValueError(
+                    'Disk is unpartitioned; you cannot specify a partition number'
+                )
+            if not 0 <= partition < len(self._table.partitions):
+                raise IndexError('Partition number out of range')
+
+            entry = self._table.partitions[partition]
+            return Volume(self, entry.start_lba, entry.end_lba)
 
     def dismount_volumes(self) -> None:
         """Dismount all volumes associated with the disk."""
