@@ -556,12 +556,12 @@ class FileSystem(FileSystemBase):
         method: Callable[Concatenate['FileSystem', P], R]
     ) -> Callable[Concatenate['FileSystem', P], R]:
         @wraps(method)
-        def inner(self: 'FileSystem', *args: P.args, **kwargs: P.kwargs) -> R:
+        def locked_wrapper(self: 'FileSystem', *args: P.args, **kwargs: P.kwargs) -> R:
             with self._lock:
                 self._volume.check_closed()
                 return method(self, *args, **kwargs)
 
-        return inner
+        return locked_wrapper
 
     # Low-level IO methods for use with a file descriptor
 
