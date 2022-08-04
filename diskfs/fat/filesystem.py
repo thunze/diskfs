@@ -843,6 +843,7 @@ class FileSystem(FileSystemBase):
         Note that, in contrast to ``os.rename()``, the behavior of this method is
         consistent over all platforms.
         """
+        # noinspection PyTypeChecker
         self._move(src, dst, replace=False)
 
     def replace(self, src: StrPath, dst: StrPath) -> None:
@@ -856,6 +857,7 @@ class FileSystem(FileSystemBase):
         Note that, in contrast to ``os.replace()``, the behavior of this method is
         consistent over all platforms.
         """
+        # noinspection PyTypeChecker
         self._move(src, dst, replace=True)
 
     @locked

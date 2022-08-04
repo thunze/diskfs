@@ -2,16 +2,17 @@
 
 from __future__ import annotations
 
-from array import array
 from io import BufferedRandom, BufferedReader, BufferedWriter
-from mmap import mmap
 from os import PathLike
-from pickle import PickleBuffer
 from typing import TYPE_CHECKING, Any, Literal, Union
 
 if TYPE_CHECKING:
+    from array import array
+
     # noinspection PyUnresolvedReferences, PyProtectedMember
     from ctypes import _CData
+    from mmap import mmap
+    from pickle import PickleBuffer
 
     ReadOnlyBuffer = bytes
     WriteableBuffer = Union[

@@ -28,7 +28,7 @@ else:
     raise RuntimeError(f'Unspported platform {sys.platform!r}')
 
 if TYPE_CHECKING:
-    from .typing import ReadableBuffer
+    from .typing import ReadableBuffer, StrPath
 
 __all__ = ['Disk']
 
@@ -66,7 +66,7 @@ class Disk:
 
     @classmethod
     def new(
-        cls, path: str, size: int, *, sector_size: int = SECTOR_SIZE_DEFAULT
+        cls, path: StrPath, size: int, *, sector_size: int = SECTOR_SIZE_DEFAULT
     ) -> Disk:
         """Create a new disk image at ``path``."""
         if size <= 0:
@@ -84,7 +84,9 @@ class Disk:
             raise
 
     @classmethod
-    def open(cls, path: str, *, sector_size: int = None, readonly: bool = True) -> Disk:
+    def open(
+        cls, path: StrPath, *, sector_size: int = None, readonly: bool = True
+    ) -> Disk:
         """Open block device or disk image at ``path``."""
         file: BufferedReader | BufferedRandom
         if readonly:
