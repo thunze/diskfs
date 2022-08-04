@@ -30,14 +30,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: Install Poetry
+        run: pipx install Poetry
+
       - name: Install Python
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
           cache: poetry
-
-      - name: Install Poetry
-        run: curl -sSL https://install.python-poetry.org | python -
 
       - name: Update PATH
         if: ${{ matrix.os != 'Windows' }}
