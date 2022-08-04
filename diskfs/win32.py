@@ -16,7 +16,6 @@ from ctypes import (
     c_char,
     c_uint,
     create_string_buffer,
-    memmove,
     sizeof,
     windll,
 )
@@ -139,12 +138,10 @@ def device_size(file: BinaryIO) -> int:
 
     :param file: IO handle for the block device.
     """
-    length_information = GET_LENGTH_INFORMATION()
-    out_buffer = create_string_buffer(sizeof(length_information))
+    out_buffer = create_string_buffer(sizeof(GET_LENGTH_INFORMATION))
     _device_io_control(file, IOCTL_DISK_GET_LENGTH_INFO, out_buffer=out_buffer)
-    memmove(byref(length_information), out_buffer[:], len(out_buffer))  # type: ignore
-    length = length_information.Length
-    return length
+    length_information = GET_LENGTH_INFORMATION.from_buffer_copy(out_buffer)
+    return length_information.Length
 
 
 def device_sector_size(file: BinaryIO) -> SectorSize:
@@ -157,16 +154,15 @@ def device_sector_size(file: BinaryIO) -> SectorSize:
         QueryType=PROPERTY_STANDARD_QUERY,
         AdditionalParameters=(BYTE * 1)(0),
     )
-    alignment_descriptor = STORAGE_ACCESS_ALIGNMENT_DESCRIPTOR()
     # noinspection PyTypeChecker
     in_buffer = create_string_buffer(bytes(query))
-    out_buffer = create_string_buffer(sizeof(alignment_descriptor))
+    out_buffer = create_string_buffer(sizeof(STORAGE_ACCESS_ALIGNMENT_DESCRIPTOR))
 
     _device_io_control(file, IOCTL_STORAGE_QUERY_PROPERTY, in_buffer, out_buffer)
-    memmove(byref(alignment_descriptor), out_buffer[:], len(out_buffer))  # type: ignore
+    alignment = STORAGE_ACCESS_ALIGNMENT_DESCRIPTOR.from_buffer_copy(out_buffer)
     return SectorSize(
-        alignment_descriptor.BytesPerLogicalSector,
-        alignment_descriptor.BytesPerPhysicalSector,
+        alignment.BytesPerLogicalSector,
+        alignment.BytesPerPhysicalSector,
     )
 
 
