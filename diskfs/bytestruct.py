@@ -1,22 +1,15 @@
 """Byte struct packing and validation."""
 
+from __future__ import annotations
+
 import struct
 from abc import ABCMeta
-from types import NoneType
-from typing import (
-    TYPE_CHECKING,
-    Annotated,
-    Any,
-    ClassVar,
-    Literal,
-    Type,
-    TypeVar,
-    get_args,
-    get_origin,
-    get_type_hints,
-)
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, Type, TypeVar
+
+from typing_extensions import Annotated, get_args, get_origin, get_type_hints
 
 from .base import ValidationError
+from .typing import NoneType
 
 if TYPE_CHECKING:
     from .volume import Volume
@@ -128,7 +121,7 @@ class ByteStruct(metaclass=_ByteStructMeta):
 
     # We exclude these dunder attributes from dataclass via ClassVar, but they will
     # still be accessible from the instance.
-    __bytestruct_fields__: ClassVar[dict[str, Any]]
+    __bytestruct_fields__: ClassVar['dict[str, Any]']
     __bytestruct_format__: ClassVar[str]
     __bytestruct_size__: ClassVar[int]
 
@@ -197,7 +190,7 @@ class ByteStruct(metaclass=_ByteStructMeta):
         validation.
         """
 
-    def validate_for_volume(self, volume: 'Volume', *, recurse: bool = False) -> None:
+    def validate_for_volume(self, volume: Volume, *, recurse: bool = False) -> None:
         """Custom validation to check suitability for a specific volume.
 
         If ``recurse`` is set, ``validate_for_volume`` is also called on every

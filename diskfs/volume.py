@@ -3,7 +3,9 @@
 A volume represents a contiguous part of a disk and may hold a file system.
 """
 
-from typing import TYPE_CHECKING, Any, Optional
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
 
 from . import fat
 from .base import SectorSize, ValidationError
@@ -31,7 +33,7 @@ class Volume:
     Also serves as an accessor to the underlying disk.
     """
 
-    def __init__(self, disk: 'Disk', start_lba: int, end_lba: int):
+    def __init__(self, disk: Disk, start_lba: int, end_lba: int):
         disk_end_lba = disk.size // disk.sector_size.logical - 1
 
         if not 0 <= start_lba <= disk_end_lba:
@@ -60,7 +62,7 @@ class Volume:
         return self._disk.read_at(disk_pos, size)
 
     def write_at(
-        self, pos: int, b: 'ReadableBuffer', *, fill_zeroes: bool = False
+        self, pos: int, b: ReadableBuffer, *, fill_zeroes: bool = False
     ) -> None:
         if not 0 <= pos < self.size_lba:
             raise ValueError('Position to write at out of volume bounds')
@@ -116,7 +118,7 @@ class Volume:
         # self.check_writable()
         raise NotImplementedError
 
-    def filesystem(self) -> Optional[FileSystem]:
+    def filesystem(self) -> FileSystem | None:
         """Detect and parse a file system present on the volume.
 
         If a file system is detected which this library can handle, an object is
@@ -137,7 +139,7 @@ class Volume:
         return filesystem
 
     @property
-    def disk(self) -> 'Disk':
+    def disk(self) -> Disk:
         return self._disk
 
     @property

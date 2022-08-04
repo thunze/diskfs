@@ -4,6 +4,8 @@ See https://en.wikipedia.org/wiki/Master_boot_record.
 See https://wiki.osdev.org/Partition_Table.
 """
 
+from __future__ import annotations
+
 import logging
 import struct
 from enum import Enum
@@ -189,7 +191,7 @@ class PartitionEntry:
         type_: PartitionType | int,
         *,
         bootable: bool = False,
-    ) -> 'PartitionEntry':
+    ) -> PartitionEntry:
         """New non-empty partition entry.
 
         ``PartitionType.EMPTY`` must not be passed as ``type_``, use
@@ -227,12 +229,12 @@ class PartitionEntry:
         return cls(start_lba, length_lba, type_int, bootable)
 
     @classmethod
-    def new_empty(cls) -> 'PartitionEntry':
+    def new_empty(cls) -> PartitionEntry:
         """New empty / unused partition entry."""
         return cls(0, 0, PartitionType.EMPTY.value, False)
 
     @classmethod
-    def from_bytes(cls, b: bytes) -> 'PartitionEntry':
+    def from_bytes(cls, b: bytes) -> PartitionEntry:
         """Parse partition entry from ``bytes``.
 
         CHS addresses are ignored.
@@ -349,7 +351,7 @@ class Table:
     @classmethod
     def new(
         cls, partitions: Iterable[PartitionEntry], *, boot_code: bytes = b''
-    ) -> 'Table':
+    ) -> Table:
         """New partition table."""
         partitions = tuple(partitions)
         boot_code = boot_code.rstrip(b'\x00')
@@ -369,7 +371,7 @@ class Table:
         return cls(stripped_entries, boot_code)
 
     @classmethod
-    def from_bytes(cls, b: bytes) -> 'Table':
+    def from_bytes(cls, b: bytes) -> Table:
         """Parse partition table from ``bytes``."""
         if len(b) != cls.SIZE:
             raise ValueError(
@@ -388,7 +390,7 @@ class Table:
         return cls(partitions, boot_code)
 
     @classmethod
-    def from_disk(cls, disk: 'Disk') -> 'Table':
+    def from_disk(cls, disk: Disk) -> Table:
         """Parse partition table from ``disk``."""
         if disk.sector_size.logical < MIN_LSS:
             raise ValueError(
@@ -425,7 +427,7 @@ class Table:
 
         return struct.pack(self.FORMAT, self._boot_code, *entries_bytes, SIGNATURE)
 
-    def _write_to_disk(self, disk: 'Disk') -> None:
+    def _write_to_disk(self, disk: Disk) -> None:
         """Write partition table to ``disk``."""
         _check_lss(disk.sector_size.logical)
         check_overlapping(self._partitions)

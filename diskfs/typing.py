@@ -1,23 +1,29 @@
 """Certain types used across the package."""
 
+from __future__ import annotations
+
+from array import array
 from io import BufferedRandom, BufferedReader, BufferedWriter
+from mmap import mmap
 from os import PathLike
+from pickle import PickleBuffer
 from typing import TYPE_CHECKING, Any, Literal, Union
 
 if TYPE_CHECKING:
-    from array import array
-
     # noinspection PyUnresolvedReferences, PyProtectedMember
     from ctypes import _CData
-    from mmap import mmap
-    from pickle import PickleBuffer
 
     ReadOnlyBuffer = bytes
-    WriteableBuffer = bytearray | memoryview | array[Any] | mmap | _CData | PickleBuffer
-    ReadableBuffer = ReadOnlyBuffer | WriteableBuffer
+    WriteableBuffer = Union[
+        bytearray, memoryview, array[Any], mmap, _CData, PickleBuffer
+    ]
+    ReadableBuffer = Union[ReadOnlyBuffer, WriteableBuffer]
+
+    StrPath = Union[str, PathLike[str]]
 
 
 __all__ = [
+    'NoneType',
     'StrPath',
     'BufferedAny',
     'ReadOnlyBuffer',
@@ -34,9 +40,9 @@ __all__ = [
 ]
 
 
-StrPath = str | PathLike[str]
+NoneType = type(None)
 
-BufferedAny = BufferedRandom | BufferedWriter | BufferedReader
+BufferedAny = Union[BufferedRandom, BufferedWriter, BufferedReader]
 
 OpenTextModeUpdating = Literal[
     "r+",

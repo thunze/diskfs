@@ -1,5 +1,7 @@
 """``Path`` and ``PurePath`` implementations for FAT file systems."""
 
+from __future__ import annotations
+
 import fnmatch
 import pathlib
 import re
@@ -8,9 +10,8 @@ import re
 from pathlib import _PosixFlavour  # type: ignore[attr-defined]
 from typing import TYPE_CHECKING, Callable, Match
 
-from ..typing import StrPath
-
 if TYPE_CHECKING:
+    from ..typing import StrPath
     from .filesystem import FileSystem
 
 __all__ = ['Path', 'PurePath']
@@ -33,7 +34,7 @@ class _Flavour(_PosixFlavour):
     ) -> Callable[[str, int, int], Match[str] | None]:
         return re.compile(fnmatch.translate(pattern), re.IGNORECASE).fullmatch
 
-    def make_uri(self, path: 'PurePath') -> str:
+    def make_uri(self, path: PurePath) -> str:
         raise NotImplementedError('URIs are unsupported for this file system')
 
 
@@ -44,22 +45,22 @@ class PurePath(pathlib.PurePosixPath):
 
 class Path(pathlib.Path, PurePath):
 
-    _accessor: 'FileSystem'
+    _accessor: FileSystem
 
-    def __new__(cls, *args: StrPath, fs: 'FileSystem') -> 'Path':
+    def __new__(cls, *args: StrPath, fs: FileSystem) -> Path:
         # noinspection PyUnresolvedReferences
-        self: 'Path' = cls._from_parts(args)  # type: ignore[attr-defined]
+        self: Path = cls._from_parts(args)  # type: ignore[attr-defined]
         self._accessor = fs
         return self
 
     @classmethod
-    def cwd(cls) -> 'Path':
+    def cwd(cls) -> Path:
         raise NotImplementedError(
             'Need file system context to get cwd; use FileSystem.getcwd() instead'
         )
 
     @classmethod
-    def home(cls) -> 'Path':
+    def home(cls) -> Path:
         raise NotImplementedError(
             'home() is unsupported for file systems accessed from userspace'
         )

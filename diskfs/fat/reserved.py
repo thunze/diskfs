@@ -1,18 +1,14 @@
 """Structures found in the reserved region of a FAT file system."""
 
+from __future__ import annotations
+
 import warnings
 from dataclasses import dataclass
 
 # noinspection PyUnresolvedReferences, PyProtectedMember
-from typing import (
-    TYPE_CHECKING,
-    Annotated,
-    ClassVar,
-    Optional,
-    Protocol,
-    Type,
-    _ProtocolMeta,
-)
+from typing import TYPE_CHECKING, ClassVar, Protocol, Type, _ProtocolMeta
+
+from typing_extensions import Annotated
 
 from ..base import ValidationError, ValidationWarning, is_power_of_two
 from ..bytestruct import ByteStruct
@@ -101,7 +97,7 @@ class Bpb(Protocol, metaclass=_BpbMeta):
         ...
 
     @classmethod
-    def from_bytes(cls, b: bytes) -> 'Bpb':
+    def from_bytes(cls, b: bytes) -> Bpb:
         ...
 
     def __bytes__(self) -> bytes:
@@ -111,11 +107,11 @@ class Bpb(Protocol, metaclass=_BpbMeta):
         ...
 
     @property
-    def bpb_dos_200(self) -> 'BpbDos200':
+    def bpb_dos_200(self) -> BpbDos200:
         ...
 
     @property
-    def total_size(self) -> Optional[int]:
+    def total_size(self) -> int | None:
         ...
 
     @property
@@ -156,7 +152,7 @@ class BpbDos200(ByteStruct):
         if self.media_type <= 0xEF or (0xF1 <= self.media_type <= 0xF7):
             raise ValidationError(f'Unsupported value media type {self.media_type}')
 
-    def validate_for_volume(self, volume: 'Volume', *, recurse: bool = False) -> None:
+    def validate_for_volume(self, volume: Volume, *, recurse: bool = False) -> None:
         super().validate_for_volume(volume, recurse=recurse)
         lss = volume.sector_size.logical
 
@@ -173,11 +169,11 @@ class BpbDos200(ByteStruct):
             raise ValidationError('Total size must not be greater than volume size')
 
     @property
-    def bpb_dos_200(self) -> 'BpbDos200':
+    def bpb_dos_200(self) -> BpbDos200:
         return self
 
     @property
-    def total_size(self) -> Optional[int]:
+    def total_size(self) -> int | None:
         return self.total_size_200 or None
 
     @property
@@ -211,7 +207,7 @@ class BpbDos331(ByteStruct):
                 'Total size does not match total size defined in DOS 2.0 BPB'
             )
 
-    def validate_for_volume(self, volume: 'Volume', *, recurse: bool = False) -> None:
+    def validate_for_volume(self, volume: Volume, *, recurse: bool = False) -> None:
         super().validate_for_volume(volume, recurse=recurse)
         if self.hidden_before_partition != volume.start_lba:
             raise ValidationError(
@@ -221,11 +217,11 @@ class BpbDos331(ByteStruct):
             raise ValidationError('Total size must not be greater than volume size')
 
     @property
-    def bpb_dos_200(self) -> 'BpbDos200':
+    def bpb_dos_200(self) -> BpbDos200:
         return self.bpb_dos_200_
 
     @property
-    def total_size(self) -> Optional[int]:
+    def total_size(self) -> int | None:
         total_size_200 = self.bpb_dos_200_.total_size
         total_size_331 = self.total_size_331 or None
         return total_size_331 or total_size_200
@@ -275,11 +271,11 @@ class ShortEbpbFat(ByteStruct):
         _check_extended_boot_signature(self.extended_boot_signature)
 
     @property
-    def bpb_dos_200(self) -> 'BpbDos200':
+    def bpb_dos_200(self) -> BpbDos200:
         return self.bpb_dos_331.bpb_dos_200
 
     @property
-    def total_size(self) -> Optional[int]:
+    def total_size(self) -> int | None:
         return self.bpb_dos_331.total_size
 
     @property
@@ -353,11 +349,11 @@ class ShortEbpbFat32(ByteStruct):
         _check_extended_boot_signature(self.extended_boot_signature)
 
     @property
-    def bpb_dos_200(self) -> 'BpbDos200':
+    def bpb_dos_200(self) -> BpbDos200:
         return self.bpb_dos_331.bpb_dos_200
 
     @property
-    def total_size(self) -> Optional[int]:
+    def total_size(self) -> int | None:
         return self.bpb_dos_331.total_size
 
     @property
@@ -396,11 +392,11 @@ class EbpbFat(ByteStruct):
             )
 
     @property
-    def bpb_dos_200(self) -> 'BpbDos200':
+    def bpb_dos_200(self) -> BpbDos200:
         return self.short.bpb_dos_331.bpb_dos_200
 
     @property
-    def total_size(self) -> Optional[int]:
+    def total_size(self) -> int | None:
         return self.short.total_size
 
     @property
@@ -430,17 +426,17 @@ class EbpbFat32(ByteStruct):
                 ValidationWarning,
             )
 
-    def validate_for_volume(self, volume: 'Volume', *, recurse: bool = False) -> None:
+    def validate_for_volume(self, volume: Volume, *, recurse: bool = False) -> None:
         super().validate_for_volume(volume, recurse=recurse)
         if self.total_size is not None and self.total_size > volume.size_lba:
             raise ValidationError('Total size must not be greater than volume size')
 
     @property
-    def bpb_dos_200(self) -> 'BpbDos200':
+    def bpb_dos_200(self) -> BpbDos200:
         return self.short.bpb_dos_331.bpb_dos_200
 
     @property
-    def total_size(self) -> Optional[int]:
+    def total_size(self) -> int | None:
         total_size_short = self.short.total_size
         if total_size_short is None:
             # If both total logical sectors entries at offset 0x20 and 0x13 are 0,
@@ -511,7 +507,7 @@ class BootSector:
     SIZE: ClassVar[int] = 512
 
     @classmethod
-    def from_bytes(cls, b: bytes, custom_bpb_type: Type[Bpb] = None) -> 'BootSector':
+    def from_bytes(cls, b: bytes, custom_bpb_type: Type[Bpb] = None) -> BootSector:
         """Parse boot sector from ``bytes``.
 
         If ``custom_bpb_type`` is set, it is tried to parse the BIOS parameter block
@@ -537,7 +533,7 @@ class BootSector:
             bpb_end = start_size + bpb_size
             return bpb_type.from_bytes(b[start_size:bpb_end])
 
-        bpb: Optional[Bpb] = None
+        bpb: Bpb | None = None
         if custom_bpb_type is not None:
             # noinspection PyTypeChecker
             bpb = parse_bpb(custom_bpb_type)
@@ -584,7 +580,7 @@ class BootSector:
                 f'as {BOOT_CODE_DUMMY!r}'
             )
 
-    def validate_for_volume(self, volume: 'Volume', *, recurse: bool = False) -> None:
+    def validate_for_volume(self, volume: Volume, *, recurse: bool = False) -> None:
         if recurse:
             self.start.validate_for_volume(volume, recurse=True)
             self.bpb.validate_for_volume(volume, recurse=True)

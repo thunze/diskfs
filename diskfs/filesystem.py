@@ -1,12 +1,12 @@
 """``FileSystem`` protocol and related generalized classes."""
 
+from __future__ import annotations
+
 import os
+import sys
 import warnings
 from enum import Enum
 from errno import EISDIR
-
-# noinspection PyUnresolvedReferences, PyProtectedMember
-from io import text_encoding  # type: ignore[attr-defined]
 from io import (
     SEEK_CUR,
     SEEK_END,
@@ -21,7 +21,15 @@ from io import (
 from os import stat_result
 from pathlib import Path
 from stat import S_ISDIR
-from typing import TYPE_CHECKING, Iterator, Literal, NamedTuple, Protocol, overload
+from typing import (
+    TYPE_CHECKING,
+    Callable,
+    Iterator,
+    Literal,
+    NamedTuple,
+    Protocol,
+    overload,
+)
 
 from .typing import (
     BufferedAny,
@@ -30,12 +38,26 @@ from .typing import (
     OpenBinaryModeUpdating,
     OpenBinaryModeWriting,
     OpenTextMode,
-    StrPath,
 )
 
 if TYPE_CHECKING:
-    from .typing import ReadableBuffer, WriteableBuffer
+    from .typing import ReadableBuffer, StrPath, WriteableBuffer
     from .volume import Volume
+
+if sys.version_info >= (3, 10):
+    import io
+
+    # make mypy happy
+    text_encoding: Callable[[str | None], str] = getattr(io, 'text_encoding')
+else:
+    # noinspection PyUnusedLocal
+    def text_encoding(encoding: str | None, stacklevel: int = 2) -> str | None:
+        """A helper function to choose the text encoding.
+
+        Returns ``encoding`` for Python <3.10.
+        """
+        return encoding
+
 
 __all__ = [
     'FileSystem',
@@ -221,14 +243,14 @@ class FileIO(RawIOBase):
 
         return bytes(result)
 
-    def readinto(self, b: 'WriteableBuffer') -> int:
+    def readinto(self, b: WriteableBuffer) -> int:
         mem = memoryview(b).cast('B')
         data = self.read(len(mem))
         actual = len(data)
         mem[:actual] = data
         return actual
 
-    def write(self, b: 'ReadableBuffer') -> int:
+    def write(self, b: ReadableBuffer) -> int:
         self._check_closed()
         self._check_writable()
         return self._fs.writefd(self._fd, b)
@@ -327,7 +349,7 @@ class FileSystem(Protocol):
         ...
 
     @property
-    def volume(self) -> 'Volume':
+    def volume(self) -> Volume:
         ...
 
     def __repr__(self) -> str:
@@ -353,7 +375,7 @@ class FileSystem(Protocol):
     def readfd(self, fd: int, size: int) -> bytes:
         ...
 
-    def writefd(self, fd: int, b: 'ReadableBuffer') -> int:
+    def writefd(self, fd: int, b: ReadableBuffer) -> int:
         ...
 
     def truncatefd(self, fd: int, size: int) -> int:

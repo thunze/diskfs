@@ -3,10 +3,12 @@
 See https://uefi.org/specifications.
 """
 
+from __future__ import annotations
+
 import logging
 import struct
 from enum import Enum, Flag
-from typing import TYPE_CHECKING, Any, Iterable, Optional
+from typing import TYPE_CHECKING, Any, Iterable
 from uuid import UUID, uuid4
 from zlib import crc32
 
@@ -168,7 +170,7 @@ class PartitionEntry:
         attributes: PartitionAttributes | int = 0,
         guid: UUID = None,
         name: str = '',
-    ) -> 'PartitionEntry':
+    ) -> PartitionEntry:
         """New non-empty partition entry.
 
         ``PartitionType.UNUSED`` must not be passed as ``type_``, use
@@ -224,12 +226,12 @@ class PartitionEntry:
         return cls(start_lba, end_lba, type_uuid, attributes_int, guid, name)
 
     @classmethod
-    def new_empty(cls) -> 'PartitionEntry':
+    def new_empty(cls) -> PartitionEntry:
         """New empty / unused partition entry."""
         return cls(0, 0, PartitionType.UNUSED.value, 0, uuid4(), '')
 
     @classmethod
-    def from_bytes(cls, b: bytes) -> 'PartitionEntry':
+    def from_bytes(cls, b: bytes) -> PartitionEntry:
         """Parse partition entry from ``bytes``."""
         # Earlier specifications allowed a partition entry to be any multiple of
         # 8 bytes long. As per newer specifications, we only allow powers of two
@@ -358,7 +360,7 @@ class Table:
         self,
         partitions: Iterable[PartitionEntry],
         disk_guid: UUID,
-        custom_mbr: Optional[mbr.Table],
+        custom_mbr: mbr.Table | None,
     ):
         partitions = tuple(partitions)
         check_overlapping(partitions, warn=True)
@@ -373,7 +375,7 @@ class Table:
         *,
         disk_guid: UUID = None,
         custom_mbr: mbr.Table = None,
-    ) -> 'Table':
+    ) -> Table:
         """New partition table."""
         # strip empty partition entries
         stripped_entries = filter(lambda p: not p.empty, partitions)
@@ -529,7 +531,7 @@ class Table:
             raise ValidationError('CRC32 of partition entry array does not match')
 
     @classmethod
-    def from_disk(cls, disk: 'Disk') -> 'Table':
+    def from_disk(cls, disk: Disk) -> Table:
         """Parse partition table from ``disk``."""
         lss = disk.sector_size.logical
         _check_lss(lss)
@@ -681,7 +683,7 @@ class Table:
 
         return primary_header, backup_header, entry_array
 
-    def _write_to_disk(self, disk: 'Disk') -> None:
+    def _write_to_disk(self, disk: Disk) -> None:
         """Write partition table to ``disk``."""
         lss = disk.sector_size.logical
         disk_size_lba = disk.size // lss
@@ -753,7 +755,7 @@ class Table:
         return self._disk_guid
 
     @property
-    def custom_mbr(self) -> Optional[mbr.Table]:
+    def custom_mbr(self) -> mbr.Table | None:
         """Custom MBR supplied along with the GPT.
 
         ``None`` if a typical protective MBR was supplied.

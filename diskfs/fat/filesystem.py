@@ -1,5 +1,7 @@
 """FAT implementation of the ``FileSystem`` protocol."""
 
+from __future__ import annotations
+
 import logging
 import os
 from dataclasses import dataclass
@@ -14,22 +16,20 @@ from threading import Lock
 from typing import (
     TYPE_CHECKING,
     Callable,
-    Concatenate,
     Generator,
     Iterator,
     Literal,
     NamedTuple,
-    ParamSpec,
     TypeVar,
-    Union,
     overload,
 )
+
+from typing_extensions import Concatenate, ParamSpec
 
 from ..base import ValidationError
 from ..filesystem import CLUSTER_SIZE_DEFAULT
 from ..filesystem import FileSystem as FileSystemBase
 from ..filesystem import FsType, StatusFlags, parse_flags
-from ..typing import StrPath
 from .base import FatType
 from .directory import (
     ENTRY_SIZE,
@@ -48,7 +48,7 @@ from .path import Path, PurePath
 from .reserved import BootSector
 
 if TYPE_CHECKING:
-    from ..typing import ReadableBuffer
+    from ..typing import ReadableBuffer, StrPath
     from ..volume import Volume
 
 __all__ = ['FileSystem']
@@ -77,7 +77,7 @@ R = TypeVar('R')  # return type
 class Node:
 
     entry: Entry
-    children: list['Node'] | None = None  # None == not parsed yet
+    children: list[Node] | None = None  # None == not parsed yet
     in_use: bool = False
 
     @property
@@ -85,7 +85,7 @@ class Node:
         return Attributes.SUBDIRECTORY in self.entry.attributes
 
     @property
-    def children_parsed(self) -> list['Node']:
+    def children_parsed(self) -> list[Node]:
         if self.children is None:
             raise RuntimeError('Node children not parsed yet')
         return self.children
@@ -119,7 +119,7 @@ class DirEntry:
     """Class with functionality similar to ``os.DirEntry``."""
 
     def __init__(
-        self, fs: 'FileSystem', dirpath: PurePath, filename: str, stat: stat_result
+        self, fs: FileSystem, dirpath: PurePath, filename: str, stat: stat_result
     ):
         self._fs = fs
         self._dirpath = dirpath
@@ -176,6 +176,18 @@ def _check_file(node: Node | Root, *, hint: StrPath) -> None:
         raise OSError(EISDIR, os.strerror(EISDIR), str(hint))
 
 
+def locked(
+    method: Callable[Concatenate['FileSystem', P], R]
+) -> Callable[Concatenate['FileSystem', P], R]:
+    @wraps(method)
+    def locked_wrapper(self: 'FileSystem', *args: P.args, **kwargs: P.kwargs) -> R:
+        with self._lock:
+            self._volume.check_closed()
+            return method(self, *args, **kwargs)
+
+    return locked_wrapper
+
+
 # noinspection PyAbstractClass
 class FileSystem(FileSystemBase):
     """FAT file system.
@@ -185,7 +197,7 @@ class FileSystem(FileSystemBase):
     """
 
     def __init__(
-        self, volume: 'Volume', boot_sector: BootSector, fat: Fat, vfat: bool = True
+        self, volume: Volume, boot_sector: BootSector, fat: Fat, vfat: bool = True
     ):
         self._volume = volume
         self._boot_sector = boot_sector
@@ -203,13 +215,13 @@ class FileSystem(FileSystemBase):
     @classmethod
     def create(
         cls,
-        volume: 'Volume',
+        volume: Volume,
         size_lba: int = None,
         *,
         cluster_size: int = CLUSTER_SIZE_DEFAULT,
         label: str = '',
         vfat: bool = True,
-    ) -> 'FileSystem':
+    ) -> FileSystem:
         """Create new file system on ``volume``.
 
         **Caution:** If any file system already resides on the volume, it will be
@@ -226,7 +238,7 @@ class FileSystem(FileSystemBase):
         raise NotImplementedError
 
     @classmethod
-    def from_volume(cls, volume: 'Volume', *, vfat: bool = True) -> 'FileSystem':
+    def from_volume(cls, volume: Volume, *, vfat: bool = True) -> FileSystem:
         """Get file system residing on partition ``partition`` of ``disk``.
 
         If ``partition`` is not specified, it is tried to parse a standalone file
@@ -255,7 +267,7 @@ class FileSystem(FileSystemBase):
         return self._boot_sector.fat_type.fs_type
 
     @property
-    def volume(self) -> 'Volume':
+    def volume(self) -> Volume:
         return self._volume
 
     @property
@@ -291,12 +303,12 @@ class FileSystem(FileSystemBase):
     @overload
     def _scandir(
         self, entry: Entry = None, *, only_useful: Literal[False] = ...
-    ) -> Iterator[Union[Entry, EightDotThreeEntry]]:
+    ) -> Iterator[Entry | EightDotThreeEntry]:
         ...
 
     def _scandir(
         self, entry: Entry = None, *, only_useful: Literal[False, True] = True
-    ) -> Iterator[Union[Entry, EightDotThreeEntry]]:
+    ) -> Iterator[Entry | EightDotThreeEntry]:
         """Yield directory entries found for directory with entry ``entry``.
 
         If ``entry`` is ``None``, the root directory is scanned.
@@ -306,24 +318,22 @@ class FileSystem(FileSystemBase):
         ):
             return  # file or empty directory
 
-        with (
-            self._get_internal_io(entry) as stream,
-            BufferedReader(stream, stream.unit_size) as reader,
-        ):
+        with self._get_internal_io(entry) as stream:
+            with BufferedReader(stream, stream.unit_size) as reader:
 
-            def bytes_gen() -> Iterator[bytes]:
-                while True:
-                    b = reader.read(32)
-                    if not b:
-                        return
-                    yield b
+                def bytes_gen() -> Iterator[bytes]:
+                    while True:
+                        b = reader.read(32)
+                        if not b:
+                            return
+                        yield b
 
-            yield from iter_entries(
-                bytes_gen(),
-                only_useful=only_useful,
-                vfat=self._vfat,
-                fat_32=self._fat_32,
-            )
+                yield from iter_entries(
+                    bytes_gen(),
+                    only_useful=only_useful,
+                    vfat=self._vfat,
+                    fat_32=self._fat_32,
+                )
 
     def _get_children(self, node: Node | Root) -> Iterator[Node]:
         if node.children is not None:
@@ -551,18 +561,6 @@ class FileSystem(FileSystemBase):
 
         return stat_result((mode, ino, dev, 1, 0, 0, size, atime, mtime, ctime))
 
-    @staticmethod
-    def locked(
-        method: Callable[Concatenate['FileSystem', P], R]
-    ) -> Callable[Concatenate['FileSystem', P], R]:
-        @wraps(method)
-        def locked_wrapper(self: 'FileSystem', *args: P.args, **kwargs: P.kwargs) -> R:
-            with self._lock:
-                self._volume.check_closed()
-                return method(self, *args, **kwargs)
-
-        return locked_wrapper
-
     # Low-level IO methods for use with a file descriptor
 
     @locked
@@ -646,7 +644,7 @@ class FileSystem(FileSystemBase):
         return stream.read(size)
 
     @locked
-    def writefd(self, fd: int, b: 'ReadableBuffer') -> int:
+    def writefd(self, fd: int, b: ReadableBuffer) -> int:
         # TODO: use FsInfo
         stream, flags, _ = self._find_in_fd_table(fd)
         if not flags.writable:

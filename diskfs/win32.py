@@ -1,9 +1,12 @@
 """Platform-specific disk operations for Windows systems."""
 
+from __future__ import annotations
+
 import sys
 
 assert sys.platform == 'win32'  # skipcq: BAN-B101
 
+# noinspection PyCompatibility
 import msvcrt
 from ctypes import (
     Array,

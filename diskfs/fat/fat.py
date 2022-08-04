@@ -1,5 +1,7 @@
 """File allocation table."""
 
+from __future__ import annotations
+
 from typing import TYPE_CHECKING, Iterator
 
 from ..base import ValidationError
@@ -39,7 +41,7 @@ class Fat:
     unreadable because of bad sectors.
     """
 
-    def __init__(self, volume: 'Volume', boot_sector: BootSector, main_fat: int = 0):
+    def __init__(self, volume: Volume, boot_sector: BootSector, main_fat: int = 0):
         fat_size = boot_sector.fat_size
         fat_count = boot_sector.fat_region_size // boot_sector.fat_size
         fat_type = boot_sector.fat_type

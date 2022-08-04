@@ -1,5 +1,7 @@
 """Protocols implemented in the ``table`` package and various partition entry checks."""
 
+from __future__ import annotations
+
 import warnings
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Iterable, Protocol
@@ -31,12 +33,12 @@ class PartitionEntry(Protocol):
     """Partition entry in a partition table."""
 
     @classmethod
-    def new_empty(cls) -> 'PartitionEntry':
+    def new_empty(cls) -> PartitionEntry:
         """New empty / unused partition entry."""
         ...
 
     @classmethod
-    def from_bytes(cls, b: bytes) -> 'PartitionEntry':
+    def from_bytes(cls, b: bytes) -> PartitionEntry:
         """Parse partition entry from ``bytes``."""
         ...
 
@@ -75,11 +77,11 @@ class Table(Protocol):
     """Partition table."""
 
     @classmethod
-    def from_disk(cls, disk: 'Disk') -> 'Table':
+    def from_disk(cls, disk: Disk) -> Table:
         """Parse partition table from ``disk``."""
         ...
 
-    def _write_to_disk(self, disk: 'Disk') -> None:
+    def _write_to_disk(self, disk: Disk) -> None:
         """Write partition table to ``disk``."""
         ...
 

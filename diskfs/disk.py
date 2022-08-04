@@ -3,13 +3,15 @@
 A disk represents either a file or block device that one can access and manipulate.
 """
 
+from __future__ import annotations
+
 import logging
 import os
 import sys
 from io import BufferedRandom, BufferedReader
 from stat import S_ISBLK, S_ISREG
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, Optional, Type
+from typing import TYPE_CHECKING, Any, Type
 
 from . import gpt, mbr
 from .base import SectorSize, ValidationError
@@ -56,7 +58,7 @@ class Disk:
         self._device = device
         self._size = size
         self._sector_size = sector_size
-        self._table: Optional[Table] = None
+        self._table: Table | None = None
 
         log.info(f'Opened disk {self}')
         log.info(f'{self} - Size: {size} bytes, {sector_size}')
@@ -65,7 +67,7 @@ class Disk:
     @classmethod
     def new(
         cls, path: str, size: int, *, sector_size: int = SECTOR_SIZE_DEFAULT
-    ) -> 'Disk':
+    ) -> Disk:
         """Create a new disk image at ``path``."""
         if size <= 0:
             raise ValueError('Disk size must be greater than 0')
@@ -82,9 +84,7 @@ class Disk:
             raise
 
     @classmethod
-    def open(
-        cls, path: str, *, sector_size: int = None, readonly: bool = True
-    ) -> 'Disk':
+    def open(cls, path: str, *, sector_size: int = None, readonly: bool = True) -> Disk:
         """Open block device or disk image at ``path``."""
         file: BufferedReader | BufferedRandom
         if readonly:
@@ -166,7 +166,7 @@ class Disk:
         return b
 
     def write_at(
-        self, pos: int, b: 'ReadableBuffer', *, fill_zeroes: bool = False
+        self, pos: int, b: ReadableBuffer, *, fill_zeroes: bool = False
     ) -> None:
         """Write raw bytes ``b`` to the disk while starting at sector ``pos``.
 
@@ -329,15 +329,15 @@ class Disk:
         self._file.close()
         log.info(f'Closed disk {self}')
 
-    def __enter__(self) -> 'Disk':
+    def __enter__(self) -> Disk:
         """Context management protocol."""
         self.check_closed()
         return self
 
     def __exit__(
         self,
-        exc_type: Optional[Type[BaseException]],
-        exc_val: Optional[BaseException],
+        exc_type: Type[BaseException] | None,
+        exc_val: BaseException | None,
         exc_tb: TracebackType,
     ) -> None:
         """Context management protocol."""
@@ -359,7 +359,7 @@ class Disk:
         return self._sector_size
 
     @property
-    def table(self) -> Optional[Table]:
+    def table(self) -> Table | None:
         """Partition table last detected on the disk.
 
         ``None`` if no partition table was detected at that time.

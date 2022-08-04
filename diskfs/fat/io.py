@@ -1,5 +1,7 @@
 """IO classes."""
 
+from __future__ import annotations
+
 from datetime import datetime
 from io import SEEK_CUR, SEEK_END, SEEK_SET, RawIOBase
 from typing import TYPE_CHECKING
@@ -21,7 +23,7 @@ class _InternalIO(RawIOBase):
     _pos: int
     _size: int
     _unit_size: int
-    _volume: 'Volume'
+    _volume: Volume
 
     def _check_closed(self) -> None:
         self._volume.check_closed()
@@ -77,14 +79,14 @@ class _InternalIO(RawIOBase):
         self._pos += size
         return b[b_start : b_start + size]
 
-    def readinto(self, b: 'WriteableBuffer') -> int:
+    def readinto(self, b: WriteableBuffer) -> int:
         m = memoryview(b).cast('B')
         data = self.read(len(m))
         n = len(data)
         m[:n] = data
         return n
 
-    def write(self, b: 'ReadableBuffer') -> int:
+    def write(self, b: ReadableBuffer) -> int:
         self._check_closed()
         self._check_writable()
 
@@ -165,7 +167,7 @@ class _InternalIO(RawIOBase):
 class DataIO(_InternalIO):
     """Data region IO."""
 
-    def __init__(self, fs: 'FileSystem', entry: Entry = None):
+    def __init__(self, fs: FileSystem, entry: Entry = None):
         self._volume = fs.volume
         self._lss = fs.volume.sector_size.logical
         self._cluster_size = fs.boot_sector.cluster_size
@@ -354,7 +356,7 @@ class DataIO(_InternalIO):
 class RootdirIO(_InternalIO):
     """Root directory region IO."""
 
-    def __init__(self, fs: 'FileSystem'):
+    def __init__(self, fs: FileSystem):
         self._volume = fs.volume
         self._lss = fs.volume.sector_size.logical
         self._start = fs.boot_sector.rootdir_region_start

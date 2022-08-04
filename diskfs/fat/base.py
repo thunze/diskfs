@@ -1,5 +1,7 @@
 """Classes and functions used across the ``fat`` package."""
 
+from __future__ import annotations
+
 from enum import Enum
 
 from ..filesystem import FsType
@@ -15,7 +17,7 @@ class FatType(Enum):
     FAT_32 = 32
 
     @classmethod
-    def from_fs_type(cls, fs_type: FsType) -> 'FatType':
+    def from_fs_type(cls, fs_type: FsType) -> FatType:
         return cls[fs_type.name]
 
     @property

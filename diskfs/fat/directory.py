@@ -1,21 +1,15 @@
 """Directory and directory entry."""
 
+from __future__ import annotations
+
 import logging
 from ctypes import c_int32, c_int64, c_uint8, c_uint16, c_uint64
 from dataclasses import dataclass, replace
 from datetime import datetime
 from enum import Enum, Flag
-from typing import (
-    Annotated,
-    Any,
-    Collection,
-    Iterable,
-    Iterator,
-    Literal,
-    Optional,
-    Union,
-    overload,
-)
+from typing import Any, Collection, Iterable, Iterator, Literal, overload
+
+from typing_extensions import Annotated
 
 from ..base import ValidationError
 from ..bytestruct import ByteStruct
@@ -430,7 +424,7 @@ class EightDotThreeEntry(ByteStruct):
         return (self._cluster_high_fat_32 << 16) | self._cluster
 
     @property
-    def hint(self) -> Optional[Hint]:
+    def hint(self) -> Hint | None:
         try:
             return Hint(self.name[0])
         except ValueError:
@@ -663,7 +657,7 @@ def iter_entries(
     only_useful: Literal[False] = ...,
     vfat: bool,
     fat_32: bool,
-) -> Iterator[Union[Entry, EightDotThreeEntry]]:
+) -> Iterator[Entry | EightDotThreeEntry]:
     ...
 
 
@@ -673,7 +667,7 @@ def iter_entries(
     only_useful: Literal[False, True] = True,
     vfat: bool,
     fat_32: bool,
-) -> Iterator[Union[Entry, EightDotThreeEntry]]:
+) -> Iterator[Entry | EightDotThreeEntry]:
     """Yield directory entries found in ``bytes_iter``.
 
     Each element of ``bytes_iter`` should represent the ``bytes`` form of one 8.3
@@ -888,21 +882,20 @@ def updated_entry(
             raise ValueError(
                 'High bits of cluster number can only be used on FAT32 file systems'
             )
-        replacements |= {'_cluster': cluster_low, '_cluster_high_fat_32': cluster_high}
+        replacements['_cluster'] = cluster_low
+        replacements['_cluster_high_fat_32'] = cluster_high
 
     if new_size is not None:
-        replacements |= {'size': new_size}
+        replacements['size'] = new_size
 
     if last_accessed is not None:
         last_accessed_date, _, _ = pack_dos_datetime(last_accessed)
-        replacements |= {'last_accessed_date': last_accessed_date}
+        replacements['last_accessed_date'] = last_accessed_date
 
     if last_modified is not None:
         last_modified_date, last_modified_time, _ = pack_dos_datetime(last_modified)
-        replacements |= {
-            'last_modified_date': last_modified_date,
-            'last_modified_time': last_modified_time,
-        }
+        replacements['last_modified_date'] = last_modified_date
+        replacements['last_modified_time'] = last_modified_time
 
     new_edt_entry = replace(old_edt_entry, **replacements)
     new_entry = Entry(new_edt_entry, entry.vfat_entries, vfat=vfat, fat_32=fat_32)
