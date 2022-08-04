@@ -13,6 +13,7 @@ jobs:
     strategy:
       matrix:
         os: ['Windows', 'macOS', 'Ubuntu']
+        python-version: ['3.8', '3.9', '3.10']
         include:
           - os: Windows
             image: windows-latest
@@ -20,19 +21,20 @@ jobs:
             image: macos-latest
           - os: Ubuntu
             image: ubuntu-latest
-    name: ${{ matrix.os }}
+    name: ${{ matrix.os }} / ${{ matrix.python-version }}
     runs-on: ${{ matrix.image }}
     defaults:
       run:
         shell: bash
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Install Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
-          python-version: '3.10.2'
+          python-version: ${{ matrix.python-version }}
+          cache: poetry
 
       - name: Install Poetry
         run: curl -sSL https://install.python-poetry.org | python -
