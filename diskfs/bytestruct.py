@@ -58,7 +58,7 @@ class _ByteStructMeta(ABCMeta):
                     if len(args) > 2:
                         if args[2] not in SIGNED_SPECIFIERS:
                             raise TypeError(
-                                f'Invalid specifier {args[2]} on field {name}, must '
+                                f'Invalid specifier {args[2]} on field {name!r}, must '
                                 f'be one of {SIGNED_SPECIFIERS}'
                             )
                         signed = args[2] == 'signed'
@@ -86,7 +86,7 @@ class _ByteStructMeta(ABCMeta):
                     format_ += f'{size}x'  # pad bytes
                 else:
                     raise TypeError(
-                        f'Annotated type {args[0]} of field {name} is not allowed '
+                        f'Annotated type {args[0]} of field {name!r} is not allowed '
                         f'for ByteStruct'
                     )
 
@@ -97,7 +97,7 @@ class _ByteStructMeta(ABCMeta):
 
             else:
                 raise TypeError(
-                    f'Type {type_} of field {name} is not allowed for ByteStruct'
+                    f'Type {type_} of field {name!r} is not allowed for ByteStruct'
                 )
 
         # exclude classvars
@@ -143,7 +143,7 @@ class ByteStruct(metaclass=_ByteStructMeta):
                 # noinspection PyTypeHints
                 if not isinstance(value, annotated_type):
                     raise TypeError(
-                        f'Value {value!r} of field {name} is not of specified type '
+                        f'Value {value!r} of field {name!r} is not of specified type '
                         f'{annotated_type}'
                     )
 
@@ -162,22 +162,22 @@ class ByteStruct(metaclass=_ByteStructMeta):
 
                     if not min_ <= value <= max_:
                         raise ValidationError(
-                            f'Value {value} of field {name} must be in range '
+                            f'Value {value} of field {name!r} must be in range '
                             f'({min_}, {max_})'
                         )
 
                 elif annotated_type is bytes:
                     if len(value) != size:
                         raise ValidationError(
-                            f'Field value must be of length {size} bytes, got '
-                            f'{len(value)} bytes'
+                            f'Value of field {name!r} must be of length {size} bytes, '
+                            f'got {len(value)} bytes'
                         )
 
             elif origin is None and issubclass(type_, ByteStruct):
                 # embedded ByteStruct
                 if not isinstance(value, type_):
                     raise TypeError(
-                        f'Value {value!r} of field {name} is not of specified type '
+                        f'Value {value!r} of field {name!r} is not of specified type '
                         f'{type_}'
                     )
 
