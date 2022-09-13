@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import struct
-from abc import ABCMeta
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, Type, TypeVar
 
 from typing_extensions import Annotated, get_args, get_origin, get_type_hints
@@ -22,8 +21,11 @@ SIGNED_SPECIFIERS = ('signed', 'unsigned')
 INT_CONVERSION = {1: 'B', 2: 'H', 4: 'I', 8: 'Q'}
 FLOAT_CONVERSION = {2: 'e', 4: 'f', 8: 'd'}
 
+_BsType = TypeVar('_BsType')
+_Bs = TypeVar('_Bs', bound='ByteStruct')
 
-class _ByteStructMeta(ABCMeta):
+
+class _ByteStructMeta(type):
     """Metaclass for ``ByteStruct``."""
 
     def __init__(
@@ -34,8 +36,12 @@ class _ByteStructMeta(ABCMeta):
         byteorder: Literal['<', '>', '!', '='] = '<',
     ):
         super().__init__(name, bases, namespace)
+        if not bases:
+            return  # cls is ByteStruct
+
         type_hints = get_type_hints(cls, include_extras=True)
         format_ = f'{byteorder}'
+        fields = {}
 
         for name, type_ in type_hints.items():
             origin = get_origin(type_)
@@ -87,21 +93,20 @@ class _ByteStructMeta(ABCMeta):
                 else:
                     raise TypeError(
                         f'Annotated type {args[0]} of field {name!r} is not allowed '
-                        f'for ByteStruct'
+                        f'for {cls.__name__}'
                     )
 
-            elif origin is None and issubclass(type_, ByteStruct):
+            elif isinstance(type_, cls.__class__):
                 # embedded ByteStruct, treat as bytes
-                size = type_.__bytestruct_size__
-                format_ += f'{size}s'
+                format_ += f'{len(type_)}s'
 
             else:
                 raise TypeError(
-                    f'Type {type_} of field {name!r} is not allowed for ByteStruct'
+                    f'Type {type_} of field {name!r} is not allowed for {cls.__name__}'
                 )
 
-        # exclude classvars
-        fields = {k: v for k, v in type_hints.items() if get_origin(v) is not ClassVar}
+            fields[name] = type_
+
         cls.__bytestruct_fields__ = fields
         cls.__bytestruct_format__ = format_
         cls.__bytestruct_size__ = struct.calcsize(format_)
@@ -109,14 +114,14 @@ class _ByteStructMeta(ABCMeta):
     def __len__(cls) -> int:
         return cls.__bytestruct_size__
 
-
-_BS = TypeVar('_BS', bound='ByteStruct')
+    def from_bytes(cls: Type[_BsType], b: bytes) -> _BsType:
+        raise NotImplementedError
 
 
 class ByteStruct(metaclass=_ByteStructMeta):
     """Byte structure."""
 
-    # We exclude these dunder attributes from dataclass via ClassVar, but they will
+    # We exclude these dunder attributes from bytestruct via ClassVar, but they will
     # still be accessible from the instance.
     __bytestruct_fields__: ClassVar['dict[str, Any]']
     __bytestruct_format__: ClassVar[str]
@@ -130,9 +135,6 @@ class ByteStruct(metaclass=_ByteStructMeta):
         for name, type_ in self.__bytestruct_fields__.items():
             value = getattr(self, name)
             origin = get_origin(type_)
-
-            if origin is ClassVar:
-                continue
 
             if origin is Annotated:
                 # Annotated
@@ -173,7 +175,7 @@ class ByteStruct(metaclass=_ByteStructMeta):
                             f'got {len(value)} bytes'
                         )
 
-            elif origin is None and issubclass(type_, ByteStruct):
+            elif isinstance(type_, _ByteStructMeta):
                 # embedded ByteStruct
                 if not isinstance(value, type_):
                     raise TypeError(
@@ -196,8 +198,8 @@ class ByteStruct(metaclass=_ByteStructMeta):
         """
         if recurse:
             for name, type_ in self.__bytestruct_fields__.items():
-                value = getattr(self, name)
-                if get_origin(type_) is None and issubclass(type_, ByteStruct):
+                if isinstance(type_, _ByteStructMeta):
+                    value = getattr(self, name)
                     value.validate_for_volume(volume, recurse=True)
 
     # noinspection PyUnusedLocal
@@ -210,7 +212,7 @@ class ByteStruct(metaclass=_ByteStructMeta):
         self.validate()
 
     @classmethod
-    def from_bytes(cls: Type[_BS], b: bytes) -> _BS:
+    def from_bytes(cls: Type[_Bs], b: bytes) -> _Bs:
         """Parse structure from ``bytes``."""
         fields = cls.__bytestruct_fields__
         size = cls.__bytestruct_size__
@@ -219,11 +221,11 @@ class ByteStruct(metaclass=_ByteStructMeta):
             raise ValueError(f'Structure must be {size} bytes long, got {len(b)} bytes')
 
         unpacked_values = struct.unpack(cls.__bytestruct_format__, b)
-        values = []
+        values: list[Any] = []
 
         # create embedded bytestructs
         for type_, unpacked_value in zip(fields.values(), unpacked_values):
-            if get_origin(type_) is None and issubclass(type_, ByteStruct):
+            if isinstance(type_, _ByteStructMeta):
                 values.append(type_.from_bytes(unpacked_value))
             else:
                 values.append(unpacked_value)
@@ -231,14 +233,14 @@ class ByteStruct(metaclass=_ByteStructMeta):
         return cls(*values)
 
     def __bytes__(self) -> bytes:
-        names = self.__bytestruct_fields__.keys()
-        values = (getattr(self, name) for name in names)
+        values = []
+        for name in self.__bytestruct_fields__.keys():
+            value = getattr(self, name)
+            if isinstance(value, ByteStruct):
+                value = bytes(value)
+            values.append(value)
 
-        # convert embedded bytestructs to bytes
-        prepared_values = (
-            bytes(value) if isinstance(value, ByteStruct) else value for value in values
-        )
-        return struct.pack(self.__bytestruct_format__, *prepared_values)
+        return struct.pack(self.__bytestruct_format__, *values)
 
     def __len__(self) -> int:
         return self.__bytestruct_size__
