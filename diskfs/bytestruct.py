@@ -222,6 +222,9 @@ class ByteStruct(metaclass=_ByteStructMeta):
     def __init__(
         self, *args: Any, skip_annotation_validation: bool = False, **kwargs: Any
     ):
+        cls = self.__class__
+        if cls.__bases__ == (object,):
+            raise TypeError(f'Cannot directly instantiate {cls.__name__}')
         # dataclass might replace __init__, so call __post_init__ if we're not replaced.
         self.__post_init__(skip_annotation_validation)
 
