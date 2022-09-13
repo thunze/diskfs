@@ -29,6 +29,11 @@ BYTE_ORDERS = ('<', '>', '!', '=')
 SIGNED_SPECIFIERS = ('signed', 'unsigned')
 INT_CONVERSION = {1: 'B', 2: 'H', 4: 'I', 8: 'Q'}
 FLOAT_CONVERSION = {2: 'e', 4: 'f', 8: 'd'}
+INTERNAL_NAMES = (
+    '__bytestruct_fields__',
+    '__bytestruct_format__',
+    '__bytestruct_size__',
+)
 
 _BsType = TypeVar('_BsType')
 _Bs = TypeVar('_Bs', bound='ByteStruct')
@@ -53,9 +58,11 @@ class _ByteStructMeta(type):
         fields = {}
 
         for name, type_ in type_hints.items():
-            origin = get_origin(type_)
+            if name in INTERNAL_NAMES or type(type_) is InitVar:
+                continue
 
-            if origin is ClassVar or type(type_) is InitVar:
+            origin = get_origin(type_)
+            if origin is ClassVar:
                 continue
 
             if origin is Annotated:
@@ -102,7 +109,7 @@ class _ByteStructMeta(type):
                 else:
                     raise TypeError(
                         f'Annotated type {args[0]} of field {name!r} is not allowed '
-                        f'for {cls.__name__}'
+                        f'for ByteStruct'
                     )
 
             elif isinstance(type_, cls.__class__):
@@ -111,7 +118,7 @@ class _ByteStructMeta(type):
 
             else:
                 raise TypeError(
-                    f'Type {type_} of field {name!r} is not allowed for {cls.__name__}'
+                    f'Type {type_} of field {name!r} is not allowed for ByteStruct'
                 )
 
             fields[name] = type_
@@ -137,11 +144,9 @@ class _ByteStructMeta(type):
 class ByteStruct(metaclass=_ByteStructMeta):
     """Byte structure."""
 
-    # We exclude these dunder attributes from bytestruct via ClassVar, but they will
-    # still be accessible from the instance.
-    __bytestruct_fields__: ClassVar['dict[str, Any]']
-    __bytestruct_format__: ClassVar[str]
-    __bytestruct_size__: ClassVar[int]
+    __bytestruct_fields__: 'dict[str, Any]'
+    __bytestruct_format__: str
+    __bytestruct_size__: int
 
     def validate_against_annotations(self) -> None:
         """Validate against field annotations.
