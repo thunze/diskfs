@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import struct
+import sys
+from dataclasses import InitVar
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, Type, TypeVar
 
 from typing_extensions import Annotated, get_args, get_origin, get_type_hints
@@ -14,6 +16,13 @@ if TYPE_CHECKING:
     from .volume import Volume
 
 __all__ = ['ByteStruct', 'BYTE_ORDERS']
+
+
+# Workaround for python/cpython#88962:
+# Starting with Python 3.11, InitVar does not need to be callable anymore to be used
+# within a lazily evaluated type annotation.
+if sys.version_info < (3, 11):
+    InitVar.__call__ = lambda *args, **kwargs: None  # type: ignore[assignment]
 
 
 BYTE_ORDERS = ('<', '>', '!', '=')
@@ -46,7 +55,7 @@ class _ByteStructMeta(type):
         for name, type_ in type_hints.items():
             origin = get_origin(type_)
 
-            if origin is ClassVar:
+            if origin is ClassVar or type(type_) is InitVar:
                 continue
 
             if origin is Annotated:
@@ -110,6 +119,13 @@ class _ByteStructMeta(type):
         cls.__bytestruct_fields__ = fields
         cls.__bytestruct_format__ = format_
         cls.__bytestruct_size__ = struct.calcsize(format_)
+
+        # Add skip_annotation_validation as an optional parameter to be able to skip
+        # execution of validate_against_annotations().
+        annotations_ = namespace.get('__annotations__', {})
+        annotations_['skip_annotation_validation'] = InitVar[bool]  # type hint
+        namespace['__annotations__'] = annotations_
+        cls.skip_annotation_validation = False  # default value
 
     def __len__(cls) -> int:
         return cls.__bytestruct_size__
@@ -203,12 +219,15 @@ class ByteStruct(metaclass=_ByteStructMeta):
                     value.validate_for_volume(volume, recurse=True)
 
     # noinspection PyUnusedLocal
-    def __init__(self, *args: Any, **kwargs: Any):
-        # dataclass replaces __init__, so call __post_init__ if we're not replaced.
-        self.__post_init__()
+    def __init__(
+        self, *args: Any, skip_annotation_validation: bool = False, **kwargs: Any
+    ):
+        # dataclass might replace __init__, so call __post_init__ if we're not replaced.
+        self.__post_init__(skip_annotation_validation)
 
-    def __post_init__(self) -> None:
-        self.validate_against_annotations()  # TODO
+    def __post_init__(self, skip_annotation_validation: bool) -> None:
+        if not skip_annotation_validation:
+            self.validate_against_annotations()
         self.validate()
 
     @classmethod
@@ -230,7 +249,7 @@ class ByteStruct(metaclass=_ByteStructMeta):
             else:
                 values.append(unpacked_value)
 
-        return cls(*values)
+        return cls(*values, skip_annotation_validation=True)
 
     def __bytes__(self) -> bytes:
         values = []
