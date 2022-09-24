@@ -40,7 +40,6 @@ __all__ = [
 
 MIN_LSS_FAT = 128
 MIN_LSS_FAT32 = 512
-ROOTDIR_ENTRIES_MAX_FLOPPY = 420
 SECTORS_PER_TRACK_MAX = 63
 HEADS_MAX = 255
 PHYSICAL_DRIVE_NUMBERS_RESERVED = (0x7F, 0xFF)
@@ -71,6 +70,7 @@ FS_INFO_UNKNOWN = 0xFFFFFFFF
 
 # defaults
 CLUSTER_SIZE_DEFAULT = 16
+ROOTDIR_ENTRIES_DEFAULT = 240
 MEDIA_TYPE_DEFAULT = 0xF8
 SECTORS_PER_TRACK_DEFAULT = 63
 HEADS_DEFAULT = 255
@@ -133,8 +133,13 @@ class BpbDos200(ByteStruct):
     fat_size_200: Annotated[int, 2]
 
     def validate(self) -> None:
-        if self.lss <= 0:
-            raise ValidationError('Logical sector size must be greater than 0')
+        if self.lss < DIRECTORY_ENTRY_SIZE:
+            raise ValidationError(
+                f'Logical sector size must be greater than or equal to '
+                f'{DIRECTORY_ENTRY_SIZE}'
+            )
+        if not is_power_of_two(self.lss):
+            raise ValidationError('Logical sector size must be a power of 2')
         if self.cluster_size <= 0:
             raise ValidationError('Cluster size must be greater than 0')
         if not is_power_of_two(self.cluster_size):
@@ -143,12 +148,6 @@ class BpbDos200(ByteStruct):
             raise ValidationError('Reserved sector count must be greater than 0')
         if self.fat_count < 1:
             raise ValidationError('FAT count must be greater than 0')
-        if self.rootdir_entries > ROOTDIR_ENTRIES_MAX_FLOPPY:
-            warnings.warn(
-                f'Root directory entry count should be less than '
-                f'{ROOTDIR_ENTRIES_MAX_FLOPPY} to work with floppy disks',
-                ValidationWarning,
-            )
         if self.media_type <= 0xEF or (0xF1 <= self.media_type <= 0xF7):
             raise ValidationError(f'Unsupported value media type {self.media_type}')
 
@@ -199,9 +198,9 @@ class BpbDos331(ByteStruct):
         if self.heads > HEADS_MAX:
             raise ValidationError(f'Head count must be a maximum of {HEADS_MAX}')
 
-        # total sizes must match or one of them is 0
+        # total sizes must match if none of them is 0
         total_size_200 = self.bpb_dos_200_.total_size
-        total_size_331 = self.total_size_331 or None
+        total_size_331 = self.total_size_331
         if total_size_200 and total_size_331 and total_size_200 != total_size_331:
             raise ValidationError(
                 'Total size does not match total size defined in DOS 2.0 BPB'
@@ -222,9 +221,7 @@ class BpbDos331(ByteStruct):
 
     @property
     def total_size(self) -> int | None:
-        total_size_200 = self.bpb_dos_200_.total_size
-        total_size_331 = self.total_size_331 or None
-        return total_size_331 or total_size_200
+        return self.bpb_dos_200_.total_size or self.total_size_331 or None
 
     @property
     def fat_size(self) -> int:
@@ -317,8 +314,10 @@ class ShortEbpbFat32(ByteStruct):
             raise ValidationError('FAT size must be greater than 0')
         if self.version != FAT32_VERSION:
             raise ValidationError(f'Invalid FAT32 version {self.version}')
-        if self.rootdir_start_cluster < 1:
-            raise ValidationError('Root directory start cluster must not be 0')
+        if self.rootdir_start_cluster < 2:
+            raise ValidationError(
+                'Root directory start cluster must be greater than or equal to 2'
+            )
         if self.fsinfo_available and self.fsinfo_sector != FS_INFO_SECTOR:
             raise ValidationError(
                 f'FS information sector number must be {FS_INFO_SECTOR}'
@@ -386,8 +385,8 @@ class EbpbFat(ByteStruct):
             )
         if self.file_system_type not in FILE_SYSTEM_TYPES_FAT:
             warnings.warn(
-                'Unknown file system type; this might lead some systems to refuse to '
-                'recognize the file system',
+                f'Unknown file system type {self.file_system_type!r}; this might lead '
+                f'some systems to refuse to recognize the file system',
                 ValidationWarning,
             )
 
@@ -421,8 +420,8 @@ class EbpbFat32(ByteStruct):
             )
         if self.file_system_type != FILE_SYSTEM_TYPE_FAT32:
             warnings.warn(
-                'Unknown file system type; this might lead some systems to refuse to '
-                'recognize the file system',
+                f'Unknown file system type {self.file_system_type!r}; this might lead '
+                f'some systems to refuse to recognize the file system',
                 ValidationWarning,
             )
 
@@ -566,7 +565,7 @@ class BootSector:
                 f'Invalid size of boot sector (expected {self.SIZE} bytes, got '
                 f'{len_all} bytes'
             )
-        if self.total_clusters < 1:  # also validates total_size
+        if self.total_clusters < 1:  # also triggers validation of total_size
             raise ValidationError('Total cluster count must be greater than 0')
 
         fat_32_bpb = isinstance(self.bpb, (EbpbFat32, ShortEbpbFat32))
@@ -574,7 +573,7 @@ class BootSector:
         if fat_32_bpb != fat_32_detected:
             raise ValidationError('Detected FAT type does not match BPB')
 
-        if self.boot_code.strip(b'\x00') == b'':
+        if not self.boot_code.strip(b'\x00'):
             raise ValidationError(
                 f'Boot code must not be empty, use at least a dummy boot loader such '
                 f'as {BOOT_CODE_DUMMY!r}'
