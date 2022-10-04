@@ -48,9 +48,10 @@ On Windows, you can find out the active code page by executing the command ``chc
 or by calling ``GetConsoleOutputCP()`` found in ``kernel32.dll``.
 """
 
-# applies to already unpacked DOS file names
-# implicitly includes characters already found in VFAT_FILENAME_FORBIDDEN
-DOS_FILENAME_FORBIDDEN = '+,.;=[]' + ''.join(map(chr, range(97, 123)))
+# Applies to already unpacked DOS file names.
+# Implicitly includes characters already found in VFAT_FILENAME_FORBIDDEN and all
+# lowercase characters (depending on the OEM codepage).
+DOS_FILENAME_FORBIDDEN = '+,.;=[]'
 
 VFAT_FILENAME_MAX_LENGTH = 255
 VFAT_FILENAME_FORBIDDEN = ''.join(map(chr, range(32))) + '"*/:<>?\\|\x7F'
@@ -134,23 +135,33 @@ def _unpack_dos_filename(name_bytes: bytes, ext_bytes: bytes) -> str:
         return f'{name_str}.{ext_str}'
 
 
-def _has_invalid_dos_character(filename: str) -> bool:
-    """Return whether ``filename`` contains at least one character not allowed in DOS
+def _is_invalid_dos_character(char: str) -> bool:
+    """Return whether ``char`` represents a character explicitly not allowed in DOS
     file names.
 
-    This includes all lowercase characters.
+    Characters already banned by general FAT file name rules are not considered by
+    this check (see ``_is_valid_vfat_filename``).
     """
-    name, ext = _split_filename(filename)
     try:
-        name.encode(DOS_FILENAME_OEM_ENCODING)
-        ext.encode(DOS_FILENAME_OEM_ENCODING)
+        char.encode(DOS_FILENAME_OEM_ENCODING)
     except UnicodeEncodeError:
         return True
 
-    for part in (name, ext):
-        if any(char in DOS_FILENAME_FORBIDDEN for char in part):
-            return True
+    # islower() check is necessary to rule out any potential lowercase
+    # characters specific to the OEM encoding (codepoints 128-255).
+    return char in DOS_FILENAME_FORBIDDEN or char.islower()
 
+
+def _has_invalid_dos_character(filename: str) -> bool:
+    """Return whether ``filename`` contains at least one character explicitly not
+    allowed in DOS file names.
+
+    Characters already banned by general FAT file name rules are not considered by
+    this check (see ``_is_valid_vfat_filename``).
+    """
+    for part in _split_filename(filename):
+        if any(_is_invalid_dos_character(char) for char in part):
+            return True
     return False
 
 
@@ -177,15 +188,6 @@ def _is_valid_vfat_filename(filename: str) -> bool:
         and not filename.endswith('.')
         and not any(char in VFAT_FILENAME_FORBIDDEN for char in filename)
     )
-
-
-def _check_dos_filename(filename: str) -> None:
-    """Validate a DOS file name in its unpacked form."""
-    if not _is_valid_dos_filename(filename):
-        raise ValidationError(
-            f'Invalid DOS filename {filename!r} (default encoding is '
-            f'{DOS_FILENAME_OEM_ENCODING!r})'
-        )
 
 
 def _check_vfat_filename(filename: str) -> None:
@@ -281,16 +283,7 @@ def _vfat_to_dos_filename(filename: str, existing_filenames: tuple[str, ...]) ->
         """Remove all dots and spaces and replace special characters with ``'_'``."""
         sanitized_ = part_.replace('.', '').replace(' ', '')
         for index, char in enumerate(sanitized_):
-            if char in DOS_FILENAME_FORBIDDEN:
-                replace_char = True
-            else:
-                try:
-                    char.encode(DOS_FILENAME_OEM_ENCODING)
-                    replace_char = False
-                except UnicodeEncodeError:
-                    replace_char = True
-
-            if replace_char:
+            if _is_invalid_dos_character(char):
                 sanitized_ = sanitized_[:index] + '_' + sanitized_[index + 1 :]
         return sanitized_
 
