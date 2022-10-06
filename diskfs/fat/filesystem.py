@@ -323,7 +323,7 @@ class FileSystem(FileSystemBase):
 
                 def bytes_gen() -> Iterator[bytes]:
                     while True:
-                        b = reader.read(32)
+                        b = reader.read(ENTRY_SIZE)
                         if not b:
                             return
                         yield b
