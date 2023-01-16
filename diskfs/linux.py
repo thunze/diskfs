@@ -5,6 +5,7 @@ import sys
 assert sys.platform == 'linux'  # skipcq: BAN-B101
 
 import io
+from ctypes import c_uint
 from fcntl import ioctl
 from typing import BinaryIO
 
@@ -31,9 +32,10 @@ def device_sector_size(file: BinaryIO) -> SectorSize:
 
     :param file: IO handle for the block device.
     """
-    logical = ioctl(file, BLKSSZGET)
-    physical = ioctl(file, BLKPBSZGET)
-    return SectorSize(logical, physical)
+    logical, physical = c_uint(), c_uint()  # see blkdev.h
+    ioctl(file, BLKSSZGET, logical)
+    ioctl(file, BLKPBSZGET, physical)
+    return SectorSize(logical.value, physical.value)
 
 
 def reread_partition_table(file: BinaryIO) -> None:

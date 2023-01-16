@@ -5,6 +5,7 @@ import sys
 assert sys.platform == 'darwin'  # skipcq: BAN-B101
 
 import io
+from ctypes import c_uint32
 from fcntl import ioctl
 from typing import BinaryIO
 
@@ -30,9 +31,10 @@ def device_sector_size(file: BinaryIO) -> SectorSize:
 
     :param file: IO handle for the block device.
     """
-    logical = ioctl(file, DKIOCGETBLOCKSIZE)
-    physical = ioctl(file, DKIOCGETPHYSICALBLOCKSIZE)
-    return SectorSize(logical, physical)
+    logical, physical = c_uint32(), c_uint32()  # see disk.h
+    ioctl(file, DKIOCGETBLOCKSIZE, logical)
+    ioctl(file, DKIOCGETPHYSICALBLOCKSIZE, physical)
+    return SectorSize(logical.value, physical.value)
 
 
 # skipcq: PYL-W0613
