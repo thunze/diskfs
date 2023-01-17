@@ -11,7 +11,7 @@ import sys
 from io import BufferedRandom, BufferedReader
 from stat import S_ISBLK, S_ISREG
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, Type
+from typing import TYPE_CHECKING, Any
 
 from . import gpt, mbr
 from .base import SectorSize, ValidationError
@@ -338,7 +338,7 @@ class Disk:
 
     def __exit__(
         self,
-        exc_type: Type[BaseException] | None,
+        exc_type: type[BaseException] | None,
         exc_val: BaseException | None,
         exc_tb: TracebackType,
     ) -> None:

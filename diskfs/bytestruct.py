@@ -5,7 +5,7 @@ from __future__ import annotations
 import struct
 import sys
 from dataclasses import InitVar
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, Type, TypeVar
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, TypeVar
 
 from typing_extensions import Annotated, get_args, get_origin, get_type_hints
 
@@ -137,7 +137,7 @@ class _ByteStructMeta(type):
     def __len__(cls) -> int:
         return cls.__bytestruct_size__
 
-    def from_bytes(cls: Type[_BsType], b: bytes) -> _BsType:
+    def from_bytes(cls: type[_BsType], b: bytes) -> _BsType:
         raise NotImplementedError
 
 
@@ -239,7 +239,7 @@ class ByteStruct(metaclass=_ByteStructMeta):
         self.validate()
 
     @classmethod
-    def from_bytes(cls: Type[_Bs], b: bytes) -> _Bs:
+    def from_bytes(cls: type[_Bs], b: bytes) -> _Bs:
         """Parse structure from ``bytes``."""
         fields = cls.__bytestruct_fields__
         size = cls.__bytestruct_size__

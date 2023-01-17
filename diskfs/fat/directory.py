@@ -268,7 +268,7 @@ def _vfat_filename_checksum(filename: str) -> int:
     return reversed_.value
 
 
-def _vfat_to_dos_filename(filename: str, existing_filenames: tuple[str, ...]) -> str:
+def _vfat_to_dos_filename(filename: str, existing_filenames: Iterable[str]) -> str:
     """Convert VFAT file name to DOS file name.
 
     It is assumed that a file with file name ``filename`` does not already exist in
@@ -785,7 +785,7 @@ def create_entry(
 
     if requires_vfat and to_be_saved_as_vfat:
         # 8.3 entry and VFAT entry chain
-        already_existing_dos = tuple(entry.dos_filename for entry in existing_entries)
+        already_existing_dos = (entry.dos_filename for entry in existing_entries)
         dos_filename = _vfat_to_dos_filename(filename, already_existing_dos)
 
         # 13 chars per VFAT entry, physical order

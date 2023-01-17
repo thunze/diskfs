@@ -6,7 +6,7 @@ import warnings
 from dataclasses import dataclass
 
 # noinspection PyUnresolvedReferences, PyProtectedMember
-from typing import TYPE_CHECKING, ClassVar, Protocol, Type, _ProtocolMeta
+from typing import TYPE_CHECKING, ClassVar, Protocol, _ProtocolMeta
 
 from typing_extensions import Annotated
 
@@ -482,7 +482,7 @@ class BootSectorStart(ByteStruct):
 
 
 # noinspection PyTypeChecker
-BPB_PARSE_ORDER: tuple[Type[Bpb], ...] = (
+BPB_PARSE_ORDER: tuple[type[Bpb], ...] = (
     EbpbFat32,
     EbpbFat,
     ShortEbpbFat32,
@@ -506,7 +506,7 @@ class BootSector:
     SIZE: ClassVar[int] = 512
 
     @classmethod
-    def from_bytes(cls, b: bytes, custom_bpb_type: Type[Bpb] = None) -> BootSector:
+    def from_bytes(cls, b: bytes, custom_bpb_type: type[Bpb] = None) -> BootSector:
         """Parse boot sector from ``bytes``.
 
         If ``custom_bpb_type`` is set, it is tried to parse the BIOS parameter block
@@ -527,7 +527,7 @@ class BootSector:
         start_size = len(BootSectorStart)
         start = BootSectorStart.from_bytes(b[:start_size])
 
-        def parse_bpb(bpb_type: Type[Bpb]) -> Bpb:
+        def parse_bpb(bpb_type: type[Bpb]) -> Bpb:
             bpb_size = len(bpb_type)
             bpb_end = start_size + bpb_size
             return bpb_type.from_bytes(b[start_size:bpb_end])
