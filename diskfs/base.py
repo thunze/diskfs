@@ -1,4 +1,4 @@
-"""Classes and functions used across the ``disk`` package."""
+"""Exceptions and helper functions used across ``diskfs``."""
 
 from typing import NamedTuple
 
@@ -14,36 +14,41 @@ __all__ = [
 
 
 class ValidationError(ValueError):
-    """Exception raised if a specific structure -- for example a partition table or a
-    file system header -- could not be created because the passed data does not
-    conform to the standard of the structure.
+    """Exception raised if an object representing a specific structure -- for example
+    a partition table or a file system header -- cannot be created because the data
+    to be parsed as the structure does not conform to the standard of the structure.
     """
 
 
 class ValidationWarning(UserWarning):
-    """Warning emitted if a value of a specific structure does not conform to the
-    structure's standard but might still be usable.
+    """Warning emitted if a value found in a structure does not conform to the
+    standard of the structure but might still be usable.
     """
 
 
 class BoundsError(ValueError):
-    """Exception raised if a partition's or file system's bounds are deemed illegal."""
+    """Exception raised if the bounds of a partition or file system are considered
+    illegal.
+    """
 
 
 class BoundsWarning(UserWarning):
-    """Warning emitted if a partition's or file system's bounds are deemed illegal."""
+    """Warning emitted if the bounds of a partition or file system are considered
+    illegal.
+    """
 
 
 class AlignmentWarning(UserWarning):
     """Warning emitted if a partition or file system is found not to be aligned to a
     disk's physical sector size.
 
-    This is usually bad because it might lead to poor performance.
+    This usually leads to significantly worse I/O performance caused by redundant
+    read and write operations on the disk.
     """
 
 
 class SectorSize(NamedTuple):
-    """Tuple of logical and physical sector sizes of a disk."""
+    """``NamedTuple`` of the logical and physical sector size of a disk."""
 
     logical: int
     physical: int
@@ -54,8 +59,8 @@ def is_power_of_two(value: int) -> bool:
 
     ``value`` must be an ``int`` greater than zero.
 
-    Returns whether ``value`` can be expressed as 2 to the power of x, while x is an
-    integer greater than or equal to zero.
+    Returns whether ``value`` can be expressed as 2 to the power of x, with x being
+    an integer greater than or equal to zero.
     """
     if value <= 0:
         raise ValueError('Value must be greater than 0')
