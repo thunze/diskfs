@@ -93,9 +93,6 @@ class _BpbMeta(_ProtocolMeta):
 class Bpb(Protocol, metaclass=_BpbMeta):
     """BIOS parameter block."""
 
-    def validate_for_volume(self, volume: 'Volume', *, recurse: bool = False) -> None:
-        ...
-
     @classmethod
     def from_bytes(cls, b: bytes) -> Bpb:
         ...
@@ -104,6 +101,9 @@ class Bpb(Protocol, metaclass=_BpbMeta):
         ...
 
     def __len__(self) -> int:
+        ...
+
+    def validate_for_volume(self, volume: 'Volume') -> None:
         ...
 
     @property
@@ -151,10 +151,8 @@ class BpbDos200(ByteStruct):
         if self.media_type <= 0xEF or (0xF1 <= self.media_type <= 0xF7):
             raise ValidationError(f'Unsupported value media type {self.media_type}')
 
-    def validate_for_volume(self, volume: Volume, *, recurse: bool = False) -> None:
-        super().validate_for_volume(volume, recurse=recurse)
+    def validate_for_volume(self, volume: Volume) -> None:
         lss = volume.sector_size.logical
-
         if self.lss != lss:
             raise ValidationError(
                 'Logical sector size in DOS 2.0 BPB does not match logical sector '
@@ -206,8 +204,8 @@ class BpbDos331(ByteStruct):
                 'Total size does not match total size defined in DOS 2.0 BPB'
             )
 
-    def validate_for_volume(self, volume: Volume, *, recurse: bool = False) -> None:
-        super().validate_for_volume(volume, recurse=recurse)
+    def validate_for_volume(self, volume: Volume) -> None:
+        self.bpb_dos_200_.validate_for_volume(volume)
         if self.hidden_before_partition != volume.start_lba:
             raise ValidationError(
                 'Hidden sector count does not match volume start sector'
@@ -266,6 +264,9 @@ class ShortEbpbFat(ByteStruct):
         # this EBPB
         _check_physical_drive_number(self.physical_drive_number)
         _check_extended_boot_signature(self.extended_boot_signature)
+
+    def validate_for_volume(self, volume: Volume) -> None:
+        self.bpb_dos_331.validate_for_volume(volume)
 
     @property
     def bpb_dos_200(self) -> BpbDos200:
@@ -347,6 +348,9 @@ class ShortEbpbFat32(ByteStruct):
         _check_physical_drive_number(self.physical_drive_number)
         _check_extended_boot_signature(self.extended_boot_signature)
 
+    def validate_for_volume(self, volume: Volume) -> None:
+        self.bpb_dos_331.validate_for_volume(volume)
+
     @property
     def bpb_dos_200(self) -> BpbDos200:
         return self.bpb_dos_331.bpb_dos_200
@@ -390,6 +394,9 @@ class EbpbFat(ByteStruct):
                 ValidationWarning,
             )
 
+    def validate_for_volume(self, volume: Volume) -> None:
+        self.short.validate_for_volume(volume)
+
     @property
     def bpb_dos_200(self) -> BpbDos200:
         return self.short.bpb_dos_331.bpb_dos_200
@@ -425,8 +432,8 @@ class EbpbFat32(ByteStruct):
                 ValidationWarning,
             )
 
-    def validate_for_volume(self, volume: Volume, *, recurse: bool = False) -> None:
-        super().validate_for_volume(volume, recurse=recurse)
+    def validate_for_volume(self, volume: Volume) -> None:
+        self.short.validate_for_volume(volume)
         if self.total_size is not None and self.total_size > volume.size_lba:
             raise ValidationError('Total size must not be greater than volume size')
 
@@ -579,10 +586,8 @@ class BootSector:
                 f'as {BOOT_CODE_DUMMY!r}'
             )
 
-    def validate_for_volume(self, volume: Volume, *, recurse: bool = False) -> None:
-        if recurse:
-            self.start.validate_for_volume(volume, recurse=True)
-            self.bpb.validate_for_volume(volume, recurse=True)
+    def validate_for_volume(self, volume: Volume) -> None:
+        self.bpb.validate_for_volume(volume)
 
     def __post_init__(self) -> None:
         self.validate()

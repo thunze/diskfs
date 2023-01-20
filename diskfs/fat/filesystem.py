@@ -251,7 +251,7 @@ class FileSystem(FileSystemBase):
 
         boot_sector_bytes = volume.read_at(0, 1)
         boot_sector = BootSector.from_bytes(boot_sector_bytes)
-        boot_sector.validate_for_volume(volume, recurse=True)
+        boot_sector.validate_for_volume(volume)
 
         # fsinfo = None
         # if getattr(boot_sector.bpb, 'fsinfo_available', False):

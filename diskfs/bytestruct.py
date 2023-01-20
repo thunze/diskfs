@@ -4,15 +4,12 @@ from __future__ import annotations
 
 import struct
 from dataclasses import InitVar, is_dataclass
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, NamedTuple, TypeVar
+from typing import Any, ClassVar, Literal, NamedTuple, TypeVar
 
 from typing_extensions import Annotated, get_args, get_origin, get_type_hints
 
 from .base import ValidationError
 from .typing import NoneType
-
-if TYPE_CHECKING:
-    from .volume import Volume
 
 __all__ = ['ByteStruct', 'BYTE_ORDERS']
 
@@ -214,18 +211,6 @@ class ByteStruct(metaclass=_ByteStructMeta):
         Automatically executed after object creation, but after field annotation
         validation.
         """
-
-    def validate_for_volume(self, volume: Volume, *, recurse: bool = False) -> None:
-        """Custom validation to check suitability for a specific volume.
-
-        If ``recurse`` is set, ``validate_for_volume`` is also called on every
-        embedded ``ByteStruct`` with ``recurse`` set.
-        """
-        if recurse:
-            for name, descriptor in self.__bytestruct_fields__.items():
-                if descriptor.is_bytestruct:
-                    value = getattr(self, name)
-                    value.validate_for_volume(volume, recurse=True)
 
     @classmethod
     def from_bytes(cls: type[_Bs], b: bytes) -> _Bs:
