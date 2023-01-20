@@ -11,13 +11,12 @@ from typing_extensions import Annotated, get_args, get_origin, get_type_hints
 from .base import ValidationError
 from .typing import NoneType
 
-__all__ = ['ByteStruct', 'BYTE_ORDERS']
+__all__ = ['ByteStruct']
 
 
-BYTE_ORDERS = ('<', '>', '!', '=')
-SIGNED_SPECIFIERS = ('signed', 'unsigned')
 INT_CONVERSION = {1: 'B', 2: 'H', 4: 'I', 8: 'Q'}
 FLOAT_CONVERSION = {2: 'e', 4: 'f', 8: 'd'}
+SIGNED_SPECIFIERS = ('signed', 'unsigned')
 INTERNAL_NAMES = (
     '__bytestruct_fields__',
     '__bytestruct_format__',
@@ -25,7 +24,6 @@ INTERNAL_NAMES = (
     '__bytestruct_cached__',
 )
 
-_BsType = TypeVar('_BsType')
 _Bs = TypeVar('_Bs', bound='ByteStruct')
 
 
@@ -127,9 +125,6 @@ class _ByteStructMeta(type):
 
     def __len__(cls) -> int:
         return cls.__bytestruct_size__
-
-    def from_bytes(cls: type[_BsType], b: bytes) -> _BsType:
-        raise NotImplementedError
 
 
 class ByteStruct(metaclass=_ByteStructMeta):
