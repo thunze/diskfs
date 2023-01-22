@@ -104,7 +104,8 @@ class _ByteStructMeta(type):
 
             if origin is not Annotated:
                 raise TypeError(
-                    f'Type {type_} of field {name!r} is not allowed for ByteStruct'
+                    f'Unannotated type {type_} of field {name!r} is not allowed for '
+                    f'ByteStruct'
                 )
 
             # Annotated type
@@ -120,7 +121,7 @@ class _ByteStructMeta(type):
                 signed = False
                 if len(args) > 2:
                     if args[2] not in SIGNED_SPECIFIERS:
-                        raise TypeError(
+                        raise ValueError(
                             f'Invalid specifier {args[2]} on field {name!r}, must be '
                             f'one of {SIGNED_SPECIFIERS}'
                         )
