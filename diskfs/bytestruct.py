@@ -85,7 +85,7 @@ class _ByteStructMeta(type):
                 continue
 
             # Embedded ByteStruct, treat as bytes
-            if isinstance(type_, cls.__class__):
+            if isinstance(type_, cls.__class__) and type_ is not ByteStruct:
                 format_ += f'{len(type_)}s'
                 fields[name] = _FieldDescriptor(type_, is_bytestruct=True)
                 continue
