@@ -61,6 +61,18 @@ class _ByteStructMeta(type):
         in bytes.
     """
 
+    def __new__(
+        mcs,
+        name: str,
+        bases: tuple[type, ...],
+        namespace: dict[str, Any],
+        **kwargs: Any,
+    ) -> _ByteStructMeta:
+        """Provide a signature of ``__new__()`` which allows specifying ``kwargs``
+        like ``byteorder`` when subclassing ``ByteStruct``.
+        """
+        return super().__new__(mcs, name, bases, namespace)
+
     def __init__(
         cls,
         name: str,
