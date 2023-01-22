@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import struct
-from dataclasses import InitVar, is_dataclass
+from dataclasses import InitVar
 from typing import Any, ClassVar, Literal, NamedTuple, TypeVar
 
 from typing_extensions import Annotated, get_args, get_origin, get_type_hints
@@ -205,29 +205,36 @@ class ByteStruct(metaclass=_ByteStructMeta):
     # Populated per instance
     __bytestruct_cached__: bytes
 
+    @classmethod
+    def _check_direct_instantiation(cls) -> None:
+        """Raise ``TypeError`` if it is tried to directly instantiate ``ByteStruct``
+        and not a subclass of ``ByteStruct``.
+        """
+        if cls.__bases__ == (object,):
+            raise TypeError(f'Cannot directly instantiate {cls.__name__}')
+
+    @classmethod
+    def _check_frozen_dataclass(cls) -> None:
+        """Raise ``TypeError`` if it is tried to instantiate a subclass of
+        ``ByteStruct`` which is not a frozen dataclass.
+        """
+        params: Any | Literal[False] = getattr(cls, '__dataclass_params__', False)
+        if not params or not params.frozen:
+            raise TypeError('ByteStruct subclass must be a frozen dataclass')
+
     # noinspection PyUnusedLocal
     def __init__(self, *args: Any, **kwargs: Any):
         cls = self.__class__
-        if cls.__bases__ == (object,):
-            raise TypeError(f'Cannot directly instantiate {cls.__name__}')
-        if not is_dataclass(cls):
-            raise TypeError('ByteStruct subclass must be a frozen dataclass')
+        cls._check_direct_instantiation()
+        cls._check_frozen_dataclass()
 
     def __post_init__(self) -> None:
         """Executed after instance creation as we expect every instance to be a
         ``dataclass``.
 
-        Checks whether the instance is an instance of a frozen ``dataclass`` and
-        triggers the internal and the user-defined validation logic.
+        Triggers the internal and the user-defined validation logic.
         """
-        try:
-            params = getattr(self.__class__, '__dataclass_params__')
-        except AttributeError:
-            raise
-        else:
-            if not params.frozen:
-                raise TypeError('ByteStruct subclass must be a frozen dataclass')
-
+        self._check_frozen_dataclass()
         if not hasattr(self, '__bytestruct_cached__'):
             self._validate_and_cache()
         self.validate()
@@ -288,6 +295,8 @@ class ByteStruct(metaclass=_ByteStructMeta):
     @classmethod
     def from_bytes(cls: type[_Bs], b: bytes) -> _Bs:
         """Parse structure from ``bytes``."""
+        cls._check_direct_instantiation()
+
         fields = cls.__bytestruct_fields__
         size = cls.__bytestruct_size__
 
