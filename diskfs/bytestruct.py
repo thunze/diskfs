@@ -177,7 +177,7 @@ class ByteStruct(metaclass=_ByteStructMeta):
     - User-friendly definition of field types
     - Validation of values including an easy way to add custom validation logic
 
-    Note that every ``ByteStruct`` subclass must be a frozen dataclass.
+    Note that every ``ByteStruct`` subclass must be a frozen ``dataclass``.
 
     Example::
 
@@ -229,7 +229,7 @@ class ByteStruct(metaclass=_ByteStructMeta):
     @classmethod
     def _check_frozen_dataclass(cls) -> None:
         """Raise ``TypeError`` if it is tried to instantiate a subclass of
-        ``ByteStruct`` which is not a frozen dataclass.
+        ``ByteStruct`` which is not a frozen ``dataclass``.
         """
         params: Any | Literal[False] = getattr(cls, '__dataclass_params__', False)
         if not params or not params.frozen:
@@ -237,9 +237,8 @@ class ByteStruct(metaclass=_ByteStructMeta):
 
     # noinspection PyUnusedLocal
     def __init__(self, *args: Any, **kwargs: Any):
-        cls = self.__class__
-        cls._check_direct_instantiation()
-        cls._check_frozen_dataclass()
+        self._check_direct_instantiation()
+        self._check_frozen_dataclass()
 
     def __post_init__(self) -> None:
         """Executed after instance creation as we expect every instance to be a
