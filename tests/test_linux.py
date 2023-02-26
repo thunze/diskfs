@@ -5,7 +5,7 @@ import sys
 import pytest
 
 if sys.platform != 'linux':
-    pytest.skip('Skipping Linux-only tests')
+    pytest.skip('Skipping Linux-only tests', allow_module_level=True)
 
 import os
 import subprocess
