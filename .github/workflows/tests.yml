@@ -59,7 +59,7 @@ jobs:
 
       - name: Run tests with coverage (Ubuntu)
         if: ${{ matrix.os == 'Ubuntu' }}
-        run: sudo env "PATH=$PATH" python -m pytest --cov=diskfs tests/
+        run: sudo -E env "PATH=$PATH" poetry run pytest --cov=diskfs tests/
 
       - name: Upload coverage data to Coveralls
         run: poetry run coveralls --service=github
