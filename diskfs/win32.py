@@ -145,7 +145,7 @@ def device_size(file: BinaryIO) -> int:
 
 
 def device_sector_size(file: BinaryIO) -> SectorSize:
-    """Get logical and physical sector size for a block device.
+    """Return the logical and physical sector size of a block device.
 
     :param file: IO handle for the block device.
     """
