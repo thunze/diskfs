@@ -1,5 +1,7 @@
 """Exceptions and helper functions used across ``diskfs``."""
 
+from __future__ import annotations
+
 from typing import NamedTuple
 
 __all__ = [

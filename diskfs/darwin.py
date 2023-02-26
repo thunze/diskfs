@@ -1,5 +1,7 @@
 """Platform-specific disk operations for Darwin systems."""
 
+from __future__ import annotations
+
 import sys
 
 assert sys.platform == 'darwin'  # skipcq: BAN-B101

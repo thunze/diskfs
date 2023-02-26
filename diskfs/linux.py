@@ -1,5 +1,7 @@
 """Platform-specific disk operations for Linux systems."""
 
+from __future__ import annotations
+
 import sys
 
 assert sys.platform == 'linux'  # skipcq: BAN-B101
