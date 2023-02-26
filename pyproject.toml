@@ -20,6 +20,12 @@ black = "^22.6.0"
 flake8 = "^5.0.3"
 mypy = ">=0.971"
 
+[tool.pytest.ini_options]
+markers = [
+    "privileged: mark the test as requiring elevated privileges",
+    "serial"
+]
+
 [tool.coverage.report]
 exclude_lines = [
     "pragma: no cover",

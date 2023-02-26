@@ -54,7 +54,12 @@ jobs:
         run: poetry run pip install pytest-github-actions-annotate-failures
 
       - name: Run tests with coverage
+        if: ${{ matrix.os != 'Ubuntu' }}
         run: poetry run pytest --cov=diskfs tests/
+
+      - name: Run tests with coverage (Ubuntu)
+        if: ${{ matrix.os == 'Ubuntu' }}
+        run: sudo env "PATH=$PATH" poetry run pytest --cov=diskfs tests/
 
       - name: Upload coverage data to Coveralls
         run: poetry run coveralls --service=github
