@@ -1,11 +1,14 @@
 """Tests for the ``linux`` module."""
 
 import sys
+from typing import TYPE_CHECKING
 
 import pytest
 
-if sys.platform != 'linux':
+# Make mypy and pytest collection happy
+if not TYPE_CHECKING and sys.platform != 'linux':
     pytest.skip('Skipping Linux-only tests', allow_module_level=True)
+assert sys.platform == 'linux'
 
 import os
 import subprocess
