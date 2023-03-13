@@ -33,7 +33,12 @@ from typing import BinaryIO
 
 from .base import SectorSize
 
-__all__ = ['device_size', 'device_sector_size', 'reread_partition_table']
+__all__ = [
+    'device_io_control',
+    'device_size',
+    'device_sector_size',
+    'reread_partition_table',
+]
 
 
 PVOID = LPVOID
@@ -103,7 +108,7 @@ _DeviceIoControl.argtypes = [
 _DeviceIoControl.restype = BOOL
 
 
-def _device_io_control(
+def device_io_control(
     file: BinaryIO,
     control_code: int,
     in_buffer: Array[c_char] = None,
@@ -139,7 +144,7 @@ def device_size(file: BinaryIO) -> int:
     :param file: IO handle for the block device.
     """
     out_buffer = create_string_buffer(sizeof(GET_LENGTH_INFORMATION))
-    _device_io_control(file, IOCTL_DISK_GET_LENGTH_INFO, out_buffer=out_buffer)
+    device_io_control(file, IOCTL_DISK_GET_LENGTH_INFO, out_buffer=out_buffer)
     length_information = GET_LENGTH_INFORMATION.from_buffer_copy(out_buffer)
     return length_information.Length
 
@@ -158,7 +163,7 @@ def device_sector_size(file: BinaryIO) -> SectorSize:
     in_buffer = create_string_buffer(bytes(query))
     out_buffer = create_string_buffer(sizeof(STORAGE_ACCESS_ALIGNMENT_DESCRIPTOR))
 
-    _device_io_control(file, IOCTL_STORAGE_QUERY_PROPERTY, in_buffer, out_buffer)
+    device_io_control(file, IOCTL_STORAGE_QUERY_PROPERTY, in_buffer, out_buffer)
     alignment = STORAGE_ACCESS_ALIGNMENT_DESCRIPTOR.from_buffer_copy(out_buffer)
     return SectorSize(
         alignment.BytesPerLogicalSector,
