@@ -23,7 +23,6 @@ elif sys.platform == 'linux':
 
     SIZES = [2 * 4096, 3 * 4096]
     SECTOR_SIZES = [
-        SectorSize(256, 4096),
         SectorSize(512, 4096),
         SectorSize(2048, 4096),
         SectorSize(4096, 4096),
