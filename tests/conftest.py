@@ -58,7 +58,7 @@ if sys.platform == 'win32':
             encoding='utf-8',
         )
         device_path = completed_process.stdout.rstrip()
-        yield Path(device_path)
+        yield device_path
 
         # Clean up
         subprocess.run(
@@ -84,7 +84,7 @@ elif sys.platform == 'linux':
             encoding='utf-8',
         )
         device_path = completed_process.stdout.rstrip()
-        yield Path(device_path)
+        yield device_path
 
         # Clean up
         subprocess.run(['losetup', '-d', device_path])
@@ -107,5 +107,5 @@ sector size pair for the block device). Some platforms do not support setting th
 logical or physical sector size for a virtual block device. In that case,
 values which cannot be used are ignored.
 
-Returns a ``pathlib.Path`` object representing the path of the block device.
+Returns a string representing the path of the block device.
 """

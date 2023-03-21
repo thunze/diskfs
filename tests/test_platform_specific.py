@@ -58,7 +58,7 @@ def test_device_properties(block_device, size_expected, sector_size_expected) ->
     """Test that ``device_size()`` and ``device_sector_size()`` return the expected
     values.
     """
-    with block_device.open('rb') as f:
+    with open(block_device, 'rb') as f:
         size_actual = platform_specific.device_size(f)
         sector_size_actual = platform_specific.device_sector_size(f)
 
@@ -86,5 +86,5 @@ def test_reread_partition_table(block_device):
     """Test that correctly invoking ``reread_partition_table()`` does not raise an
     exception.
     """
-    with block_device.open('rb') as f:
+    with open(block_device, 'rb') as f:
         platform_specific.reread_partition_table(f)
