@@ -4,7 +4,7 @@ import os
 import subprocess
 import sys
 from pathlib import Path
-from shutil import rmtree
+from shutil import copyfileobj, rmtree
 from tempfile import mkdtemp, mkstemp
 
 import pytest
@@ -38,22 +38,30 @@ def tempfile():
 
 if sys.platform == 'win32':
 
-    @pytest.fixture
-    def block_device(request, tempdir):
-        # We are using a temporary directory here because a temporary file would have
-        # to be deleted first in order for New-VHD to function. However, this would
-        # impose a race condition as we cannot guarantee the filename to stay unused.
-        size, (lss, pss) = request.param
+    import gzip
+    import importlib.resources
 
-        # Create and mount virtual hard disk
-        backfile_path = (tempdir / 'temp.vhdx').absolute()
-        command = (
-            f'(New-VHD -Path "{backfile_path}" -SizeBytes {size} -Dynamic '
-            f'-LogicalSectorSizeBytes {lss} -PhysicalSectorSizeBytes {pss} '
-            f'| Mount-VHD -Passthru | Get-Disk).Path'
+    from . import data
+
+    @pytest.fixture
+    def block_device(request, tempfile):
+        size, (lss, pss) = request.param
+        gzipped_filename = f'empty_{size}_{lss}_{pss}.vhdx.gz'
+
+        # Decompress VHDX file
+        with importlib.resources.path(data, gzipped_filename) as gzipped_path:
+            with gzip.open(gzipped_path, 'rb') as f_in:
+                with tempfile.open('wb') as f_out:
+                    copyfileobj(f_in, f_out)
+
+        # Mount virtual hard disk
+        backfile_path = tempfile.absolute()
+        mount_command = (
+            f'(Mount-DiskImage "{backfile_path}" -NoDriveLetter -StorageType VHDX)'
+            f'.DevicePath'
         )
         completed_process = subprocess.run(
-            ['powershell.exe', '-Command', command],
+            ['powershell.exe', '-Command', mount_command],
             capture_output=True,
             encoding='utf-8',
         )
@@ -61,9 +69,8 @@ if sys.platform == 'win32':
         yield device_path
 
         # Clean up
-        subprocess.run(
-            ['powershell.exe', '-Command', f'Dismount-VHD "{backfile_path}"']
-        )
+        dismount_command = f'Dismount-DiskImage -DevicePath "{device_path}"'
+        subprocess.run(['powershell.exe', '-Command', dismount_command])
 
 elif sys.platform == 'linux':
 
