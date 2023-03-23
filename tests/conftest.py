@@ -101,8 +101,32 @@ elif sys.platform == 'darwin':
 
     @pytest.fixture
     def block_device(request, tempfile):
-        size, (lss, pss) = request.param
-        raise NotImplementedError
+        size, _ = request.param
+
+        # Expand new temporary file to desired size
+        with tempfile.open('wb') as f:
+            f.truncate(size)
+
+        # Attach disk image
+        backfile_path = tempfile.absolute()
+        completed_process = subprocess.run(
+            [
+                'hdiutil',
+                'attach',
+                '-imagekey',
+                'diskimage-class=CRawDiskImage',
+                '-nomount',
+                backfile_path,
+            ],
+            capture_output=True,
+            check=True,
+            encoding='utf-8',
+        )
+        device_path = completed_process.stdout.split()[0]  # see man hdiutil
+        yield device_path
+
+        # Clean up
+        subprocess.run(['hdiutil', 'detach', device_path])
 
 else:
     raise RuntimeError(f'Unspported platform {sys.platform!r}')
