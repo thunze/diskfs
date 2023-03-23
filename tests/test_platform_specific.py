@@ -47,7 +47,6 @@ SECTOR_SIZE_MAX_SANE = 16 * 1024 * 1024
 
 
 @pytest.mark.privileged
-@pytest.mark.skipif(sys.platform == 'darwin', reason='Not implemented yet')
 @pytest.mark.parametrize(
     ['block_device', 'size_expected', 'sector_size_expected'],
     [
