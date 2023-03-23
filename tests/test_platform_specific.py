@@ -42,6 +42,9 @@ else:
 
 # Test logic
 
+SECTOR_SIZE_MIN_SANE = 128
+SECTOR_SIZE_MAX_SANE = 16 * 1024 * 1024
+
 
 @pytest.mark.privileged
 @pytest.mark.skipif(sys.platform == 'darwin', reason='Not implemented yet')
@@ -72,7 +75,10 @@ def test_device_properties(block_device, size_expected, sector_size_expected) ->
         if customizable:
             assert actual == expected
         else:
+            # If we don't know the expected LSS/PSS, the best we can do is check that
+            # the queried value is a power of two roughly lying within a sane range.
             assert is_power_of_two(actual)
+            assert SECTOR_SIZE_MIN_SANE <= actual <= SECTOR_SIZE_MAX_SANE
 
     assert sector_size_actual.physical >= sector_size_actual.logical
 
