@@ -63,6 +63,7 @@ if sys.platform == 'win32':
         completed_process = subprocess.run(
             ['powershell.exe', '-Command', mount_command],
             capture_output=True,
+            check=True,
             encoding='utf-8',
         )
         device_path = completed_process.stdout.rstrip()
