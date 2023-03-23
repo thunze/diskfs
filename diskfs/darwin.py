@@ -6,8 +6,7 @@ import sys
 
 assert sys.platform == 'darwin'  # skipcq: BAN-B101
 
-import io
-from ctypes import c_uint32
+from ctypes import c_uint32, c_uint64
 from fcntl import ioctl
 from typing import BinaryIO
 
@@ -18,6 +17,7 @@ __all__ = ['device_size', 'device_sector_size', 'reread_partition_table']
 
 DKIOCGETBLOCKSIZE = 0x40046418
 DKIOCGETPHYSICALBLOCKSIZE = 0x4004644D
+DKIOCGETBLOCKCOUNT = 0x40086419
 
 
 def device_size(file: BinaryIO) -> int:
@@ -25,7 +25,10 @@ def device_size(file: BinaryIO) -> int:
 
     :param file: IO handle for the block device.
     """
-    return file.seek(0, io.SEEK_END)
+    sector_size, sector_count = c_uint32(), c_uint64()  # see disk.h
+    ioctl(file, DKIOCGETBLOCKSIZE, sector_size)
+    ioctl(file, DKIOCGETBLOCKCOUNT, sector_count)
+    return sector_size.value * sector_count.value
 
 
 def device_sector_size(file: BinaryIO) -> SectorSize:
