@@ -84,7 +84,8 @@ def test_device_properties(block_device, size_expected, sector_size_expected) ->
 
 @pytest.mark.privileged
 @pytest.mark.skipif(
-    sys.platform != 'linux', reason='Function empty on non-Linux platforms'
+    sys.platform != 'linux',
+    reason='reread_partition_table() is empty on non-Linux platforms',
 )
 @pytest.mark.parametrize('block_device', [(SIZES[0], SECTOR_SIZES[0])], indirect=True)
 def test_reread_partition_table(block_device):
@@ -93,3 +94,22 @@ def test_reread_partition_table(block_device):
     """
     with open(block_device, 'rb') as f:
         platform_specific.reread_partition_table(f)
+
+
+@pytest.mark.skipif(
+    sys.platform != 'win32', reason='device_io_control() is only available on Windows'
+)
+def test_device_io_control_fail(tempfile):
+    """Test that ``device_io_control()`` raises an ``OSError`` with the ``winerror``
+    attribute set when called with an invalid combination of arguments for
+    ``DeviceIoControl()``.
+
+    In this case, the control code ``IOCTL_STORAGE_QUERY_PROPERTY`` expects an input
+    buffer to be passed to ``DeviceIoControl()`` which we do not provide.
+    """
+    if sys.platform == 'win32':  # make mypy happy
+        with tempfile.open('rb') as f, pytest.raises(OSError) as exc_info:
+            platform_specific.device_io_control(
+                f, platform_specific.IOCTL_STORAGE_QUERY_PROPERTY
+            )
+            assert exc_info.value.winerror is not None
