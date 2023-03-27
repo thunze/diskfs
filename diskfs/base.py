@@ -1,4 +1,4 @@
-"""Exceptions and helper functions used across ``diskfs``."""
+"""Exception classes, data structures and helper functions used across ``diskfs``."""
 
 from __future__ import annotations
 
@@ -10,6 +10,7 @@ __all__ = [
     'BoundsError',
     'BoundsWarning',
     'AlignmentWarning',
+    'DeviceProperties',
     'SectorSize',
     'is_power_of_two',
 ]
@@ -47,6 +48,21 @@ class AlignmentWarning(UserWarning):
     This usually leads to significantly worse I/O performance caused by redundant
     read and write operations on the disk.
     """
+
+
+class DeviceProperties(NamedTuple):
+    """Additional properties provided for block devices.
+
+    - ``removable``: Whether the device is removable.
+    - ``vendor``: Name of the vendor of the device (e.g. 'SanDisk').
+    - ``model``: Model or product name of the device (e.g. 'Ultra Fit').
+
+    A property is ``None`` if it could not be determined for the block device.
+    """
+
+    removable: bool | None
+    vendor: str | None
+    model: str | None
 
 
 class SectorSize(NamedTuple):
