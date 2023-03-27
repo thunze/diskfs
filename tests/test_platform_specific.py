@@ -47,6 +47,21 @@ SECTOR_SIZE_MAX_SANE = 16 * 1024 * 1024
 
 
 @pytest.mark.privileged
+@pytest.mark.skipif(sys.platform != 'linux', reason='Not implemented yet')
+@pytest.mark.parametrize('block_device', [(SIZES[0], SECTOR_SIZES[0])], indirect=True)
+def test_device_properties(block_device) -> None:
+    """Test that the ``DeviceProperties`` tuple obtained from ``device_properties()``
+    contains the expected values.
+    """
+    with open(block_device, 'rb') as f:
+        removable, vendor, model = platform_specific.device_properties(f)
+
+    assert removable is False
+    assert vendor is None
+    assert model is None
+
+
+@pytest.mark.privileged
 @pytest.mark.parametrize(
     ['block_device', 'size_expected', 'sector_size_expected'],
     [
@@ -56,7 +71,9 @@ SECTOR_SIZE_MAX_SANE = 16 * 1024 * 1024
     ],
     indirect=['block_device'],
 )
-def test_device_properties(block_device, size_expected, sector_size_expected) -> None:
+def test_device_size_sector_size(
+    block_device, size_expected, sector_size_expected
+) -> None:
     """Test that ``device_size()`` and ``device_sector_size()`` return the expected
     values.
     """
