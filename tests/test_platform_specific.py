@@ -17,7 +17,7 @@ if sys.platform == 'win32':
     # Only combinations allowed by New-VHD
     SECTOR_SIZES = [SectorSize(512, 512), SectorSize(512, 4096), SectorSize(4096, 4096)]
     SECTOR_SIZE_CUSTOMIZABLE = (True, True)  # LSS and PSS customizable
-    DEVICE_PROPERTIES = DeviceProperties(False, None, None)
+    DEVICE_PROPERTIES = DeviceProperties(False, 'Msft', 'Virtual Disk')
 
 elif sys.platform == 'linux':
     from diskfs import linux as platform_specific
