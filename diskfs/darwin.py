@@ -88,7 +88,7 @@ def _unpack_cf_string(string: CFString | None) -> str | None:
     buffer = create_string_buffer(max_size)
 
     if not CFStringGetCString(string, buffer, max_size, ENCODING_UTF_8):
-        raise RuntimeError("Failed to convert CFString to C string")
+        raise RuntimeError("Failed to convert CFString to C string")  # pragma: no cover
     return buffer.value.decode('utf-8')
 
 
