@@ -10,7 +10,7 @@ import os
 from contextlib import contextmanager
 from ctypes import c_uint32, c_uint64, create_string_buffer
 from fcntl import ioctl
-from typing import BinaryIO, Iterator, TypeVar, cast
+from typing import BinaryIO, Iterator, TypeVar, Union, cast
 
 from ._darwin import (
     ENCODING_UTF_8,
@@ -111,9 +111,13 @@ def device_properties(file: BinaryIO) -> DeviceProperties:
         vendor_ref = CFDictionaryGetValue(description, VENDOR_KEY)
         model_ref = CFDictionaryGetValue(description, MODEL_KEY)
 
-        removable = _unpack_cf_boolean(cast(CFBoolean, removable_ref))
-        vendor = _unpack_cf_string(cast(CFString, vendor_ref))
-        model = _unpack_cf_string(cast(CFString, model_ref))
+        removable_casted = cast(Union[CFBoolean, None], removable_ref)
+        vendor_casted = cast(Union[CFString, None], vendor_ref)
+        model_casted = cast(Union[CFString, None], model_ref)
+
+        removable = _unpack_cf_boolean(removable_casted)
+        vendor = _unpack_cf_string(vendor_casted)
+        model = _unpack_cf_string(model_casted)
 
     if vendor is not None:
         vendor = vendor.rstrip()
