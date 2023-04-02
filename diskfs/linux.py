@@ -75,7 +75,7 @@ def device_sector_size(file: BinaryIO) -> SectorSize:
 
 
 def reread_partition_table(file: BinaryIO) -> None:
-    """Force kernel to re-read the partition table on a block device.
+    """Update the operating system's view of a block device's partition table.
 
     :param file: IO handle for the block device.
     """

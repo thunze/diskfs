@@ -51,6 +51,7 @@ PARAM_OUT = 2
 
 IOCTL_DISK_GET_LENGTH_INFO = 475228
 IOCTL_DISK_GET_DRIVE_GEOMETRY = 458752
+IOCTL_DISK_UPDATE_PROPERTIES = 459072
 IOCTL_STORAGE_QUERY_PROPERTY = 2954240
 
 # IOCTL_STORAGE_QUERY_PROPERTY
@@ -176,7 +177,7 @@ def device_io_control(
     """Send a control code directly to a specified device driver, causing the
     corresponding device to perform the corresponding operation.
 
-    Wrapper for ``DeviceIoControl``.
+    Wrapper for ``DeviceIoControl()``.
     """
     handle = msvcrt.get_osfhandle(file.fileno())
     in_buffer_size = len(in_buffer) if in_buffer is not None else 0
@@ -283,8 +284,9 @@ def device_sector_size(file: BinaryIO) -> SectorSize:
     return SectorSize(alignment.BytesPerLogicalSector, alignment.BytesPerPhysicalSector)
 
 
-
-# skipcq: PYL-W0613
-# noinspection PyUnusedLocal
 def reread_partition_table(file: BinaryIO) -> None:
-    """Force kernel to re-read the partition table on a block device."""
+    """Update the operating system's view of a block device's partition table.
+
+    :param file: IO handle for the block device.
+    """
+    device_io_control(file, IOCTL_DISK_UPDATE_PROPERTIES)
