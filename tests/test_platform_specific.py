@@ -50,7 +50,6 @@ SECTOR_SIZE_MAX_SANE = 16 * 1024 * 1024
 
 
 @pytest.mark.privileged
-@pytest.mark.skipif(sys.platform == 'win32', reason='Not implemented yet')
 @pytest.mark.parametrize('block_device', [(SIZES[0], SECTOR_SIZES[0])], indirect=True)
 def test_device_properties(block_device) -> None:
     """Test that the ``DeviceProperties`` tuple obtained from ``device_properties()``
