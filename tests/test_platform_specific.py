@@ -4,7 +4,7 @@ import sys
 
 import pytest
 
-from diskfs.base import SectorSize, is_power_of_two
+from diskfs.base import DeviceProperties, SectorSize, is_power_of_two
 
 # Test logic is the same, only parametrization has to be adjusted per platform.
 
@@ -28,6 +28,7 @@ elif sys.platform == 'linux':
         SectorSize(4096, 4096),
     ]
     SECTOR_SIZE_CUSTOMIZABLE = (True, False)  # only LSS customizable
+    DEVICE_PROPERTIES = DeviceProperties(False, None, None)
 
 elif sys.platform == 'darwin':
     from diskfs import darwin as platform_specific
@@ -35,6 +36,7 @@ elif sys.platform == 'darwin':
     SIZES = [2 * 4096, 3 * 4096]
     SECTOR_SIZES = [SectorSize(512, 512)]
     SECTOR_SIZE_CUSTOMIZABLE = (False, False)  # not customizable at all
+    DEVICE_PROPERTIES = DeviceProperties(True, 'Apple', 'Disk Image')
 
 else:
     raise RuntimeError(f'Unspported platform {sys.platform!r}')
@@ -47,18 +49,14 @@ SECTOR_SIZE_MAX_SANE = 16 * 1024 * 1024
 
 
 @pytest.mark.privileged
-@pytest.mark.skipif(sys.platform != 'linux', reason='Not implemented yet')
+@pytest.mark.skipif(sys.platform == 'win32', reason='Not implemented yet')
 @pytest.mark.parametrize('block_device', [(SIZES[0], SECTOR_SIZES[0])], indirect=True)
 def test_device_properties(block_device) -> None:
     """Test that the ``DeviceProperties`` tuple obtained from ``device_properties()``
     contains the expected values.
     """
     with open(block_device, 'rb') as f:
-        removable, vendor, model = platform_specific.device_properties(f)
-
-    assert removable is False
-    assert vendor is None
-    assert model is None
+        assert platform_specific.device_properties(f) == DEVICE_PROPERTIES
 
 
 @pytest.mark.privileged
