@@ -96,3 +96,13 @@ def test_device_size_sector_size(
             assert SECTOR_SIZE_MIN_SANE <= actual <= SECTOR_SIZE_MAX_SANE
 
     assert sector_size_actual.physical >= sector_size_actual.logical
+
+
+@pytest.mark.privileged
+@pytest.mark.parametrize('block_device', [(SIZES[0], SECTOR_SIZES[0])], indirect=True)
+def test_reread_partition_table(block_device):
+    """Test that correctly invoking ``reread_partition_table()`` does not raise an
+    exception.
+    """
+    with open(block_device, 'rb') as f:
+        platform_specific.reread_partition_table(f)
