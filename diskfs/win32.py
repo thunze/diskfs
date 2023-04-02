@@ -14,6 +14,7 @@ from ctypes import (
     WinError,
     byref,
     c_char,
+    c_char_p,
     c_uint,
     create_string_buffer,
     sizeof,
@@ -21,6 +22,7 @@ from ctypes import (
 )
 from ctypes.wintypes import (
     BOOL,
+    BOOLEAN,
     BYTE,
     DWORD,
     HANDLE,
@@ -29,9 +31,9 @@ from ctypes.wintypes import (
     LPVOID,
     WPARAM,
 )
-from typing import BinaryIO
+from typing import BinaryIO, TypeVar
 
-from .base import SectorSize
+from .base import DeviceProperties, SectorSize
 
 __all__ = [
     'device_io_control',
@@ -52,6 +54,7 @@ IOCTL_DISK_GET_DRIVE_GEOMETRY = 458752
 IOCTL_STORAGE_QUERY_PROPERTY = 2954240
 
 # IOCTL_STORAGE_QUERY_PROPERTY
+STORAGE_DEVICE_PROPERTY = 0  # value of enum STORAGE_PROPERTY_ID
 STORAGE_ACCESS_ALIGNMENT_PROPERTY = 6  # value of enum STORAGE_PROPERTY_ID
 PROPERTY_STANDARD_QUERY = 0  # value of enum STORAGE_QUERY_TYPE
 
@@ -73,6 +76,62 @@ class STORAGE_PROPERTY_QUERY(Structure):
         ('QueryType', c_uint),  # enum STORAGE_QUERY_TYPE
         ('AdditionalParameters', BYTE * 1),
     ]
+
+
+# noinspection PyPep8Naming
+class STORAGE_DESCRIPTOR_HEADER(Structure):
+    """Possible output structure for ``IOCTL_STORAGE_QUERY_PROPERTY`` when requesting
+    ``StorageDeviceProperty``.
+
+    Only used to determine the required buffer size for ``STORAGE_DEVICE_DESCRIPTOR``.
+    """
+
+    _fields_ = [
+        ('Version', DWORD),
+        ('Size', DWORD),
+    ]
+
+
+# noinspection PyPep8Naming
+def STORAGE_DEVICE_DESCRIPTOR(size: int) -> type[Structure]:
+    """Return the output structure for ``IOCTL_STORAGE_QUERY_PROPERTY`` of size
+    ``size`` when requesting ``StorageDeviceProperty``.
+    """
+
+    def with_raw_properties_size(raw_properties_size: int) -> type[Structure]:
+        """Return the ``STORAGE_DEVICE_DESCRIPTOR`` structure with the field
+        ``RawDeviceProperties`` being of size ``raw_properties_size``.
+        """
+        # noinspection PyPep8Naming
+        class STORAGE_DEVICE_DESCRIPTOR_(Structure):
+            """``STORAGE_DEVICE_DESCRIPTOR`` structure of dynamic size."""
+
+            _fields_ = [
+                ('Version', DWORD),
+                ('Size', DWORD),
+                ('DeviceType', BYTE),
+                ('DeviceTypeModifier', BYTE),
+                ('RemovableMedia', BOOLEAN),
+                ('CommandQueueing', BOOLEAN),
+                ('VendorIdOffset', DWORD),
+                ('ProductIdOffset', DWORD),
+                ('ProductRevisionOffset', DWORD),
+                ('SerialNumberOffset', DWORD),
+                ('BusType', c_uint),  # enum STORAGE_BUS_TYPE
+                ('RawPropertiesLength', DWORD),
+                ('RawDeviceProperties', BYTE * raw_properties_size),
+            ]
+
+        return STORAGE_DEVICE_DESCRIPTOR_
+
+    size_without_raw_properties = sizeof(with_raw_properties_size(0))
+    if size < size_without_raw_properties:
+        raise ValueError(
+            f'Size must be greater than or equal to size without raw properties block '
+            f'(got {size} instead of at least {size_without_raw_properties} bytes)'
+        )
+
+    return with_raw_properties_size(size - size_without_raw_properties)
 
 
 # noinspection PyPep8Naming
@@ -138,6 +197,67 @@ def device_io_control(
         raise WinError()
 
 
+_S = TypeVar('_S', bound=Structure)
+
+
+def storage_query_property(
+    file: BinaryIO,
+    storage_property_query: STORAGE_PROPERTY_QUERY,
+    out_structure_type: type[_S],
+) -> _S:
+    """Wrapper for calling ``DeviceIoControl()`` with ``IOCTL_STORAGE_QUERY_PROPERTY``.
+
+    :param file: IO handle for the block device.
+    :param storage_property_query: ``STORAGE_PROPERTY_QUERY`` to use as the input.
+    :param out_structure_type: ``Structure`` subclass used to parse the output.
+
+    Returns the parsed output as an instance of ``out_structure_type``.
+    """
+    # noinspection PyTypeChecker
+    in_buffer = create_string_buffer(bytes(storage_property_query))
+    out_buffer = create_string_buffer(sizeof(out_structure_type))
+    device_io_control(file, IOCTL_STORAGE_QUERY_PROPERTY, in_buffer, out_buffer)
+    return out_structure_type.from_buffer_copy(out_buffer)
+
+
+def device_properties(file: BinaryIO) -> DeviceProperties:
+    """Return additional properties of a block device.
+
+    :param file: IO handle for the block device.
+    """
+    query = STORAGE_PROPERTY_QUERY(
+        PropertyId=STORAGE_DEVICE_PROPERTY,
+        QueryType=PROPERTY_STANDARD_QUERY,
+        AdditionalParameters=(BYTE * 1)(0),
+    )
+    header = storage_query_property(file, query, STORAGE_DESCRIPTOR_HEADER)
+    storage_device_descriptor = STORAGE_DEVICE_DESCRIPTOR(header.Size)
+    properties = storage_query_property(file, query, storage_device_descriptor)
+
+    def unpack_ascii_string(offset: int) -> str | None:
+        """Unpack ASCII string starting at byte ``offset`` in ``out_buffer`` and
+        ``rstrip()`` the result.
+
+        Returns ``None`` if ``offset`` is 0 as this implies that the regarding
+        property is unavailable.
+        """
+        if offset == 0:
+            return None
+        # noinspection PyTypeChecker
+        null_terminated = bytes(properties)[offset:]
+        string_bytes = c_char_p(null_terminated).value  # cut off after \x00
+
+        if string_bytes is None:
+            return None
+        return string_bytes.decode('ascii').rstrip()
+
+    removable = bool(properties.RemovableMedia)
+    vendor = unpack_ascii_string(properties.VendorIdOffset)
+    model = unpack_ascii_string(properties.ProductIdOffset)
+
+    return DeviceProperties(removable, vendor, model)
+
+
 def device_size(file: BinaryIO) -> int:
     """Return the size of a block device.
 
@@ -159,16 +279,9 @@ def device_sector_size(file: BinaryIO) -> SectorSize:
         QueryType=PROPERTY_STANDARD_QUERY,
         AdditionalParameters=(BYTE * 1)(0),
     )
-    # noinspection PyTypeChecker
-    in_buffer = create_string_buffer(bytes(query))
-    out_buffer = create_string_buffer(sizeof(STORAGE_ACCESS_ALIGNMENT_DESCRIPTOR))
+    alignment = storage_query_property(file, query, STORAGE_ACCESS_ALIGNMENT_DESCRIPTOR)
+    return SectorSize(alignment.BytesPerLogicalSector, alignment.BytesPerPhysicalSector)
 
-    device_io_control(file, IOCTL_STORAGE_QUERY_PROPERTY, in_buffer, out_buffer)
-    alignment = STORAGE_ACCESS_ALIGNMENT_DESCRIPTOR.from_buffer_copy(out_buffer)
-    return SectorSize(
-        alignment.BytesPerLogicalSector,
-        alignment.BytesPerPhysicalSector,
-    )
 
 
 # skipcq: PYL-W0613
