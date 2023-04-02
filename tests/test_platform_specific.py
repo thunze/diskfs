@@ -1,4 +1,4 @@
-"""Tests for the platform-specific modules ``darwin``, ``linux`` and ``win32``."""
+"""Generalized tests for the platform-specific modules."""
 
 import sys
 
@@ -95,36 +95,3 @@ def test_device_size_sector_size(
             assert SECTOR_SIZE_MIN_SANE <= actual <= SECTOR_SIZE_MAX_SANE
 
     assert sector_size_actual.physical >= sector_size_actual.logical
-
-
-@pytest.mark.privileged
-@pytest.mark.skipif(
-    sys.platform != 'linux',
-    reason='reread_partition_table() is empty on non-Linux platforms',
-)
-@pytest.mark.parametrize('block_device', [(SIZES[0], SECTOR_SIZES[0])], indirect=True)
-def test_reread_partition_table(block_device):
-    """Test that correctly invoking ``reread_partition_table()`` does not raise an
-    exception.
-    """
-    with open(block_device, 'rb') as f:
-        platform_specific.reread_partition_table(f)
-
-
-@pytest.mark.skipif(
-    sys.platform != 'win32', reason='device_io_control() is only available on Windows'
-)
-def test_device_io_control_fail(tempfile):
-    """Test that ``device_io_control()`` raises an ``OSError`` with the ``winerror``
-    attribute set when called with an invalid combination of arguments for
-    ``DeviceIoControl()``.
-
-    In this case, the control code ``IOCTL_STORAGE_QUERY_PROPERTY`` expects an input
-    buffer to be passed to ``DeviceIoControl()`` which we do not provide.
-    """
-    if sys.platform == 'win32':  # make mypy happy
-        with tempfile.open('rb') as f, pytest.raises(OSError) as exc_info:
-            platform_specific.device_io_control(
-                f, platform_specific.IOCTL_STORAGE_QUERY_PROPERTY
-            )
-            assert exc_info.value.winerror is not None
