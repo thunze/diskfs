@@ -32,4 +32,12 @@ repos:
         additional_dependencies:
           - pytest>=7.1.2,<8.0.0
           - typing-extensions>=4.0.0,<5.0
-        args: []  # Make sure missing imports are flagged
+
+        # Select the current directory ('.') as the target directory and prevent
+        # pre-commit from passing single file paths to mypy to avoid *.py and *.pyi
+        # files with the same name to be recognized as distinct and thus duplicate
+        # modules.
+        # Also leave out --ignore-missing-imports to make sure missing imports are
+        # flagged.
+        args: ['.']
+        pass_filenames: false
