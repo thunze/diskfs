@@ -84,9 +84,11 @@ DIRECTORY_ENTRY_SIZE = 32
 
 
 class _BpbMeta(_ProtocolMeta):
+    """Meta-protocol to enable structural subtyping of BIOS parameter block classes."""
 
     # noinspection PyMethodParameters
     def __len__(cls) -> int:
+        """Size of the BPB in bytes."""
         ...
 
 
@@ -96,27 +98,37 @@ class Bpb(Protocol, metaclass=_BpbMeta):
 
     @classmethod
     def from_bytes(cls, b: bytes) -> Bpb:
+        """Parse BPB from ``bytes``."""
         ...
 
     def __bytes__(self) -> bytes:
+        """``bytes`` form of the BPB."""
         ...
 
     def __len__(self) -> int:
+        """Size of the BPB in bytes."""
         ...
 
-    def validate_for_volume(self, volume: 'Volume') -> None:
+    def validate_for_volume(self, volume: Volume) -> None:
+        """Validate the BPB against the metadata of ``volume``."""
         ...
 
     @property
     def bpb_dos_200(self) -> BpbDos200:
+        """Encapsulated DOS 2.0 BPB."""
         ...
 
     @property
     def total_size(self) -> int | None:
+        """Total size of the file system in logical sectors.
+
+        ``None`` if the total size is not defined in this BPB.
+        """
         ...
 
     @property
     def fat_size(self) -> int:
+        """Size of the FAT of the file system in logical sectors."""
         ...
 
 
