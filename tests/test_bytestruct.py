@@ -34,6 +34,8 @@ class ArbitraryByteStruct(ByteStruct):
 
 @dataclass(frozen=True)
 class CustomValidationByteStruct(ByteStruct):
+    """A valid ``ByteStruct`` subclass with custom validation logic."""
+
     f_1: Annotated[int, 4]
     f_2: Annotated[bytes, 2]
 
