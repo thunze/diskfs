@@ -231,8 +231,8 @@ class ByteStruct(metaclass=_ByteStructMeta):
         """Raise ``TypeError`` if it is tried to instantiate a subclass of
         ``ByteStruct`` which is not a frozen ``dataclass``.
         """
-        params: Any | Literal[False] = getattr(cls, '__dataclass_params__', False)
-        if not params or not params.frozen:
+        params: Any = getattr(cls, '__dataclass_params__', None)
+        if params is None or not params.frozen:
             raise TypeError('ByteStruct subclass must be a frozen dataclass')
 
     # noinspection PyUnusedLocal
