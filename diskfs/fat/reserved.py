@@ -29,6 +29,7 @@ __all__ = [
     'BootSector',
     'FsInfo',
     'CLUSTER_SIZE_DEFAULT',
+    'ROOTDIR_ENTRIES_DEFAULT',
     'MEDIA_TYPE_DEFAULT',
     'SECTORS_PER_TRACK_DEFAULT',
     'HEADS_DEFAULT',
@@ -62,13 +63,13 @@ OEM_NAMES_COMMON = (
 )
 SIGNATURE = b'\x55\xaa'
 
-# FS info sector
+# FS information sector
 FS_INFO_SIGNATURE_1 = b'RRaA'
 FS_INFO_SIGNATURE_2 = b'rrAa'
 FS_INFO_SIGNATURE_3 = b'\x00\x00' + SIGNATURE
 FS_INFO_UNKNOWN = 0xFFFFFFFF
 
-# defaults
+# Defaults
 CLUSTER_SIZE_DEFAULT = 16
 ROOTDIR_ENTRIES_DEFAULT = 240
 MEDIA_TYPE_DEFAULT = 0xF8
@@ -78,7 +79,7 @@ PHYSICAL_DRIVE_NUMBER_DEFAULT = 0x80
 VOLUME_LABEL_DEFAULT = b'NO NAME    '
 BOOT_CODE_DUMMY = b'\xF4\xEB\xFD'  # endless loop
 
-# other constants
+# Other constants
 DIRECTORY_ENTRY_SIZE = 32
 
 
@@ -148,19 +149,18 @@ class BpbDos200(ByteStruct):
             raise ValidationError('Reserved sector count must be greater than 0')
         if self.fat_count < 1:
             raise ValidationError('FAT count must be greater than 0')
+        if (self.rootdir_entries * DIRECTORY_ENTRY_SIZE) % self.lss != 0:
+            raise ValidationError(
+                'Root directory entries must align with logical sector size'
+            )
         if self.media_type <= 0xEF or (0xF1 <= self.media_type <= 0xF7):
-            raise ValidationError(f'Unsupported value media type {self.media_type}')
+            raise ValidationError(f'Unsupported media type 0x{self.media_type:x}')
 
     def validate_for_volume(self, volume: Volume) -> None:
-        lss = volume.sector_size.logical
-        if self.lss != lss:
+        if self.lss != volume.sector_size.logical:
             raise ValidationError(
                 'Logical sector size in DOS 2.0 BPB does not match logical sector '
                 'size of disk'
-            )
-        if (self.rootdir_entries * DIRECTORY_ENTRY_SIZE) % lss != 0:
-            raise ValidationError(
-                'Root directory entries must align with logical sector size of disk'
             )
         if self.total_size_200 > volume.size_lba:
             raise ValidationError('Total size must not be greater than volume size')
@@ -196,7 +196,7 @@ class BpbDos331(ByteStruct):
         if self.heads > HEADS_MAX:
             raise ValidationError(f'Head count must be a maximum of {HEADS_MAX}')
 
-        # total sizes must match if none of them is 0
+        # Total sizes must match if none of them is 0
         total_size_200 = self.bpb_dos_200_.total_size
         total_size_331 = self.total_size_331
         if total_size_200 and total_size_331 and total_size_200 != total_size_331:
@@ -582,8 +582,8 @@ class BootSector:
 
         if not self.boot_code.strip(b'\x00'):
             raise ValidationError(
-                f'Boot code must not be empty, use at least a dummy boot loader such '
-                f'as {BOOT_CODE_DUMMY!r}'
+                f'Boot code must not be empty, use at least a dummy boot loader, '
+                f'such as {BOOT_CODE_DUMMY!r}'
             )
 
     def validate_for_volume(self, volume: Volume) -> None:
