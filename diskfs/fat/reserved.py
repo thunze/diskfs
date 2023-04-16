@@ -203,10 +203,13 @@ class BpbDos331(ByteStruct):
     def validate(self) -> None:
         if self.sectors_per_track > SECTORS_PER_TRACK_MAX:
             raise ValidationError(
-                f'Sector count per track must be a maximum of {SECTORS_PER_TRACK_MAX}'
+                f'Sector count per track must be less than or equal to '
+                f'{SECTORS_PER_TRACK_MAX}'
             )
         if self.heads > HEADS_MAX:
-            raise ValidationError(f'Head count must be a maximum of {HEADS_MAX}')
+            raise ValidationError(
+                f'Head count must be a less than or equal to {HEADS_MAX}'
+            )
 
         # Total sizes must match if none of them is 0
         total_size_200 = self.bpb_dos_200_.total_size
