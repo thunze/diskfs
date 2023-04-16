@@ -36,9 +36,6 @@ __all__ = ['Disk']
 log = logging.getLogger(__name__)
 
 
-SECTOR_SIZE_DEFAULT = 512
-
-
 class Disk:
     """File or block device that one can access and manipulate.
 
@@ -65,9 +62,7 @@ class Disk:
         self.read_table()
 
     @classmethod
-    def new(
-        cls, path: StrPath, size: int, *, sector_size: int = SECTOR_SIZE_DEFAULT
-    ) -> Disk:
+    def new(cls, path: StrPath, size: int, *, sector_size: int = 512) -> Disk:
         """Create a new disk image at ``path``."""
         if size <= 0:
             raise ValueError('Disk size must be greater than 0')
