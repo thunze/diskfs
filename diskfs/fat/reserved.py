@@ -83,7 +83,7 @@ BOOT_CODE_DUMMY = b'\xF4\xEB\xFD'  # endless loop
 DIRECTORY_ENTRY_SIZE = 32
 
 
-class _BpbMeta(_ProtocolMeta):
+class _BpbMeta(_ProtocolMeta):  # pragma: no cover
     """Meta-protocol to enable structural subtyping of BIOS parameter block classes."""
 
     # noinspection PyMethodParameters
@@ -93,7 +93,7 @@ class _BpbMeta(_ProtocolMeta):
 
 
 # noinspection PyPropertyDefinition
-class Bpb(Protocol, metaclass=_BpbMeta):
+class Bpb(Protocol, metaclass=_BpbMeta):  # pragma: no cover
     """BIOS parameter block."""
 
     @classmethod
