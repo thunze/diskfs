@@ -4,15 +4,18 @@ from dataclasses import replace
 
 import pytest
 
-from diskfs.base import SectorSize, ValidationError
+from diskfs.base import SectorSize, ValidationError, ValidationWarning
 from diskfs.fat.reserved import (
     CLUSTER_SIZE_DEFAULT,
+    EXTENDED_BOOT_SIGNATURE_EXISTS,
     HEADS_DEFAULT,
     MEDIA_TYPE_DEFAULT,
+    PHYSICAL_DRIVE_NUMBER_DEFAULT,
     ROOTDIR_ENTRIES_DEFAULT,
     SECTORS_PER_TRACK_DEFAULT,
     BpbDos200,
     BpbDos331,
+    ShortEbpbFat,
 )
 from diskfs.volume import Volume
 
@@ -92,6 +95,19 @@ BPB_DOS_331_FAT32_EXAMPLE = BpbDos331(
     heads=HEADS_DEFAULT,
     hidden_before_partition=0,
     total_size_331=2097152,  # 6 + 2 * 1024 + 0 + 2095098 sectors
+)
+
+SHORT_EBPB_FAT12_EXAMPLE = ShortEbpbFat(
+    bpb_dos_331=BPB_DOS_331_FAT12_EXAMPLE,
+    physical_drive_number=PHYSICAL_DRIVE_NUMBER_DEFAULT,
+    reserved=0,
+    extended_boot_signature=EXTENDED_BOOT_SIGNATURE_EXISTS,
+)
+SHORT_EBPB_FAT16_EXAMPLE = ShortEbpbFat(
+    bpb_dos_331=BPB_DOS_331_FAT16_EXAMPLE,
+    physical_drive_number=PHYSICAL_DRIVE_NUMBER_DEFAULT,
+    reserved=0,
+    extended_boot_signature=EXTENDED_BOOT_SIGNATURE_EXISTS,
 )
 
 
@@ -376,4 +392,162 @@ class TestBpbDos331:
         assert bpb.bpb_dos_200 is bpb.bpb_dos_200_
         assert bpb.total_size == total_size
         assert bpb.fat_size == bpb.bpb_dos_200_.fat_size_200
-        assert bpb.total_size == total_size
+
+
+class TestShortEbpbFat:
+    """Tests for ``ShortEbpbFat``."""
+
+    @pytest.mark.parametrize(
+        'replace_kwargs',
+        [
+            {
+                'bpb_dos_331': replace(
+                    BPB_DOS_331_FAT16_EXAMPLE,
+                    bpb_dos_200_=replace(BPB_DOS_200_FAT16_EXAMPLE, lss=128),
+                )
+            },
+            {
+                'bpb_dos_331': replace(
+                    BPB_DOS_331_FAT16_EXAMPLE,
+                    bpb_dos_200_=replace(
+                        BPB_DOS_200_FAT16_EXAMPLE, lss=128, rootdir_entries=4
+                    ),
+                )
+            },
+            {
+                'bpb_dos_331': replace(
+                    BPB_DOS_331_FAT16_EXAMPLE,
+                    bpb_dos_200_=replace(BPB_DOS_200_FAT16_EXAMPLE, fat_size_200=1),
+                )
+            },
+            {'physical_drive_number': 0x00},
+            {'physical_drive_number': 0x40},
+            {'physical_drive_number': 0x7E},
+            {'physical_drive_number': 0xFE},
+            {'reserved': 1},
+            {'extended_boot_signature': b'\x28'},
+        ],
+    )
+    def test_validate_success(self, replace_kwargs):
+        """Test custom validation logic for succeeding cases."""
+        replace(SHORT_EBPB_FAT16_EXAMPLE, **replace_kwargs)
+
+    @pytest.mark.parametrize(
+        ['replace_kwargs', 'msg_contains'],
+        [
+            ({'physical_drive_number': 0x7F}, 'physical drive number'),
+            ({'physical_drive_number': 0xFF}, 'physical drive number'),
+        ],
+    )
+    def test_validate_warn(self, replace_kwargs, msg_contains):
+        """Test custom validation logic for succeeding cases with warnings issued."""
+        with pytest.warns(ValidationWarning, match=f'.*{msg_contains}.*'):
+            replace(SHORT_EBPB_FAT16_EXAMPLE, **replace_kwargs)
+
+    @pytest.mark.parametrize(
+        ['replace_kwargs', 'msg_contains'],
+        [
+            (
+                {
+                    'bpb_dos_331': replace(
+                        BPB_DOS_331_FAT16_EXAMPLE,
+                        bpb_dos_200_=replace(BPB_DOS_200_FAT16_EXAMPLE, lss=64),
+                    )
+                },
+                'FAT requires a logical sector size',
+            ),
+            (
+                {
+                    'bpb_dos_331': replace(
+                        BPB_DOS_331_FAT16_EXAMPLE,
+                        bpb_dos_200_=replace(BPB_DOS_200_FAT16_EXAMPLE, lss=32),
+                    )
+                },
+                'FAT requires a logical sector size',
+            ),
+            (
+                {
+                    'bpb_dos_331': replace(
+                        BPB_DOS_331_FAT16_EXAMPLE,
+                        bpb_dos_200_=replace(
+                            BPB_DOS_200_FAT16_EXAMPLE, rootdir_entries=0
+                        ),
+                    )
+                },
+                'Root directory entry count',
+            ),
+            (
+                {
+                    'bpb_dos_331': replace(
+                        BPB_DOS_331_FAT16_EXAMPLE,
+                        bpb_dos_200_=replace(BPB_DOS_200_FAT16_EXAMPLE, fat_size_200=0),
+                    )
+                },
+                r'FAT size.*2\.0',
+            ),
+            ({'extended_boot_signature': b'\x00'}, 'extended boot signature'),
+            ({'extended_boot_signature': b'\x27'}, 'extended boot signature'),
+            ({'extended_boot_signature': b'\x2A'}, 'extended boot signature'),
+            ({'extended_boot_signature': b'\xFF'}, 'extended boot signature'),
+        ],
+    )
+    def test_validate_fail(self, replace_kwargs, msg_contains):
+        """Test custom validation logic for failing cases."""
+        with pytest.raises(ValidationError, match=f'.*{msg_contains}.*'):
+            replace(SHORT_EBPB_FAT16_EXAMPLE, **replace_kwargs)
+
+    @pytest.mark.parametrize(
+        'volume_basic',
+        [(0, SHORT_EBPB_FAT16_EXAMPLE.bpb_dos_331.total_size_331 - 1, 512, 512)],
+        indirect=['volume_basic'],
+    )
+    def test_validate_for_volume_success(self, volume_basic):
+        """Test validation against a specific volume for succeeding cases."""
+        SHORT_EBPB_FAT16_EXAMPLE.validate_for_volume(volume_basic)
+
+    @pytest.mark.parametrize(
+        ['volume_basic', 'replace_kwargs', 'msg_contains'],
+        [
+            (
+                (
+                    0,
+                    SHORT_EBPB_FAT16_EXAMPLE.bpb_dos_331.total_size_331 - 1,
+                    4096,
+                    4096,
+                ),
+                {
+                    'bpb_dos_331': replace(
+                        BPB_DOS_331_FAT16_EXAMPLE,
+                        bpb_dos_200_=replace(
+                            BPB_DOS_200_FAT16_EXAMPLE, lss=512, rootdir_entries=16
+                        ),
+                    )
+                },
+                'Logical sector size.*disk',
+            ),
+            (
+                (0, SHORT_EBPB_FAT16_EXAMPLE.bpb_dos_331.total_size_331 - 1, 512, 512),
+                {
+                    'bpb_dos_331': replace(
+                        BPB_DOS_331_FAT16_EXAMPLE, hidden_before_partition=1
+                    )
+                },
+                'Hidden sector',
+            ),
+        ],
+        indirect=['volume_basic'],
+    )
+    def test_validate_for_volume_fail(self, volume_basic, replace_kwargs, msg_contains):
+        """Test validation against a specific volume for failing cases."""
+        bpb = replace(SHORT_EBPB_FAT16_EXAMPLE, **replace_kwargs)
+        with pytest.raises(ValidationError, match=f'.*{msg_contains}.*'):
+            bpb.validate_for_volume(volume_basic)
+
+    @pytest.mark.parametrize(
+        'bpb', [SHORT_EBPB_FAT12_EXAMPLE, SHORT_EBPB_FAT16_EXAMPLE]
+    )
+    def test_properties(self, bpb):
+        """Test that property values defined on BPBs match the expected values."""
+        assert bpb.bpb_dos_200 is bpb.bpb_dos_331.bpb_dos_200_
+        assert bpb.total_size == bpb.bpb_dos_331.total_size
+        assert bpb.fat_size == bpb.bpb_dos_331.fat_size
