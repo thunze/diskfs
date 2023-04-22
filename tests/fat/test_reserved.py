@@ -25,7 +25,7 @@ from diskfs.volume import Volume
 
 
 @pytest.fixture
-def volume_basic(request, monkeypatch):  # TODO: Rename
+def volume_meta(request, monkeypatch):
     """Fixture providing a surface-level mocked instance of ``Volume`` with
     customizable ``start_lba``, ``end_lba`` and ``sector_size`` values.
 
@@ -222,7 +222,7 @@ class TestBpbDos200:
             replace(BPB_DOS_200_FAT16_EXAMPLE, lss=lss, rootdir_entries=rootdir_entries)
 
     @pytest.mark.parametrize(
-        ['volume_basic', 'replace_kwargs'],
+        ['volume_meta', 'replace_kwargs'],
         [
             ((0, 2047, 512, 512), {'lss': 512, 'rootdir_entries': 16}),
             ((0, 2047, 512, 4096), {'lss': 512, 'rootdir_entries': 16}),
@@ -231,15 +231,15 @@ class TestBpbDos200:
             ((0, 2047, 512, 512), {'total_size_200': 2048}),
             ((0, 4095, 512, 512), {'total_size_200': 1001}),
         ],
-        indirect=['volume_basic'],
+        indirect=['volume_meta'],
     )
-    def test_validate_for_volume_success(self, volume_basic, replace_kwargs):
+    def test_validate_for_volume_success(self, volume_meta, replace_kwargs):
         """Test validation against a specific volume for succeeding cases."""
         bpb = replace(BPB_DOS_200_FAT16_EXAMPLE, **replace_kwargs)
-        bpb.validate_for_volume(volume_basic)
+        bpb.validate_for_volume(volume_meta)
 
     @pytest.mark.parametrize(
-        ['volume_basic', 'replace_kwargs', 'msg_contains'],
+        ['volume_meta', 'replace_kwargs', 'msg_contains'],
         [
             (
                 (0, 2048, 4096, 4096),
@@ -254,13 +254,13 @@ class TestBpbDos200:
             ((0, 2047, 512, 512), {'total_size_200': 4096}, 'Total size.*volume'),
             ((0, 4095, 512, 512), {'total_size_200': 4097}, 'Total size.*volume'),
         ],
-        indirect=['volume_basic'],
+        indirect=['volume_meta'],
     )
-    def test_validate_for_volume_fail(self, volume_basic, replace_kwargs, msg_contains):
+    def test_validate_for_volume_fail(self, volume_meta, replace_kwargs, msg_contains):
         """Test validation against a specific volume for failing cases."""
         bpb = replace(BPB_DOS_200_FAT16_EXAMPLE, **replace_kwargs)
         with pytest.raises(ValidationError, match=f'.*{msg_contains}.*'):
-            bpb.validate_for_volume(volume_basic)
+            bpb.validate_for_volume(volume_meta)
 
     @pytest.mark.parametrize(
         ['bpb', 'total_size'],
@@ -342,7 +342,7 @@ class TestBpbDos331:
             replace(BPB_DOS_331_FAT16_EXAMPLE, **replace_kwargs)
 
     @pytest.mark.parametrize(
-        ['volume_basic', 'replace_kwargs'],
+        ['volume_meta', 'replace_kwargs'],
         [
             (
                 (0, BPB_DOS_331_FAT16_EXAMPLE.total_size_331 - 1, 512, 512),
@@ -362,15 +362,15 @@ class TestBpbDos331:
             ((0, 99999, 512, 512), {'total_size_331': 100000}),
             ((0, 100999, 512, 512), {'total_size_331': 100000}),
         ],
-        indirect=['volume_basic'],
+        indirect=['volume_meta'],
     )
-    def test_validate_for_volume_success(self, volume_basic, replace_kwargs):
+    def test_validate_for_volume_success(self, volume_meta, replace_kwargs):
         """Test validation against a specific volume for succeeding cases."""
         bpb = replace(BPB_DOS_331_FAT16_EXAMPLE, **replace_kwargs)
-        bpb.validate_for_volume(volume_basic)
+        bpb.validate_for_volume(volume_meta)
 
     @pytest.mark.parametrize(
-        ['volume_basic', 'replace_kwargs', 'msg_contains'],
+        ['volume_meta', 'replace_kwargs', 'msg_contains'],
         [
             (
                 (0, 2048, 4096, 4096),
@@ -387,13 +387,13 @@ class TestBpbDos331:
             ((0, 4095, 512, 512), {'total_size_331': 4097}, 'Total size.*volume'),
             ((0, 99999, 512, 512), {'total_size_331': 101000}, 'Total size.*volume'),
         ],
-        indirect=['volume_basic'],
+        indirect=['volume_meta'],
     )
-    def test_validate_for_volume_fail(self, volume_basic, replace_kwargs, msg_contains):
+    def test_validate_for_volume_fail(self, volume_meta, replace_kwargs, msg_contains):
         """Test validation against a specific volume for failing cases."""
         bpb = replace(BPB_DOS_331_FAT16_EXAMPLE, **replace_kwargs)
         with pytest.raises(ValidationError, match=f'.*{msg_contains}.*'):
-            bpb.validate_for_volume(volume_basic)
+            bpb.validate_for_volume(volume_meta)
 
     @pytest.mark.parametrize(
         ['bpb', 'total_size'],
@@ -722,7 +722,7 @@ def test_validate_warn_phyiscal_drive_number(bpb, physical_drive_number):
 
 
 @pytest.mark.parametrize(
-    ['volume_basic', 'bpb'],
+    ['volume_meta', 'bpb'],
     [
         ((0, bpb.total_size - 1, 512, 512), bpb)  # type: ignore[attr-defined]
         for bpb in (  # TODO: Add long EBPBs
@@ -731,17 +731,17 @@ def test_validate_warn_phyiscal_drive_number(bpb, physical_drive_number):
             SHORT_EBPB_FAT32_EXAMPLE,
         )
     ],
-    indirect=['volume_basic'],
+    indirect=['volume_meta'],
 )
-def test_ebpb_validate_for_volume_success(volume_basic, bpb):
+def test_ebpb_validate_for_volume_success(volume_meta, bpb):
     """Test validation of EBPBs against a volume for specific succeeding cases common
     to all EBPBs.
     """
-    bpb.validate_for_volume(volume_basic)
+    bpb.validate_for_volume(volume_meta)
 
 
 @pytest.mark.parametrize(
-    ['volume_basic', 'bpb'],
+    ['volume_meta', 'bpb'],
     [
         ((0, bpb.total_size - 1, 4096, 4096), bpb)  # type: ignore[attr-defined]
         for bpb in (
@@ -750,9 +750,9 @@ def test_ebpb_validate_for_volume_success(volume_basic, bpb):
             SHORT_EBPB_FAT32_EXAMPLE,
         )
     ],
-    indirect=['volume_basic'],
+    indirect=['volume_meta'],
 )
-def test_ebpb_validate_for_volume_fail_bpb_dos_200(volume_basic, bpb):
+def test_ebpb_validate_for_volume_fail_bpb_dos_200(volume_meta, bpb):
     """Test validation of EBPBs against a volume for a failing case caused by an
     invalid value in the encapsulated DOS 2.0 BPB common to all EBPBs.
     """
@@ -767,11 +767,11 @@ def test_ebpb_validate_for_volume_fail_bpb_dos_200(volume_basic, bpb):
     bpb_new = short_new if bpb is short else replace(bpb, short=short_new)
 
     with pytest.raises(ValidationError, match='.*Logical sector size.*disk.*'):
-        bpb_new.validate_for_volume(volume_basic)
+        bpb_new.validate_for_volume(volume_meta)
 
 
 @pytest.mark.parametrize(
-    ['volume_basic', 'bpb'],
+    ['volume_meta', 'bpb'],
     [
         ((0, bpb.total_size - 1, 512, 512), bpb)  # type: ignore[attr-defined]
         for bpb in (
@@ -780,9 +780,9 @@ def test_ebpb_validate_for_volume_fail_bpb_dos_200(volume_basic, bpb):
             SHORT_EBPB_FAT32_EXAMPLE,
         )
     ],
-    indirect=['volume_basic'],
+    indirect=['volume_meta'],
 )
-def test_ebpb_validate_for_volume_fail_bpb_dos_331(volume_basic, bpb):
+def test_ebpb_validate_for_volume_fail_bpb_dos_331(volume_meta, bpb):
     """Test validation of EBPBs against a volume for a failing case caused by an
     invalid value in the encapsulated DOS 3.31 BPB common to all EBPBs.
     """
@@ -793,4 +793,4 @@ def test_ebpb_validate_for_volume_fail_bpb_dos_331(volume_basic, bpb):
     bpb_new = short_new if bpb is short else replace(bpb, short=short_new)
 
     with pytest.raises(ValidationError, match='.*Hidden sector.*'):
-        bpb_new.validate_for_volume(volume_basic)
+        bpb_new.validate_for_volume(volume_meta)
