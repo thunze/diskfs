@@ -120,7 +120,7 @@ class Bpb(Protocol, metaclass=_BpbMeta):  # pragma: no cover
 
     @property
     def total_size(self) -> int | None:
-        """Total size of the file system in logical sectors.
+        """Total size of the file system described by the BPB in logical sectors.
 
         ``None`` if the total size is not defined in this BPB.
         """
@@ -171,8 +171,8 @@ class BpbDos200(ByteStruct):
     def validate_for_volume(self, volume: Volume) -> None:
         if self.lss != volume.sector_size.logical:
             raise ValidationError(
-                'Logical sector size in DOS 2.0 BPB does not match logical sector '
-                'size of disk'
+                'Logical sector size defined in DOS 2.0 BPB does not match logical '
+                'sector size of disk'
             )
         if self.total_size_200 > volume.size_lba:
             raise ValidationError('Total size must not be greater than volume size')
@@ -242,6 +242,9 @@ class BpbDos331(ByteStruct):
 
 
 def _check_physical_drive_number(physical_drive_number: int) -> None:
+    """Issue ``ValidationWarning`` if ``physical_drive_number`` is a reserved EBPB
+    physical drive number value.
+    """
     if physical_drive_number in PHYSICAL_DRIVE_NUMBERS_RESERVED:
         warnings.warn(
             f'Reserved physical drive number {physical_drive_number}', ValidationWarning
@@ -249,6 +252,9 @@ def _check_physical_drive_number(physical_drive_number: int) -> None:
 
 
 def _check_extended_boot_signature(extended_boot_signature: bytes) -> None:
+    """Raise ``ValidationError`` if ``extended_boot_signature`` is an invalid EBPB
+    extended boot signature.
+    """
     if extended_boot_signature not in EXTENDED_BOOT_SIGNATURES:
         raise ValidationError(
             f'Invalid extended boot signature {extended_boot_signature!r}'
@@ -257,6 +263,7 @@ def _check_extended_boot_signature(extended_boot_signature: bytes) -> None:
 
 @dataclass(frozen=True)
 class ShortEbpbFat(ByteStruct):
+    """Shortened FAT12/16 extended BIOS parameter block."""
 
     bpb_dos_331: BpbDos331
     physical_drive_number: Annotated[int, 1]
@@ -264,7 +271,7 @@ class ShortEbpbFat(ByteStruct):
     extended_boot_signature: Annotated[bytes, 1]
 
     def validate(self) -> None:
-        # previous BPBs
+        # Previous BPBs
         if self.bpb_dos_331.bpb_dos_200.lss < MIN_LSS_FAT:
             raise ValidationError(
                 f'FAT requires a logical sector size of at least {MIN_LSS_FAT} bytes'
@@ -276,7 +283,7 @@ class ShortEbpbFat(ByteStruct):
                 'FAT size defined in DOS 2.0 BPB must be greater than 0'
             )
 
-        # this EBPB
+        # This EBPB
         _check_physical_drive_number(self.physical_drive_number)
         _check_extended_boot_signature(self.extended_boot_signature)
 
@@ -298,6 +305,7 @@ class ShortEbpbFat(ByteStruct):
 
 @dataclass(frozen=True)
 class ShortEbpbFat32(ByteStruct):
+    """Shortened FAT32 extended BIOS parameter block."""
 
     bpb_dos_331: BpbDos331
     fat_size_32: Annotated[int, 4]
@@ -325,7 +333,7 @@ class ShortEbpbFat32(ByteStruct):
         if self.bpb_dos_331.bpb_dos_200.fat_size != 0:
             raise ValidationError('FAT size defined in DOS 2.0 BPB must be 0')
 
-        # this EBPB
+        # This EBPB
         if self.fat_size_32 <= 0:
             raise ValidationError('FAT size must be greater than 0')
         if self.version != FAT32_VERSION:
@@ -389,7 +397,7 @@ class ShortEbpbFat32(ByteStruct):
 
 @dataclass(frozen=True)
 class EbpbFat(ByteStruct):
-    """FAT12 and FAT16 extended BIOS parameter block."""
+    """FAT12/16 extended BIOS parameter block."""
 
     short: ShortEbpbFat
     volume_id: Annotated[int, 4]
