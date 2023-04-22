@@ -321,7 +321,7 @@ class ShortEbpbFat32(ByteStruct):
     extended_boot_signature: Annotated[bytes, 1]
 
     def validate(self) -> None:
-        # previous BPBs
+        # Previous BPBs
         if self.bpb_dos_331.bpb_dos_200.lss < MIN_LSS_FAT32:
             raise ValidationError(
                 f'FAT32 requires a logical sector size of at least {MIN_LSS_FAT32} '
@@ -389,10 +389,17 @@ class ShortEbpbFat32(ByteStruct):
 
     @property
     def fsinfo_available(self) -> bool:
+        """Whether an FS information sector is present in the reserved region."""
         return self.fsinfo_sector not in SECTOR_NUMBERS_UNUSED
 
     @property
     def backup_available(self) -> bool:
+        """Whether a backup of the boot sectors is present in the reserved region.
+
+        In this context, the term "boot sectors" refers to LBA 0, the FS information
+        sector and other reserved sectors present in the reserved region before any
+        backup sector.
+        """
         return self.boot_sector_backup_start not in SECTOR_NUMBERS_UNUSED
 
 
@@ -481,10 +488,17 @@ class EbpbFat32(ByteStruct):
 
     @property
     def fsinfo_available(self) -> bool:
+        """Whether an FS information sector is present in the reserved region."""
         return self.short.fsinfo_available
 
     @property
     def backup_available(self) -> bool:
+        """Whether a backup of the boot sectors is present in the reserved region.
+
+        In this context, the term "boot sectors" refers to LBA 0, the FS information
+        sector and other reserved sectors present in the reserved region before any
+        backup sector.
+        """
         return self.short.backup_available
 
 
