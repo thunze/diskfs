@@ -23,7 +23,7 @@ def volume_basic(request, monkeypatch):
     customizable ``start_lba``, ``end_lba`` and ``sector_size`` values.
 
     Parametrized using a ``tuple`` of the desired values for ``start_lba``,
-    ``end_lba`` and ``sector_size``.
+    ``end_lba``, ``sector_size.logical`` and ``sector_size.physical``.
     """
     start, end, lss, pss = request.param
     size = end - start + 1
@@ -209,7 +209,7 @@ class TestBpbDos200:
         ['volume_basic', 'replace_kwargs', 'msg_contains'],
         [
             (
-                (0, 2048, 4096, 512),
+                (0, 2048, 4096, 4096),
                 {'lss': 512, 'rootdir_entries': 16},
                 'Logical sector size.*disk',
             ),
@@ -240,8 +240,8 @@ class TestBpbDos200:
     def test_properties(self, bpb, total_size):
         """Test that property values defined on BPBs match the expected values."""
         assert bpb.bpb_dos_200 is bpb
-        assert bpb.fat_size == bpb.fat_size_200
         assert bpb.total_size == total_size
+        assert bpb.fat_size == bpb.fat_size_200
 
 
 class TestBpbDos331:
@@ -340,7 +340,7 @@ class TestBpbDos331:
         ['volume_basic', 'replace_kwargs', 'msg_contains'],
         [
             (
-                (0, 2048, 4096, 512),
+                (0, 2048, 4096, 4096),
                 {
                     'bpb_dos_200_': replace(
                         BPB_DOS_200_FAT16_EXAMPLE, lss=512, rootdir_entries=16
@@ -374,5 +374,6 @@ class TestBpbDos331:
     def test_properties(self, bpb, total_size):
         """Test that property values defined on BPBs match the expected values."""
         assert bpb.bpb_dos_200 is bpb.bpb_dos_200_
+        assert bpb.total_size == total_size
         assert bpb.fat_size == bpb.bpb_dos_200_.fat_size_200
         assert bpb.total_size == total_size
