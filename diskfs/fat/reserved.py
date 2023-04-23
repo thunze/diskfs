@@ -507,6 +507,7 @@ class EbpbFat32(ByteStruct):
 
 @dataclass(frozen=True)
 class BootSectorStart(ByteStruct):
+    """First eleven bytes of a FAT boot sector."""
 
     jump_instruction: Annotated[bytes, 3]
     oem_name: Annotated[bytes, 8]
