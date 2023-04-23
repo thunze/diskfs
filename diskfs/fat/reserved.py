@@ -29,6 +29,7 @@ __all__ = [
     'BootSector',
     'FsInfo',
     'EXTENDED_BOOT_SIGNATURE_EXISTS',
+    'FILE_SYSTEM_TYPE_FAT32',
     'FAT32_VERSION',
     'FS_INFO_SECTOR',
     'CLUSTER_SIZE_DEFAULT',
