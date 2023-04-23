@@ -18,6 +18,7 @@ from diskfs.fat.reserved import (
     ROOTDIR_ENTRIES_DEFAULT,
     SECTORS_PER_TRACK_DEFAULT,
     VOLUME_LABEL_DEFAULT,
+    BootSectorStart,
     BpbDos200,
     BpbDos331,
     EbpbFat,
@@ -152,6 +153,7 @@ EBPB_FAT32_EXAMPLE = EbpbFat32(
 class TestBpbDos200:
     """Tests for ``BpbDos200``."""
 
+    # noinspection PyTypeChecker
     @pytest.mark.parametrize(
         'replace_kwargs',
         [{'lss': 1 << (exp + 5), 'rootdir_entries': 1 << exp} for exp in range(0, 9)]
@@ -1066,3 +1068,61 @@ def test_ebpb_validate_for_volume_fail_bpb_dos_331(volume_meta, bpb):
 
     with pytest.raises(ValidationError, match='.*Hidden sector.*'):
         bpb_new.validate_for_volume(volume_meta)
+
+
+class TestBootSectorStart:
+    """Tests for ``BootSectorStart``."""
+
+    @pytest.mark.parametrize(
+        ['jump_instruction', 'warning_expected'],
+        [
+            (b'\xEB\x00\x00', False),
+            (b'\xEB\x34\x90', False),
+            (b'\xEB\xFF\xFF', False),
+            (b'\xE9\x00\x00', False),
+            (b'\xE9\x65\x90', False),
+            (b'\xE9\xFF\xFF', False),
+            (b'\x90\xEB\x00', False),
+            (b'\x90\xEB\xFF', False),
+            (b'\xEA\x34\x90', True),
+            (b'\xEC\x34\x90', True),
+            (b'\xE8\x65\x90', True),
+            (b'\x89\xEB\xFF', True),
+            (b'\x91\xEB\xFF', True),
+            (b'\x90\xEC\xFF', True),
+            (b'\x00\x00\x00', True),
+            (b'\xF8\xF8\xF8', True),
+        ],
+    )
+    def test_validate_jump_instruction(self, jump_instruction, warning_expected):
+        """Test custom validation logic for ``jump_instruction``."""
+        if warning_expected:
+            with pytest.warns(ValidationWarning, match='.*jump instruction.*'):
+                BootSectorStart(jump_instruction, b'MSDOS5.0')
+        else:
+            with warnings.catch_warnings():
+                warnings.simplefilter("error")
+                BootSectorStart(jump_instruction, b'MSDOS5.0')
+
+    @pytest.mark.parametrize(
+        ['oem_name', 'warning_expected'],
+        [
+            (b'MSDOS5.0', False),
+            (b'MSWIN4.1', False),
+            (b'IBM  3.3', False),
+            (b'IBM  7.1', False),
+            (b'mkdosfs ', False),
+            (b'FreeDOS ', False),
+            (b'diskfs  ', True),
+            (b' OGACIHC', True),
+        ],
+    )
+    def test_validate_oem_name(self, oem_name, warning_expected):
+        """Test custom validation logic for ``oem_name``."""
+        if warning_expected:
+            with pytest.warns(ValidationWarning, match='.*OEM name.*'):
+                BootSectorStart(b'\xEB\x34\x90', oem_name)
+        else:
+            with warnings.catch_warnings():
+                warnings.simplefilter("error")
+                BootSectorStart(b'\xEB\x34\x90', oem_name)
