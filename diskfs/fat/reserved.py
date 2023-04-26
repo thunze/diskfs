@@ -577,6 +577,7 @@ class BootSector:
         start = BootSectorStart.from_bytes(b[:start_size])
 
         def parse_bpb(bpb_type: type[Bpb]) -> Bpb:
+            """Parse BPB of type ``bpb_type`` from ``b``."""
             bpb_size = len(bpb_type)
             bpb_end = start_size + bpb_size
             return bpb_type.from_bytes(b[start_size:bpb_end])
@@ -595,7 +596,7 @@ class BootSector:
                     pass
 
         if bpb is None:
-            raise ValidationError('No known BPB could be parsed')
+            raise ValidationError('No known FAT BPB could be parsed')
 
         boot_code_start = start_size + len(bpb)
         boot_code = b[boot_code_start:-signature_size]
