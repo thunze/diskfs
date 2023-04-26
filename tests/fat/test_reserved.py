@@ -1,11 +1,14 @@
 """Tests for the ``reserved`` module of the ``fat`` package."""
 
+from __future__ import annotations
+
 import warnings
-from dataclasses import replace
+from dataclasses import dataclass, replace
 
 import pytest
 
 from diskfs.base import SectorSize, ValidationError, ValidationWarning
+from diskfs.bytestruct import ByteStruct
 from diskfs.fat.reserved import (
     CLUSTER_SIZE_DEFAULT,
     EXTENDED_BOOT_SIGNATURE_EXISTS,
@@ -17,7 +20,9 @@ from diskfs.fat.reserved import (
     PHYSICAL_DRIVE_NUMBER_DEFAULT,
     ROOTDIR_ENTRIES_DEFAULT,
     SECTORS_PER_TRACK_DEFAULT,
+    SIGNATURE,
     VOLUME_LABEL_DEFAULT,
+    BootSector,
     BootSectorStart,
     BpbDos200,
     BpbDos331,
@@ -148,6 +153,17 @@ EBPB_FAT32_EXAMPLE = EbpbFat32(
     volume_label=VOLUME_LABEL_DEFAULT,
     file_system_type=FILE_SYSTEM_TYPE_FAT32,
 )
+
+SHORT_EBPB_FAT12_EXAMPLE_NOT_EXTENDED = replace(
+    SHORT_EBPB_FAT12_EXAMPLE, extended_boot_signature=b'\x28'
+)
+SHORT_EBPB_FAT16_EXAMPLE_NOT_EXTENDED = replace(
+    SHORT_EBPB_FAT16_EXAMPLE, extended_boot_signature=b'\x28'
+)
+SHORT_EBPB_FAT32_EXAMPLE_NOT_EXTENDED = replace(
+    SHORT_EBPB_FAT32_EXAMPLE, extended_boot_signature=b'\x28'
+)
+BOOT_SECTOR_START_EXAMPLE = BootSectorStart(b'\xEB\x34\x90', b'MSDOS5.0')
 
 
 class TestBpbDos200:
@@ -1126,3 +1142,158 @@ class TestBootSectorStart:
             with warnings.catch_warnings():
                 warnings.simplefilter("error")
                 BootSectorStart(b'\xEB\x34\x90', oem_name)
+
+
+@dataclass(frozen=True)
+class CustomBpb(ByteStruct):
+    """Custom BPB type defined for testing purposes, based on ``BpbDos200``."""
+
+    bpb_dos_200_: BpbDos200
+
+    def validate_for_volume(self, volume: Volume) -> None:
+        pass
+
+    @property
+    def bpb_dos_200(self) -> BpbDos200:
+        return self.bpb_dos_200_
+
+    @property
+    def total_size(self) -> int | None:
+        return self.bpb_dos_200_.total_size
+
+    @property
+    def fat_size(self) -> int:
+        return self.bpb_dos_200_.fat_size
+
+
+@dataclass(frozen=True)
+class CustomBpbValidateFail(CustomBpb):
+    """Custom BPB type always failing validation."""
+
+    def validate(self) -> None:
+        raise ValidationError('Custom BPB validation failed')
+
+
+@dataclass(frozen=True)
+class CustomBpbValidateForVolumeFail(CustomBpb):
+    """Custom BPB type always failing validation against a volume."""
+
+    def validate_for_volume(self, volume: Volume) -> None:
+        raise ValidationError('Custom BPB validation failed')
+
+
+class TestBootSector:
+    """Tests for ``BootSector``."""
+
+    @pytest.mark.parametrize(
+        'b', [b'', b'\x34', b'\xF8' * 511, b'\xF6' * 256, b'\xF7' * 513]
+    )
+    def test_from_bytes_fail_size(self, b):
+        """Test that ``from_bytes()`` raises ``ValueError`` when supplied with bytes
+        not of length 512.
+        """
+        with pytest.raises(ValueError, match='.*bytes long.*'):
+            BootSector.from_bytes(b)
+
+    @pytest.mark.parametrize(
+        'b', [b'\x00' * 512, b'\xAA' * 512, b'\x55' * 512, b'\xAA\x55' * 256]
+    )
+    def test_from_bytes_fail_signature(self, b):
+        """Test that ``from_bytes()`` raises ``ValidationError`` when supplied with
+        bytes not ending with the expected VBR signature.
+        """
+        with pytest.raises(ValidationError, match='.*signature.*'):
+            BootSector.from_bytes(b)
+
+    @pytest.mark.parametrize(
+        'b',
+        [
+            SIGNATURE * 256,
+            b'\x00' * 510 + SIGNATURE,
+            b'\xFF' * 510 + SIGNATURE,
+            b'\xF8' * 510 + SIGNATURE,
+        ],
+    )
+    def test_from_bytes_fail_no_known_fat_bpb(self, b):
+        """Test that ``from_bytes()`` raises ``ValidationError`` when supplied with
+        bytes containing a valid VBR signature but not containing any known FAT BPB.
+        """
+        with pytest.raises(ValidationError, match='.*FAT BPB.*'):
+            BootSector.from_bytes(b)
+
+    @pytest.mark.parametrize(
+        ['bpb_bytes', 'custom_bpb_type', 'msg_contains'],
+        [
+            (bytes(BPB_DOS_200_FAT12_EXAMPLE), CustomBpbValidateFail, 'Custom BPB'),
+            (
+                b'\x1f\x00' + bytes(BPB_DOS_200_FAT12_EXAMPLE)[2:],
+                CustomBpb,
+                'Logical sector size',
+            ),
+            (
+                b'\x1f\x00' + bytes(BPB_DOS_200_FAT16_EXAMPLE)[2:],
+                BpbDos200,
+                'Logical sector size',
+            ),
+        ],
+    )
+    def test_from_bytes_fail_custom_bpb(self, bpb_bytes, custom_bpb_type, msg_contains):
+        """Test that ``from_bytes()`` raises ``ValidationError`` through the
+        validation logic of a custom BPB when tried to create from bytes not passing
+        the BPB's validation logic.
+        """
+        b = (bytes(BOOT_SECTOR_START_EXAMPLE) + bpb_bytes).ljust(510) + SIGNATURE
+        with pytest.raises(ValidationError, match=f'.*{msg_contains}.*'):
+            # noinspection PyTypeChecker
+            BootSector.from_bytes(b, custom_bpb_type)
+
+    @pytest.mark.parametrize(
+        ['bpb', 'expected_bpb_type'],
+        [
+            (BPB_DOS_200_FAT12_EXAMPLE, BpbDos200),
+            (BPB_DOS_331_FAT16_EXAMPLE, BpbDos331),
+            (SHORT_EBPB_FAT12_EXAMPLE_NOT_EXTENDED, ShortEbpbFat),
+            (SHORT_EBPB_FAT16_EXAMPLE_NOT_EXTENDED, ShortEbpbFat),
+            (SHORT_EBPB_FAT32_EXAMPLE_NOT_EXTENDED, ShortEbpbFat32),
+            (EBPB_FAT12_EXAMPLE, EbpbFat),
+            (EBPB_FAT16_EXAMPLE, EbpbFat),
+            (EBPB_FAT32_EXAMPLE, EbpbFat32),
+            (CustomBpb(BPB_DOS_200_FAT12_EXAMPLE), BpbDos200),
+        ],
+    )
+    def test_from_bytes_success_standard_bpb(self, bpb, expected_bpb_type):
+        """Test ``from_bytes()`` for succeeding cases using the standard BPB types."""
+        b = (bytes(BOOT_SECTOR_START_EXAMPLE) + bytes(bpb)).ljust(510) + SIGNATURE
+        boot_sector = BootSector.from_bytes(b)
+        assert isinstance(boot_sector.bpb, expected_bpb_type)
+
+    @pytest.mark.parametrize(
+        ['bpb', 'custom_bpb_type'],
+        [
+            (BPB_DOS_200_FAT12_EXAMPLE, BpbDos200),
+            (BPB_DOS_331_FAT16_EXAMPLE, BpbDos331),
+            (SHORT_EBPB_FAT12_EXAMPLE_NOT_EXTENDED, BpbDos200),
+            (SHORT_EBPB_FAT12_EXAMPLE_NOT_EXTENDED, BpbDos331),
+            (SHORT_EBPB_FAT12_EXAMPLE_NOT_EXTENDED, ShortEbpbFat),
+            (SHORT_EBPB_FAT16_EXAMPLE_NOT_EXTENDED, BpbDos331),
+            (SHORT_EBPB_FAT16_EXAMPLE_NOT_EXTENDED, ShortEbpbFat),
+            (SHORT_EBPB_FAT32_EXAMPLE_NOT_EXTENDED, ShortEbpbFat32),
+            (EBPB_FAT12_EXAMPLE, BpbDos200),
+            (EBPB_FAT12_EXAMPLE, BpbDos331),
+            (EBPB_FAT12_EXAMPLE, ShortEbpbFat),
+            (EBPB_FAT12_EXAMPLE, EbpbFat),
+            (EBPB_FAT16_EXAMPLE, BpbDos331),
+            (EBPB_FAT16_EXAMPLE, ShortEbpbFat),
+            (EBPB_FAT16_EXAMPLE, EbpbFat),
+            (EBPB_FAT32_EXAMPLE, ShortEbpbFat32),
+            (EBPB_FAT32_EXAMPLE, EbpbFat32),
+            (CustomBpb(BPB_DOS_200_FAT12_EXAMPLE), BpbDos200),
+            (CustomBpb(BPB_DOS_200_FAT12_EXAMPLE), CustomBpb),
+        ],
+    )
+    def test_from_bytes_success_custom_bpb(self, bpb, custom_bpb_type):
+        """Test ``from_bytes()`` for succeeding cases using custom BPB types."""
+        b = (bytes(BOOT_SECTOR_START_EXAMPLE) + bytes(bpb)).ljust(510) + SIGNATURE
+        # noinspection PyTypeChecker
+        boot_sector = BootSector.from_bytes(b, custom_bpb_type)
+        assert isinstance(boot_sector.bpb, custom_bpb_type)
