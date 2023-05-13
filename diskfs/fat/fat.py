@@ -286,10 +286,6 @@ class Fat:
         return sum(1 for value in iter(self) if value == CLUSTER_EMPTY)
 
     @property
-    def entries(self) -> int:
-        return self._entries
-
-    @property
     def main_fat(self) -> int:
         """The selected main FAT."""
         return self._main_fat
