@@ -46,23 +46,23 @@ class Fat:
         fat_count = boot_sector.fat_region_size // boot_sector.fat_size
         fat_type = boot_sector.fat_type
 
-        # start sectors of available FATs
+        # Start sectors of available FATs
         fat_starts = tuple(
             boot_sector.fat_region_start + i * fat_size for i in range(fat_count)
         )
 
-        # data region starts with cluster 2
+        # Data region starts with cluster 2
         expected_fat_clusters = boot_sector.total_clusters + 2
         read_max = BAD_CLUSTER[fat_type]
 
-        # reading from clusters ...FF6 and ...FF7 should be allowed if they exist
+        # Reading from clusters ...FF6 and ...FF7 should be allowed if they exist
         if expected_fat_clusters > read_max + 1:
             raise ValueError(
                 f'Total cluster number {boot_sector.total_clusters} is greater than '
                 f'possible for FAT type {fat_type!s}'
             )
 
-        # round up for FAT12
+        # Round up for FAT12
         expected_fat_size_bytes = (expected_fat_clusters * fat_type.value - 1) // 8 + 1
         actual_fat_size_bytes = fat_size * volume.sector_size.logical
 
@@ -83,12 +83,12 @@ class Fat:
         self._fat_starts = fat_starts
         self._fat_type = fat_type
 
-        # Values: Actual buffer, fat sector offset, whether the buffer was altered
-        # Inserting dummy values here which are immediately replaced by _ensure_buffer.
+        # Values: Actual buffer, FAT sector offset, whether the buffer was altered
+        # Inserting dummy values here which are immediately replaced by _ensure_buffer()
         self._buffer: tuple[bytearray, int, bool] = (bytearray(), -1, False)
         self._ensure_buffer(0)
 
-        # check media descriptor entry
+        # Check media descriptor entry
         expected_media_type = boot_sector.bpb.bpb_dos_200.media_type
         actual_media_type = self[0] & 0xFF
         if actual_media_type != expected_media_type:
@@ -97,16 +97,21 @@ class Fat:
             )
 
     def _check_cluster_key(self, cluster: int) -> None:
+        """Raise ``IndexError`` if ``cluster`` not a valid cluster index for the FAT."""
         key_max = self._entries - 1
         if not 0 <= cluster <= key_max:
             raise IndexError(f'Cluster index must not exceed FAT bounds (0, {key_max})')
 
     def _check_cluster_value(self, cluster: int) -> None:
+        """Raise ``ValueError`` if ``cluster`` not a valid cluster value for the FAT."""
         value_max = CLUSTER_EOC[self._fat_type]
         if not 0 <= cluster <= value_max:
             raise ValueError(f'Cluster value must be in range (0, {value_max})')
 
     def _check_cluster_data_read(self, cluster: int) -> None:
+        """Raise ``ValueError`` if ``cluster`` is not the number of a readable cluster
+        with respect to the FAT.
+        """
         read_max = self._entries - 1
         if not 2 <= cluster <= read_max:
             raise ValueError(
@@ -114,6 +119,9 @@ class Fat:
             )
 
     def _check_cluster_data_write(self, cluster: int) -> None:
+        """Raise ``ValueError`` if ``cluster`` is not the number of a writable cluster
+        with respect to the FAT.
+        """
         write_max = min(self._entries, CLUSTER_AVOID_DATA[self._fat_type]) - 1
         if not 2 <= cluster <= write_max:
             raise ValueError(
@@ -121,14 +129,15 @@ class Fat:
             )
 
     def __len__(self) -> int:
+        """Number of FAT entries."""
         return self._entries
 
     def _ensure_buffer(self, sector_offset: int) -> None:
         """Ensure that the internal buffer holds the data (usually one sector)
-        found at start sector of main FAT + ``sector_offset``.
+        found at the start sector of the selected main FAT + ``sector_offset``.
 
         If a data range other than the one already held by the buffer is requested,
-        the buffer is flushed and the requested data is read from the disk.
+        the buffer is flushed before data is read from the disk.
 
         For FAT12, two sectors are read instead of one. This is done so that we don't
         have to worry about FAT12 entries spanning a sector boundary.
@@ -137,9 +146,9 @@ class Fat:
             raise ValueError(f'Offset {sector_offset} exceeds FAT size')
 
         if self._buffer[1] == sector_offset:
-            return  # same part of the FAT, do nothing
+            return  # Same part of the FAT, do nothing
         else:
-            self.flush()  # write to volume if there were changes
+            self.flush()  # Write to volume if there were changes
 
         start_sector = self._fat_starts[self._main_fat]
         if self._fat_type is FatType.FAT_12:
@@ -179,6 +188,7 @@ class Fat:
         return sector_offset, bytes_offset_sector, byte_count
 
     def __getitem__(self, key: int) -> int:
+        """Read the FAT entry with index ``key``."""
         self._check_cluster_key(key)
         sector_offset, bytes_offset_buffer, byte_count = self._get_io_info(key)
 
@@ -200,6 +210,7 @@ class Fat:
         return value
 
     def __setitem__(self, key: int, value: int) -> None:
+        """Set value of the FAT entry with index ``key``."""
         self._volume.check_writable()
 
         self._check_cluster_key(key)
@@ -222,22 +233,24 @@ class Fat:
                     value = (old_value & 0xF000) | (value & 0x0FFF)
 
             elif self._fat_type is FatType.FAT_32:
-                # high 4 bits are reserved, we must keep them
+                # High 4 bits are reserved, we must keep them
                 value = (old_value & 0xF0000000) | value
 
         value_bytes = value.to_bytes(byte_count, 'little')
         buffer[bytes_offset_sector : bytes_offset_sector + byte_count] = value_bytes
-        self._buffer = (buffer, sector_offset, True)  # we altered the buffer
+        self._buffer = (buffer, sector_offset, True)  # We altered the buffer
 
     def set_eoc(self, key: int) -> None:
+        """Mark FAT entry with index ``key`` as the end of a cluster chain."""
         eoc = CLUSTER_EOC[self._fat_type]
         self[key] = eoc
 
     def set_empty(self, key: int) -> None:
+        """Mark FAT entry with index ``key`` as unused."""
         self[key] = CLUSTER_EMPTY
 
     def get_chain(self, start_cluster: int) -> Iterator[int]:
-        """Yield cluster numbers of chain cluster with start ``start_cluster``."""
+        """Yield cluster numbers of cluster chain starting with ``start_cluster``."""
         bad_cluster = BAD_CLUSTER[self._fat_type]
         cluster = start_cluster
 
@@ -249,8 +262,10 @@ class Fat:
             cluster = self[cluster]
 
     def next_free_clusters(self, count: int) -> Iterator[int]:
+        """Yield the numbers of the next ``count`` free clusters."""
         avoid_data = CLUSTER_AVOID_DATA[self._fat_type]
-        found = 0  # free clusters already found
+        found = 0  # Count of free clusters already found
+        # noinspection PyTypeChecker
         for key, value in enumerate(iter(self)):
             if found == count:
                 return
@@ -262,6 +277,12 @@ class Fat:
         raise FileSystemLimit('Not enough free clusters available')
 
     def free_clusters(self) -> int:
+        """Return the total count of free clusters.
+
+        Currently very inefficient, even for FAT32 because the FS info sector is not
+        utilized.
+        """
+        # noinspection PyTypeChecker
         return sum(1 for value in iter(self) if value == CLUSTER_EMPTY)
 
     @property
@@ -270,4 +291,5 @@ class Fat:
 
     @property
     def main_fat(self) -> int:
+        """The selected main FAT."""
         return self._main_fat
