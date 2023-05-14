@@ -604,19 +604,22 @@ class BootSector:
         return cls(start, bpb, boot_code)
 
     def __bytes__(self) -> bytes:
+        """``bytes`` form of the boot sector."""
         return bytes(self.start) + bytes(self.bpb) + self.boot_code + SIGNATURE
 
     def __len__(self) -> int:
+        """Size of the boot sector in bytes."""
         return self.SIZE
 
     def validate(self) -> None:
+        """Validation logic."""
         len_all = len(self.start) + len(self.bpb) + len(self.boot_code) + len(SIGNATURE)
         if len_all != self.SIZE:
             raise ValidationError(
                 f'Invalid size of boot sector (expected {self.SIZE} bytes, got '
                 f'{len_all} bytes'
             )
-        if self.total_clusters < 1:  # also triggers validation of total_size
+        if self.total_clusters < 1:  # Also triggers validation of total_size
             raise ValidationError('Total cluster count must be greater than 0')
 
         fat_32_bpb = isinstance(self.bpb, (EbpbFat32, ShortEbpbFat32))
@@ -631,21 +634,23 @@ class BootSector:
             )
 
     def validate_for_volume(self, volume: Volume) -> None:
+        """Validate the boot sector against the metadata of ``volume``."""
         self.bpb.validate_for_volume(volume)
 
     def __post_init__(self) -> None:
+        """Execute validation logic after instance creation."""
         self.validate()
 
     @property
     def total_size(self) -> int:
-        """Total size occupied by the file system in sectors."""
+        """Total size of the file system in sectors."""
         if self.bpb.total_size is None:
             raise ValidationError('No total size was defined')
         return self.bpb.total_size
 
     @property
     def fat_size(self) -> int:
-        """Size of a file allocation table in sectors."""
+        """Size of a FAT of the file system in sectors."""
         return self.bpb.fat_size
 
     @property
@@ -668,7 +673,7 @@ class BootSector:
         """Size of root directory region in sectors. Always zero for FAT32."""
         entries = self.bpb.bpb_dos_200.rootdir_entries
         lss = self.bpb.bpb_dos_200.lss
-        # entries already align to lss of disk (checked in BpbDos200)
+        # Alignment to LSS of disk was already checked in BpbDos200
         return (entries * DIRECTORY_ENTRY_SIZE) // lss
 
     @property
@@ -683,14 +688,19 @@ class BootSector:
 
     @property
     def cluster_size(self) -> int:
+        """Size of a cluster in sectors."""
         return self.bpb.bpb_dos_200.cluster_size
 
     @property
     def total_clusters(self) -> int:
+        """Total clusters provided by the file system."""
         return self.data_region_size // self.cluster_size
 
     @property
     def fat_type(self) -> FatType:
+        """Type of FAT file system (FAT12, FAT16 or FAT32) according to the amount of
+        clusters provided by the file system.
+        """
         if self.total_clusters < 4085:
             return FatType.FAT_12
         elif self.total_clusters < 65525:
