@@ -628,9 +628,10 @@ class BootSector:
             raise ValidationError('Detected FAT type does not match BPB')
 
         if not self.boot_code.strip(b'\x00'):
-            raise ValidationError(
-                f'Boot code must not be empty, use at least a dummy boot loader, '
-                f'such as {BOOT_CODE_DUMMY!r}'
+            warnings.warn(
+                f'Boot code should not be empty, use at least a dummy boot loader, '
+                f'such as {BOOT_CODE_DUMMY!r}',
+                ValidationWarning,
             )
 
     def validate_for_volume(self, volume: Volume) -> None:
