@@ -27,7 +27,7 @@ __all__ = [
     'EbpbFat32',
     'BootSectorStart',
     'BootSector',
-    'FsInfo',
+    'FsInfoSector',
     'EXTENDED_BOOT_SIGNATURE_EXISTS',
     'FILE_SYSTEM_TYPE_FAT32',
     'FAT32_VERSION',
@@ -711,7 +711,7 @@ class BootSector:
 
 
 @dataclass(frozen=True)
-class FsInfo(ByteStruct):
+class FsInfoSector(ByteStruct):
     """FS information sector (FAT32 only)."""
 
     signature_1: Annotated[bytes, 4]
