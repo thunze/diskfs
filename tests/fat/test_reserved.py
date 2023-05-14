@@ -9,6 +9,7 @@ import pytest
 
 from diskfs.base import SectorSize, ValidationError, ValidationWarning
 from diskfs.bytestruct import ByteStruct
+from diskfs.fat.base import FatType
 from diskfs.fat.reserved import (
     CLUSTER_SIZE_DEFAULT,
     EXTENDED_BOOT_SIGNATURE_EXISTS,
@@ -24,6 +25,7 @@ from diskfs.fat.reserved import (
     VOLUME_LABEL_DEFAULT,
     BootSector,
     BootSectorStart,
+    Bpb,
     BpbDos200,
     BpbDos331,
     EbpbFat,
@@ -1182,8 +1184,36 @@ class CustomBpbValidateForVolumeFail(CustomBpb):
         raise ValidationError('Custom BPB validation failed')
 
 
+def ebpb_fat32_with_file_system_type_as_total_size(
+    file_system_type: bytes,
+) -> EbpbFat32:
+    """Return an example ``EbpbFat32`` with ``file_system_type`` set to
+    ``file_system_type`` and ``total_size_331`` set to 0.
+    """
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", ValidationWarning)
+        return replace(
+            EBPB_FAT32_EXAMPLE,
+            short=replace(
+                SHORT_EBPB_FAT32_EXAMPLE,
+                bpb_dos_331=replace(BPB_DOS_331_FAT32_EXAMPLE, total_size_331=0),
+            ),
+            file_system_type=file_system_type,
+        )
+
+
 class TestBootSector:
     """Tests for ``BootSector``."""
+
+    @staticmethod
+    def dummy_boot_code(bpb: Bpb, filler_byte: bytes = b'\xF8') -> bytes:
+        """Return dummy boot code of a length suitable when using ``bpb`` in a boot
+        sector.
+        """
+        boot_code_len = (
+            BootSector.SIZE - len(bpb) - len(BootSectorStart) - len(SIGNATURE)
+        )
+        return boot_code_len * filler_byte
 
     @pytest.mark.parametrize(
         'b', [b'', b'\x34', b'\xF8' * 511, b'\xF6' * 256, b'\xF7' * 513]
@@ -1213,6 +1243,10 @@ class TestBootSector:
             b'\xFF' * 510 + SIGNATURE,
             b'\xF8' * 510 + SIGNATURE,
         ],
+    )
+    @pytest.mark.filterwarnings(
+        'ignore:Unknown jump instruction pattern',
+        'ignore:Unknown OEM name',
     )
     def test_from_bytes_fail_no_known_fat_bpb(self, b):
         """Test that ``from_bytes()`` raises ``ValidationError`` when supplied with
@@ -1262,10 +1296,14 @@ class TestBootSector:
         ],
     )
     def test_from_bytes_success_standard_bpb(self, bpb, expected_bpb_type):
-        """Test ``from_bytes()`` for succeeding cases using the standard BPB types."""
+        """Test ``from_bytes()`` for succeeding cases using the standard BPB types.
+
+        Also test the behavior of ``__bytes__()`` for these cases.
+        """
         b = (bytes(BOOT_SECTOR_START_EXAMPLE) + bytes(bpb)).ljust(510) + SIGNATURE
         boot_sector = BootSector.from_bytes(b)
         assert isinstance(boot_sector.bpb, expected_bpb_type)
+        assert bytes(boot_sector) == b
 
     @pytest.mark.parametrize(
         ['bpb', 'custom_bpb_type'],
@@ -1292,8 +1330,288 @@ class TestBootSector:
         ],
     )
     def test_from_bytes_success_custom_bpb(self, bpb, custom_bpb_type):
-        """Test ``from_bytes()`` for succeeding cases using custom BPB types."""
+        """Test ``from_bytes()`` for succeeding cases using custom BPB types.
+
+        Also test the behavior of ``__bytes__()`` for these cases.
+        """
         b = (bytes(BOOT_SECTOR_START_EXAMPLE) + bytes(bpb)).ljust(510) + SIGNATURE
         # noinspection PyTypeChecker
         boot_sector = BootSector.from_bytes(b, custom_bpb_type)
         assert isinstance(boot_sector.bpb, custom_bpb_type)
+        assert bytes(boot_sector) == b
+
+    @pytest.mark.parametrize(
+        ['bpb', 'boot_code'],
+        [
+            (BPB_DOS_200_FAT12_EXAMPLE, b'\xF1' * 485),
+            (BPB_DOS_200_FAT12_EXAMPLE, b'\xF1' * 487),
+            (EBPB_FAT12_EXAMPLE, b'\xF2' * 447),
+            (EBPB_FAT12_EXAMPLE, b'\xF2' * 449),
+            (EBPB_FAT16_EXAMPLE, b'\xF3' * 447),
+            (EBPB_FAT16_EXAMPLE, b'\xF3' * 449),
+            (EBPB_FAT32_EXAMPLE, b'\xF4' * 419),
+            (EBPB_FAT32_EXAMPLE, b'\xF4' * 421),
+        ],
+    )
+    def test_validate_fail_size(self, bpb, boot_code):
+        """Test that ``validate()`` fails through instantiation for attribute
+        combinations of invalid total length.
+        """
+        with pytest.raises(ValidationError, match='.*size of boot sector.*'):
+            BootSector(BOOT_SECTOR_START_EXAMPLE, bpb, boot_code)
+
+    @pytest.mark.parametrize(
+        'bpb',
+        [
+            BPB_DOS_200_FAT16_EXAMPLE,
+            replace(BPB_DOS_331_FAT32_EXAMPLE, total_size_331=0),
+            replace(
+                SHORT_EBPB_FAT16_EXAMPLE_NOT_EXTENDED,
+                bpb_dos_331=replace(BPB_DOS_331_FAT16_EXAMPLE, total_size_331=0),
+            ),
+            replace(
+                SHORT_EBPB_FAT32_EXAMPLE_NOT_EXTENDED,
+                bpb_dos_331=replace(BPB_DOS_331_FAT32_EXAMPLE, total_size_331=0),
+            ),
+            replace(
+                EBPB_FAT16_EXAMPLE,
+                short=replace(
+                    SHORT_EBPB_FAT16_EXAMPLE,
+                    bpb_dos_331=replace(BPB_DOS_331_FAT16_EXAMPLE, total_size_331=0),
+                ),
+            ),
+            ebpb_fat32_with_file_system_type_as_total_size(b'\x00' * 8),
+        ],
+    )
+    @pytest.mark.filterwarnings('ignore:Unknown file system type')
+    def test_validate_fail_total_size(self, bpb):
+        """Test that ``validate()`` fails for boot sectors with BPBs not defining the
+        total size of the file system.
+
+        Test the same condition on boot sectors instantiated using ``from_bytes()``.
+        """
+        boot_code = self.dummy_boot_code(bpb)
+        with pytest.raises(ValidationError, match='.*total size.*'):
+            BootSector(BOOT_SECTOR_START_EXAMPLE, bpb, boot_code)
+        with pytest.raises(ValidationError, match='.*total size.*'):
+            b = bytes(BOOT_SECTOR_START_EXAMPLE) + bytes(bpb) + boot_code + SIGNATURE
+            BootSector.from_bytes(b)
+
+    @pytest.mark.parametrize(
+        'bpb',
+        [
+            replace(BPB_DOS_200_FAT12_EXAMPLE, total_size_200=24),
+            replace(BPB_DOS_200_FAT12_EXAMPLE, total_size_200=39),
+            replace(BPB_DOS_331_FAT16_EXAMPLE, total_size_331=81),
+            replace(BPB_DOS_331_FAT16_EXAMPLE, total_size_331=96),
+            replace(
+                SHORT_EBPB_FAT16_EXAMPLE_NOT_EXTENDED,
+                bpb_dos_331=replace(BPB_DOS_331_FAT16_EXAMPLE, total_size_331=96),
+            ),
+            replace(
+                SHORT_EBPB_FAT32_EXAMPLE_NOT_EXTENDED,
+                bpb_dos_331=replace(BPB_DOS_331_FAT32_EXAMPLE, total_size_331=2054),
+            ),
+            replace(
+                EBPB_FAT16_EXAMPLE,
+                short=replace(
+                    SHORT_EBPB_FAT16_EXAMPLE,
+                    bpb_dos_331=replace(BPB_DOS_331_FAT16_EXAMPLE, total_size_331=96),
+                ),
+            ),
+            replace(
+                EBPB_FAT32_EXAMPLE,
+                short=replace(
+                    SHORT_EBPB_FAT32_EXAMPLE,
+                    bpb_dos_331=replace(BPB_DOS_331_FAT32_EXAMPLE, total_size_331=2069),
+                ),
+            ),
+            ebpb_fat32_with_file_system_type_as_total_size(
+                b'\x01\x00\x00\x00\x00\x00\x00\x00'
+            ),
+        ],
+    )
+    @pytest.mark.filterwarnings('ignore:Unknown file system type')
+    def test_validate_fail_total_clusters(self, bpb):
+        """Test that ``validate()`` fails for boot sectors with BPBs implying a total
+        cluster size of zero.
+
+        Test the same condition on boot sectors instantiated using ``from_bytes()``.
+        """
+        boot_code = self.dummy_boot_code(bpb)
+        with pytest.raises(ValidationError, match='.*Total cluster.*'):
+            BootSector(BOOT_SECTOR_START_EXAMPLE, bpb, boot_code)
+        with pytest.raises(ValidationError, match='.*Total cluster.*'):
+            b = bytes(BOOT_SECTOR_START_EXAMPLE) + bytes(bpb) + boot_code + SIGNATURE
+            BootSector.from_bytes(b)
+
+    @pytest.mark.parametrize(
+        'bpb',
+        [
+            replace(BPB_DOS_331_FAT16_EXAMPLE, total_size_331=4294967295),
+            replace(
+                SHORT_EBPB_FAT16_EXAMPLE_NOT_EXTENDED,
+                bpb_dos_331=replace(
+                    BPB_DOS_331_FAT16_EXAMPLE, total_size_331=4294967295
+                ),
+            ),
+            replace(
+                EBPB_FAT16_EXAMPLE,
+                short=replace(
+                    SHORT_EBPB_FAT16_EXAMPLE,
+                    bpb_dos_331=replace(
+                        BPB_DOS_331_FAT16_EXAMPLE, total_size_331=4294967295
+                    ),
+                ),
+            ),
+            replace(
+                SHORT_EBPB_FAT32_EXAMPLE_NOT_EXTENDED,
+                bpb_dos_331=replace(BPB_DOS_331_FAT32_EXAMPLE, total_size_331=65328),
+            ),
+            replace(
+                SHORT_EBPB_FAT32_EXAMPLE_NOT_EXTENDED,
+                bpb_dos_331=replace(BPB_DOS_331_FAT32_EXAMPLE, total_size_331=1048400),
+            ),
+            replace(
+                EBPB_FAT32_EXAMPLE,
+                short=replace(
+                    SHORT_EBPB_FAT32_EXAMPLE,
+                    bpb_dos_331=replace(
+                        BPB_DOS_331_FAT32_EXAMPLE, total_size_331=65328
+                    ),
+                ),
+            ),
+            replace(
+                EBPB_FAT32_EXAMPLE,
+                short=replace(
+                    SHORT_EBPB_FAT32_EXAMPLE,
+                    bpb_dos_331=replace(
+                        BPB_DOS_331_FAT32_EXAMPLE, total_size_331=1048400
+                    ),
+                ),
+            ),
+            ebpb_fat32_with_file_system_type_as_total_size(
+                b'\x30\xff\x00\x00\x00\x00\x00\x00'
+            ),
+        ],
+    )
+    def test_validate_fail_detected_fat_type(self, bpb):
+        """Test that ``validate()`` fails for boot sectors with BPBs whose
+        structurally implied FAT type (e.g. ``EbpbFat32``) contradicts the total file
+        system size they define.
+        """
+        boot_code = self.dummy_boot_code(bpb)
+        with pytest.raises(ValidationError, match='.*FAT type.*'):
+            BootSector(BOOT_SECTOR_START_EXAMPLE, bpb, boot_code)
+
+    @pytest.mark.parametrize(
+        'bpb',
+        [
+            BPB_DOS_200_FAT12_EXAMPLE,
+            BPB_DOS_331_FAT16_EXAMPLE,
+            SHORT_EBPB_FAT16_EXAMPLE,
+            SHORT_EBPB_FAT32_EXAMPLE,
+            EBPB_FAT16_EXAMPLE,
+            EBPB_FAT32_EXAMPLE,
+        ],
+    )
+    def test_validate_warn_empty_boot_code(self, bpb):
+        """Test that ``validate()`` issues a warning for empty boot code."""
+        boot_code = self.dummy_boot_code(bpb, b'\x00')
+        with pytest.warns(ValidationWarning, match='.*Boot code.*'):
+            BootSector(BOOT_SECTOR_START_EXAMPLE, bpb, boot_code)
+
+    @pytest.mark.parametrize(
+        ['volume_meta', 'bpb'],
+        [
+            ((0, bpb.total_size - 1, 4096, 4096), bpb)  # type: ignore[attr-defined]
+            for bpb in (
+                BPB_DOS_200_FAT12_EXAMPLE,
+                BPB_DOS_331_FAT16_EXAMPLE,
+                replace(
+                    BPB_DOS_331_FAT16_EXAMPLE,
+                    bpb_dos_200_=replace(
+                        BPB_DOS_200_FAT16_EXAMPLE, lss=4096, rootdir_entries=1920
+                    ),
+                    hidden_before_partition=1,
+                ),
+                EBPB_FAT32_EXAMPLE,
+            )
+        ],
+        indirect=['volume_meta'],
+    )
+    def test_validate_for_volume_fail(self, volume_meta, bpb):
+        """Test that ``validate_for_volume()`` fails if the validation of the
+        encapsulated BPB against the volume fails.
+        """
+        boot_code = self.dummy_boot_code(bpb)
+        boot_sector = BootSector(BOOT_SECTOR_START_EXAMPLE, bpb, boot_code)
+        with pytest.raises(ValidationError, match='.*(volume|disk).*'):
+            boot_sector.validate_for_volume(volume_meta)
+
+    # noinspection PyTypeChecker
+    @pytest.mark.parametrize(
+        [
+            'bpb',
+            'fat_region_start',
+            'fat_region_size',
+            'rootdir_region_start',
+            'rootdir_region_size',
+            'data_region_start',
+            'data_region_size',
+            'total_size',
+            'total_clusters',
+            'fat_type',
+        ],
+        [
+            (bpb, 1, 8, 9, 15, 24, 40936, 40960, 2558, FatType.FAT_12)
+            for bpb in (
+                BPB_DOS_200_FAT12_EXAMPLE,
+                BPB_DOS_331_FAT12_EXAMPLE,
+                SHORT_EBPB_FAT12_EXAMPLE,
+                EBPB_FAT12_EXAMPLE,
+            )
+        ]
+        + [
+            (bpb, 2, 64, 66, 15, 81, 130991, 131072, 8186, FatType.FAT_16)
+            for bpb in (
+                BPB_DOS_331_FAT16_EXAMPLE,
+                SHORT_EBPB_FAT16_EXAMPLE,
+                EBPB_FAT16_EXAMPLE,
+            )
+        ]
+        + [
+            (bpb, 6, 2048, 2054, 0, 2054, 2095098, 2097152, 130943, FatType.FAT_32)
+            for bpb in (SHORT_EBPB_FAT32_EXAMPLE, EBPB_FAT32_EXAMPLE)
+        ],
+    )
+    def test_properties(
+        self,
+        bpb,
+        fat_region_start,
+        fat_region_size,
+        rootdir_region_start,
+        rootdir_region_size,
+        data_region_start,
+        data_region_size,
+        total_size,
+        total_clusters,
+        fat_type,
+    ):
+        """Test that property values defined on boot sectors with different BPBs
+        match the expected values.
+        """
+        boot_code = self.dummy_boot_code(bpb)
+        boot_sector = BootSector(BOOT_SECTOR_START_EXAMPLE, bpb, boot_code)
+        assert len(boot_sector) == 512
+        assert boot_sector.total_size == total_size
+        assert boot_sector.fat_size == bpb.fat_size
+        assert boot_sector.fat_region_start == fat_region_start
+        assert boot_sector.fat_region_size == fat_region_size
+        assert boot_sector.rootdir_region_start == rootdir_region_start
+        assert boot_sector.rootdir_region_size == rootdir_region_size
+        assert boot_sector.data_region_start == data_region_start
+        assert boot_sector.data_region_size == data_region_size
+        assert boot_sector.cluster_size == 16
+        assert boot_sector.total_clusters == total_clusters
+        assert boot_sector.fat_type is fat_type
