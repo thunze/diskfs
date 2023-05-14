@@ -133,7 +133,7 @@ class Bpb(Protocol, metaclass=_BpbMeta):  # pragma: no cover
 
     @property
     def fat_size(self) -> int:
-        """Size of the FAT of the file system in logical sectors."""
+        """Size of a FAT of the file system in logical sectors."""
         ...
 
 
