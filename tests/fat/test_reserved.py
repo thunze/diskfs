@@ -16,6 +16,10 @@ from diskfs.fat.reserved import (
     FAT32_VERSION,
     FILE_SYSTEM_TYPE_FAT32,
     FS_INFO_SECTOR,
+    FS_INFO_SIGNATURE_1,
+    FS_INFO_SIGNATURE_2,
+    FS_INFO_SIGNATURE_3,
+    FS_INFO_UNKNOWN,
     HEADS_DEFAULT,
     MEDIA_TYPE_DEFAULT,
     PHYSICAL_DRIVE_NUMBER_DEFAULT,
@@ -30,6 +34,7 @@ from diskfs.fat.reserved import (
     BpbDos331,
     EbpbFat,
     EbpbFat32,
+    FsInfoSector,
     ShortEbpbFat,
     ShortEbpbFat32,
 )
@@ -166,6 +171,17 @@ SHORT_EBPB_FAT32_EXAMPLE_NOT_EXTENDED = replace(
     SHORT_EBPB_FAT32_EXAMPLE, extended_boot_signature=b'\x28'
 )
 BOOT_SECTOR_START_EXAMPLE = BootSectorStart(b'\xEB\x34\x90', b'MSDOS5.0')
+
+# State after formatting
+FS_INFO_SECTOR_EXAMPLE = FsInfoSector(
+    FS_INFO_SIGNATURE_1,
+    b'\x00' * 480,
+    FS_INFO_SIGNATURE_2,
+    FS_INFO_UNKNOWN,
+    FS_INFO_UNKNOWN,
+    b'\x00' * 12,
+    FS_INFO_SIGNATURE_3,
+)
 
 
 class TestBpbDos200:
@@ -1615,3 +1631,33 @@ class TestBootSector:
         assert boot_sector.cluster_size == 16
         assert boot_sector.total_clusters == total_clusters
         assert boot_sector.fat_type is fat_type
+
+
+class TestFsInfoSector:
+    """Tests for ``FsInfoSector``."""
+
+    @pytest.mark.parametrize(
+        'replace_kwargs',
+        [
+            {'free_clusters': 0},
+            {'free_clusters': 1080},
+            {'last_allocated_cluster': 2},
+            {'last_allocated_cluster': 545},
+        ],
+    )
+    def test_validate_success(self, replace_kwargs):
+        """Test custom validation logic for succeeding cases."""
+        replace(FS_INFO_SECTOR_EXAMPLE, **replace_kwargs)
+
+    @pytest.mark.parametrize(
+        ['replace_kwargs', 'msg_contains'],
+        [
+            ({'signature_1': b'\x01\x02\x03\x04'}, '.*first.*signature.*'),
+            ({'signature_2': b'\x01\x02\x03\x04'}, '.*second.*signature.*'),
+            ({'signature_3': b'\xaa\x55\x00\x00'}, '.*third.*signature.*'),
+        ],
+    )
+    def test_validate_fail(self, replace_kwargs, msg_contains):
+        """Test custom validation logic for failing cases."""
+        with pytest.raises(ValidationError, match=f'.*{msg_contains}.*'):
+            replace(FS_INFO_SECTOR_EXAMPLE, **replace_kwargs)
