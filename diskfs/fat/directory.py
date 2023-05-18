@@ -37,20 +37,20 @@ ENTRY_SIZE = 32
 MAX_VFAT_ENTRIES = 20
 
 DOS_FILENAME_OEM_ENCODING = '850'
-"""OEM encoding used for DOS file names.
+"""OEM encoding used for DOS filenames.
 
-DOS file names support characters < 256, but the encoding of characters >= 128
-depends on the file system driver. We cannot know in advance which encoding was used
-to encode file names on the file system, so we go for code page 850 as the default.
-This constant is meant to be changed if needed but it should only be changed to names
-of 8-bit 1-byte encodings.
+DOS filenames support characters < 256, but the encoding of characters >= 128 depends
+on the file system driver. We cannot know in advance which encoding was used to
+encode filenames on the file system, so we go for code page 850 as the default. This
+constant is meant to be changed if needed but it should only be changed to names of
+8-bit 1-byte encodings.
 On Windows, you can find out the active code page by executing the command ``chcp``
 or by calling ``GetConsoleOutputCP()`` found in ``kernel32.dll``.
 """
 
-# Applies to already unpacked DOS file names.
+# Applies to already unpacked DOS filenames.
 # Implicitly includes characters already found in VFAT_FILENAME_FORBIDDEN and all
-# lowercase characters (depending on the OEM codepage).
+# lowercase characters (depending on the OEM code page).
 DOS_FILENAME_FORBIDDEN = '+,.;=[]'
 
 VFAT_FILENAME_MAX_LENGTH = 255
@@ -66,10 +66,10 @@ DOS_YEAR_MAX = 2107
 
 
 class Hint(Enum):
-    """Possible special meanings of the first character of a short file name.
+    """Possible special meanings of the first character of a short filename.
 
-    This excludes 0x05 (meaning that the first character of the short file name is
-    actually 0xE5) because it only needs to be handled in file name packing and
+    This excludes 0x05 (meaning that the first character of the short filename is
+    actually 0xE5) because it only needs to be handled in filename packing and
     unpacking.
     """
 
@@ -94,6 +94,13 @@ class Attributes(Flag):
 
 
 def _split_filename(filename: str) -> tuple[str, str]:
+    """Split ``filename`` into name and (rightmost) extension.
+
+    Examples:
+        - 'thing.json' -> ('thing', 'json')
+        - 'thing.json.txt' -> ('thing.json', 'txt')
+        - 'thing' -> ('thing', '')
+    """
     split_ = filename.rsplit('.', maxsplit=1)
     if len(split_) > 2:
         raise RuntimeError(f'File name splitting failed (got {split_})')
@@ -103,12 +110,15 @@ def _split_filename(filename: str) -> tuple[str, str]:
 
 
 def _pack_dos_filename(filename: str) -> tuple[bytes, bytes]:
-    """Pack a DOS file name."""
+    """Pack a DOS filename into a name of 8 bytes and an extension of 3 bytes.
+
+    Assumption: Length and validity of the filename have already been checked.
+    """
     name_str, ext_str = _split_filename(filename)
     name_bytes = name_str.encode(DOS_FILENAME_OEM_ENCODING)
     ext_bytes = ext_str.encode(DOS_FILENAME_OEM_ENCODING)
 
-    # pad with spaces
+    # Pad with spaces
     packed_name = name_bytes.ljust(8)
     packed_ext = ext_bytes.ljust(3)
     if packed_name[0] == Hint.DELETED.value:
@@ -117,10 +127,10 @@ def _pack_dos_filename(filename: str) -> tuple[bytes, bytes]:
 
 
 def _unpack_dos_filename(name_bytes: bytes, ext_bytes: bytes) -> str:
-    """Unpack a DOS file name.
+    """Unpack a DOS filename from a name of 8 bytes and an extension of 3 bytes.
 
     Characters which cannot be decoded using ``DOS_FILENAME_OEM_ENCODING`` are
-    replaced by replacement character ``U+FFFD``.
+    replaced by the Unicode replacement character ``U+FFFD``.
     """
     unpacked_name = name_bytes.rstrip(b' ')
     unpacked_ext = ext_bytes.rstrip(b' ')
@@ -136,28 +146,27 @@ def _unpack_dos_filename(name_bytes: bytes, ext_bytes: bytes) -> str:
 
 
 def _is_invalid_dos_character(char: str) -> bool:
-    """Return whether ``char`` represents a character explicitly not allowed in DOS
-    file names.
+    """Return whether ``char`` is a character not allowed in DOS filenames.
 
-    Characters already banned by general FAT file name rules are not considered by
-    this check (see ``_is_valid_vfat_filename``).
+    Characters already prohibited by general FAT filename rules are not considered by
+    this check (see ``_is_valid_vfat_filename()``).
     """
     try:
         char.encode(DOS_FILENAME_OEM_ENCODING)
     except UnicodeEncodeError:
         return True
 
-    # islower() check is necessary to rule out any potential lowercase
-    # characters specific to the OEM encoding (codepoints 128-255).
+    # The islower() check is necessary to rule out any potential lowercase characters
+    # specific to the OEM encoding (codepoints 128-255) in addition to [a-z].
     return char in DOS_FILENAME_FORBIDDEN or char.islower()
 
 
 def _has_invalid_dos_character(filename: str) -> bool:
-    """Return whether ``filename`` contains at least one character explicitly not
-    allowed in DOS file names.
+    """Return whether ``filename`` contains at least one character not allowed in DOS
+    filenames.
 
-    Characters already banned by general FAT file name rules are not considered by
-    this check (see ``_is_valid_vfat_filename``).
+    Characters already prohibited by general FAT filename rules are not considered by
+    this check (see ``_is_valid_vfat_filename()``).
     """
     for part in _split_filename(filename):
         if any(_is_invalid_dos_character(char) for char in part):
@@ -166,6 +175,7 @@ def _has_invalid_dos_character(filename: str) -> bool:
 
 
 def _is_valid_dos_filename(filename: str) -> bool:
+    """Return whether ``filename`` is a valid DOS filename."""
     name, ext = _split_filename(filename)
     return (
         _is_valid_vfat_filename(filename)
@@ -177,6 +187,7 @@ def _is_valid_dos_filename(filename: str) -> bool:
 
 
 def _is_valid_vfat_filename(filename: str) -> bool:
+    """Return whether ``filename`` is a valid VFAT filename."""
     try:
         filename.encode('utf-16le')
     except UnicodeEncodeError:
@@ -191,31 +202,35 @@ def _is_valid_vfat_filename(filename: str) -> bool:
 
 
 def _check_vfat_filename(filename: str) -> None:
-    """Validate a VFAT file name.
+    """Check that ``filename`` is a valid VFAT filename.
 
-    Because VFAT file names are a superset of DOS file names, this is a check every
-    new file name must pass.
+    Because VFAT filenames are a superset of DOS filenames, this is a check every new
+    filename must pass.
     """
     if not _is_valid_vfat_filename(filename):
-        raise ValidationError(f'Invalid file name {filename!r}')
+        raise ValidationError(f'Invalid filename {filename!r}')
 
 
 def _requires_vfat(filename: str) -> bool:
-    """Check whether VFAT must be enabled to correctly store the given file name.
+    """Return whether storing ``filename`` requires the VFAT extension to be enabled.
 
-    This function is separate from ``_to_be_saved_as_vfat`` because setting case info
-    is only supported when VFAT is enabled.
+    This function is separate from ``_to_be_saved_as_vfat()`` because setting case
+    info for a filename – which in theory would not require any VFAT LFN entries – is
+    only supported when VFAT is enabled.
     """
     return not _is_valid_dos_filename(filename)
 
 
 def _to_be_saved_as_vfat(filename: str) -> bool:
-    """Check whether a VFAT LFN must be used to correctly store the given file name."""
+    """Return whether a VFAT LFN must be used to correctly store ``filename``.
+
+    If not, a single 8.3 entry with case info can be used.
+    """
     name, ext = _split_filename(filename)
     return (
         not (name == '' or name.isupper() or name.islower())
         or not (ext == '' or ext.isupper() or ext.islower())
-        # pass filename.upper() because _is_valid_dos_filename rejects mixed case
+        # Pass filename.upper() because _is_valid_dos_filename() rejects lowercase parts
         or not _is_valid_dos_filename(filename.upper())
     )
 
