@@ -102,8 +102,7 @@ def _split_filename(filename: str) -> tuple[str, str]:
         - 'thing' -> ('thing', '')
     """
     split_ = filename.rsplit('.', maxsplit=1)
-    if len(split_) > 2:
-        raise RuntimeError(f'File name splitting failed (got {split_})')
+    assert len(split_) <= 2
     if len(split_) == 1:
         return split_[0], ''
     return split_[0], split_[1]
@@ -139,10 +138,9 @@ def _unpack_dos_filename(name_bytes: bytes, ext_bytes: bytes) -> str:
 
     name_str = unpacked_name.decode(DOS_FILENAME_OEM_ENCODING, errors='replace')
     ext_str = unpacked_ext.decode(DOS_FILENAME_OEM_ENCODING, errors='replace')
-    if ext_str == '':
-        return name_str
-    else:
+    if ext_str:
         return f'{name_str}.{ext_str}'
+    return name_str
 
 
 def _is_invalid_dos_character(char: str) -> bool:
