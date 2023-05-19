@@ -234,6 +234,10 @@ def _to_be_saved_as_vfat(filename: str) -> bool:
 
 
 def _get_case_info(filename: str) -> int:
+    """Return case information flags for ``filename``.
+
+    Assumption: ``filename.upper()`` is a valid DOS filename.
+    """
     name, ext = _split_filename(filename)
     case_info = 0
 
