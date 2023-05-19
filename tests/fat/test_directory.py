@@ -6,8 +6,11 @@ from diskfs.base import ValidationError
 
 # noinspection PyProtectedMember
 from diskfs.fat.directory import (
+    CASE_INFO_EXT_LOWER,
+    CASE_INFO_NAME_LOWER,
     DOS_FILENAME_OEM_ENCODING,
     _check_vfat_filename,
+    _get_case_info,
     _is_valid_dos_filename,
     _is_valid_vfat_filename,
     _pack_dos_filename,
@@ -210,3 +213,27 @@ def test_invalid_vfat_filename(filename):
     assert not _is_valid_dos_filename(filename)
     with pytest.raises(ValidationError, match='Invalid filename.*'):
         _check_vfat_filename(filename)
+
+
+@pytest.mark.parametrize(
+    ['filename', 'name_lower', 'ext_lower'],
+    [
+        ('coffee', True, False),
+        ('cöffee', True, False),
+        ('coffee.ext', True, True),
+        ('cöffee.äxt', True, True),
+        ('coffee.EXT', True, False),
+        ('cöffee.ÄXT', True, False),
+        ('COFFEE.ext', False, True),
+        ('CÖFFEE.äxt', False, True),
+        ('COFFEE.EXT', False, False),
+        ('CÖFFEE.ÄXT', False, False),
+    ],
+)
+def test__get_case_info(filename, name_lower, ext_lower):
+    """Test that ``_get_case_info()`` returns the correct case information flags for
+    ``filename``.
+    """
+    assert _is_valid_dos_filename(filename.upper())  # internal check
+    assert bool(_get_case_info(filename) & CASE_INFO_NAME_LOWER) is name_lower
+    assert bool(_get_case_info(filename) & CASE_INFO_EXT_LOWER) is ext_lower
