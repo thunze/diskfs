@@ -19,7 +19,6 @@ from diskfs.fat.directory import (
 
 DOS_ENC = DOS_FILENAME_OEM_ENCODING
 E5 = b'\xE5'.decode(DOS_ENC)
-O5 = b'\x05'.decode(DOS_ENC)
 
 
 @pytest.mark.parametrize(
@@ -201,7 +200,8 @@ def test_valid_vfat_but_invalid_dos_filename(filename, saved_as_vfat):
         *(f'a{c}.b' for c in '\x00\x05\x1F"*/:<>?\\|\x7F'),
         *(f'ab.{c}' for c in '\x00\x05\x1F"*/:<>?\\|\x7F'),
         *'"*/:<>?\\|\x7F',
-        '\uD00D' 'are\uDEADserious',
+        '\uD800',
+        'are\uDEADserious',
     ],
 )
 def test_invalid_vfat_filename(filename):
