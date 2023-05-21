@@ -355,7 +355,9 @@ def _vfat_to_dos_filename(filename: str, existing_filenames: Iterable[str]) -> s
                 found = f'{proposed_name}.{ext_3}'
                 return found.rstrip('.')
 
-    raise FileSystemLimit(f'Could not find a DOS filename for VFAT filename {filename}')
+    raise FileSystemLimit(
+        f'Could not find a DOS filename for VFAT filename {filename}'
+    )  # pragma: nocover
 
 
 def _dos_filename_checksum(name_bytes: bytes, ext_bytes: bytes) -> int:

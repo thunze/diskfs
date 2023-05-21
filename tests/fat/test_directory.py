@@ -1,5 +1,7 @@
 """Tests for the ``directory`` module of the ``fat`` package."""
 
+from __future__ import annotations
+
 import pytest
 
 from diskfs.base import ValidationError
@@ -18,6 +20,8 @@ from diskfs.fat.directory import (
     _split_filename,
     _to_be_saved_as_vfat,
     _unpack_dos_filename,
+    _vfat_filename_checksum,
+    _vfat_to_dos_filename,
 )
 
 DOS_ENC = DOS_FILENAME_OEM_ENCODING
@@ -237,3 +241,164 @@ def test__get_case_info(filename, name_lower, ext_lower):
     assert _is_valid_dos_filename(filename.upper())  # internal check
     assert bool(_get_case_info(filename) & CASE_INFO_NAME_LOWER) is name_lower
     assert bool(_get_case_info(filename) & CASE_INFO_EXT_LOWER) is ext_lower
+
+
+@pytest.mark.parametrize(
+    ['filename', 'checksum'],
+    [
+        ('filename_01', 0x6580),
+        ('filename_02', 0xBF8B),
+        ('filename_03', 0xB483),
+        ('filename_04', 0xDA15),
+        ('filename_05', 0x801A),
+        ('filename_06', 0x360F),
+        ('filename_07', 0x5C90),
+        ('filename_08', 0x0295),
+        ('FiLeNaMe_09', 0xDE8C),
+        ('FILENAME_10', 0xA80B),
+        ('caffeinated.caf.caf', 0xF883),
+        ('caffeinated.cäf.caf', 0xB976),
+        ('caffeinated.caffeinated', 0x7E22),
+        ('caffeinated_coffee.caf', 0x0153),
+        ('caffeinated_+,;=[].caf', 0x0CFA),
+        ('caffeinated_({}).caf', 0xAF27),
+        ('caffeinated_☺.caf', _vfat_filename_checksum('caffeinated_☻.caf')),  # dummy
+    ],
+)
+def test__vfat_filename_checksum(filename, checksum):
+    """Test that ``_vfat_filename_checksum()`` returns the expected checksum for
+    ``filename``.
+    """
+    assert _vfat_filename_checksum(filename) == checksum
+
+
+@pytest.mark.parametrize(
+    ['filename', 'dos_filename'],
+    [
+        ('COFFEE.CAF', 'COFFEE.CAF'),
+        ('COFFEE.caf', 'COFFEE.CAF'),
+        ('coffee.CAF', 'COFFEE.CAF'),
+        ('coffee.caf', 'COFFEE.CAF'),
+        ('cof.fee.caf', 'COFFEE~1.CAF'),
+        ('.coffee.caf', 'COFFEE~1.CAF'),
+        ('.cof.fee.caf', 'COFFEE~1.CAF'),
+        (' . c.  o .ffee.caf', 'COFFEE~1.CAF'),
+        ('coffee.cafe', 'COFFEE~1.CAF'),
+        ('coffee.c a f e', 'COFFEE~1.CAF'),
+        ('coFFee.C a f e', 'COFFEE~1.CAF'),
+        ('caffeinated.C a f e', 'CAFFEI~1.CAF'),
+        ('caffeinated.caffeinated', 'CAFFEI~1.CAF'),
+        ('C☺FFEE.C☻F', 'C_FFEE~1.C_F'),
+        ('☺☻☺☻☺☻.☻☺☻', '______~1.___'),
+        ('☺☻☺☻☺☻☺☻☺☻☺☻.☻☺☻☺☻', '______~1.___'),
+        ('☺☻☺☻☺☻☺☻☺☻☺☻.A☻☺', '______~1.A__'),
+        ('______~1.___', '______~1.___'),
+        (',+,', '___~1'),
+        ('coffeecoffee', 'COFFEE~1'),
+        ('.coffeecoffee', 'COFFEE~1'),
+        ('.coffee', 'COFFEE~1'),
+        ('. coffee', 'COFFEE~1'),
+        ('AB', 'AB'),
+        ('aB', 'AB'),
+        ('A', 'A'),
+        ('b', 'B'),
+        ('_', '_'),
+        ('1-', '1-'),
+        ('A+', 'A_0D92~1'),
+        (',b', '_BF6E2~1'),
+        (',+', '__3050~1'),
+        (',', '_C5C5~1'),
+        ('+', '_7BBA~1'),
+        (' A', 'AEFA0~1'),
+        ('.A', 'ACD87~1'),
+        ('.  [', '_D34E~1'),
+        ('.[...A+', '_D9F5~1.A_'),
+        ('A.[', 'AB33A~1._'),
+        ('ABC.[', 'ABC~1._'),
+        ('COFFEE', 'COFFEE'),
+        (' COFFEE', 'COFFEE~1'),
+        ('.COFFEE', 'COFFEE~1'),
+        ('  COFFEE', 'COFFEE~1'),
+        (' .COFFEE', 'AE89~1.COF'),
+        ('. COFFEE', 'COFFEE~1'),
+        ('..COFFEE', 'COFFEE~1'),
+        ('   COFFEE', 'COFFEE~1'),
+        ('  .COFFEE', 'FADF~1.COF'),
+        (' . COFFEE', 'BA0E~1.COF'),
+        (' ..COFFEE', '40B4~1.COF'),
+        ('.  COFFEE', 'COFFEE~1'),
+        ('. .COFFEE', 'COFFEE~1'),
+        ('.. COFFEE', 'COFFEE~1'),
+        ('...COFFEE', 'COFFEE~1'),
+        ('[[[COFFEE', '___COF~1'),
+        ('.[.COFFEE', '_051A~1.COF'),
+        ('[.[COFFEE', '_C052~1._CO'),
+        ('#.!COFFEE', '#F0E3~1.!CO'),
+        ('. . CO', 'COB5A1~1'),
+        ('123[.456', '123_~1.456'),
+    ],
+)
+def test__vfat_to_dos_filename_single(filename, dos_filename):
+    """Test DOS filename generation from VFAT filenames for empty directories."""
+    assert _vfat_to_dos_filename(filename, []) == dos_filename
+
+
+@pytest.mark.parametrize(
+    'pairs',
+    [
+        [
+            ('caffeine_01', 'CAFFEI~1'),
+            ('caffeine_02', 'CAFFEI~2'),
+            ('caffeine_03', 'CAFFEI~3'),
+            ('caffeine_04', 'CAFFEI~4'),
+            ('caffeine_05', 'CA517E~1'),
+            ('caffeine_06', 'CA7700~1'),
+            ('caffeine_07', 'CA2DF4~1'),
+            ('caffeine_08', 'CAD2F9~1'),
+            ('caffeine_09', 'CAF88B~1'),
+            ('caffeine_10', 'CA3866~1'),
+            ('caffeine_11', 'CAED5B~1'),
+            ('caffeine_12', 'CA7CAF~1'),
+            ('caffeine_13', 'CAC6BA~1'),
+            ('caffeine_14', 'CA11C5~1'),
+            ('caffeine_15', 'CAFA24~1'),
+            ('caffeine_16', 'CA453F~1'),
+            ('caffeine_17', 'CA9F3A~1'),
+            ('caffeine_18', 'CAE945~1'),
+            ('caffeine_19', 'CA8AC9~1'),
+            ('caffeine_20', 'CA3A41~1'),
+            ('caffeine', 'CAFFEINE'),
+        ],
+        [
+            ('caffeine_01', 'CAFFEI~1'),
+            ('caffeine_02', 'CAFFEI~2'),
+            ('caffeine_03', 'CAFFEI~3'),
+            ('caffeine_04', 'CAFFEI~4'),
+            ('CA517E~1', 'CA517E~1'),
+            ('caffeine_05', 'CA517E~2'),
+            ('CA7700~1', 'CA7700~1'),
+            ('CA7700~2', 'CA7700~2'),
+            ('CA7700~3', 'CA7700~3'),
+            ('CA7700~4', 'CA7700~4'),
+            ('CA7700~5', 'CA7700~5'),
+            ('CA7700~6', 'CA7700~6'),
+            ('CA7700~7', 'CA7700~7'),
+            ('CA7700~8', 'CA7700~8'),
+            ('CA7700~9', 'CA7700~9'),
+            ('caffeine_06', 'CA770~10'),
+        ],
+    ],
+)
+def test__vfat_to_dos_filename_multiple(pairs):
+    """Test DOS filename generation from VFAT filenames for non-empty directories.
+
+    ``pairs`` is a list of ``(filename, dos_filename)`` tuples where ``dos_filename``
+    is successively added to the list of existing DOS filenames in an imaginary
+    directory.
+    ``dos_filename`` is the DOS filename which is supposed to be assigned to the VFAT
+    filename ``filename``.
+    """
+    existing_filenames: list[str] = []
+    for filename, dos_filename in pairs:
+        assert _vfat_to_dos_filename(filename, existing_filenames) == dos_filename
+        existing_filenames.append(dos_filename)
