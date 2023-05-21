@@ -319,8 +319,8 @@ def _vfat_to_dos_filename(filename: str, existing_filenames: Iterable[str]) -> s
 
     # A tilde (~) variant of the filename is now definitely required.
 
-    if name.lstrip('.') == '':
-        # Edge case: If name is empty except for dots, use ext as name.
+    if filename.startswith('.') and name.lstrip('.').lstrip(' ') == '':
+        # In certain special cases, ext is used as name.
         name_6 = ext_sanitized[:6]
         ext_3 = ''
     else:
