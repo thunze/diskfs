@@ -250,9 +250,11 @@ def _get_case_info(filename: str) -> int:
 
 
 def _vfat_filename_checksum(filename: str) -> int:
-    """Get checksum for a VFAT file name like Windows does it.
+    """Return the checksum of VFAT filename ``filename`` used in case of a DOS
+    filename collision in a directory.
 
-    This function is using ``ctypes`` to force wrap-around of integers.
+    This function tries to mimic Windows NT behavior as closely as possible and uses
+    ``ctypes`` to force the wrap-around of integers.
 
     Source: https://tomgalvin.uk/blog/gen/2015/06/09/filenames/.
     """
@@ -262,7 +264,8 @@ def _vfat_filename_checksum(filename: str) -> int:
             # Using the OEM encoding seems to be exactly what Windows does here. The
             # only thing I wasn't able to find out is how their checksum function
             # deals with characters not available in the OEM encoding, e.g. '☺'. So
-            # if such characters are used in LFNs, their 8.3 checksum will not match.
+            # if such characters are used in LFNs, the checksum generated here will
+            # not match the one Windows would generate.
             char_int = char.encode(DOS_FILENAME_OEM_ENCODING)[0]
         except UnicodeEncodeError:
             char_int = 0xFE  # dummy
