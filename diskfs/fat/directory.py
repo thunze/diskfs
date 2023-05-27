@@ -369,7 +369,11 @@ def _dos_filename_checksum(name_bytes: bytes, ext_bytes: bytes) -> int:
 
 
 def pack_dos_datetime(dt: datetime) -> tuple[int, int, int]:
-    """Returns a tuple of (date, time, 10 ms count)."""
+    """Return a packed DOS datetime as a tuple of (date, time, 10 ms count) from the
+    datetime object ``dt``.
+    """
+    if dt.year < DOS_YEAR_MIN or dt.year > DOS_YEAR_MAX:
+        raise ValueError(f'Invalid DOS date {dt}')
     date = ((dt.year - DOS_YEAR_MIN) << 9) | (dt.month << 5) | dt.day
     time = (dt.hour << 11) | (dt.minute << 5) | (dt.second // 2)
     time_ten_ms = (dt.second % 2) * 100 + dt.microsecond // 10_000
