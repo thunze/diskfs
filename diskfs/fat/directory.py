@@ -361,13 +361,9 @@ def _vfat_to_dos_filename(filename: str, existing_filenames: Iterable[str]) -> s
 
 
 def _dos_filename_checksum(name_bytes: bytes, ext_bytes: bytes) -> int:
-    """Get checksum of a packed DOS file name for VFAT entries (offset 0x0D)."""
-    all_bytes = name_bytes + ext_bytes
-    if len(all_bytes) != 11:
-        raise ValueError(f'Must pass 11 bytes in total, got {all_bytes!r}')
-
+    """Return checksum of a packed DOS filename; used for VFAT entries (offset 0x0D)."""
     checksum = c_uint8(0)
-    for byte in all_bytes:
+    for byte in name_bytes + ext_bytes:
         checksum = c_uint8(((checksum.value & 1) << 7) + (checksum.value >> 1) + byte)
     return checksum.value
 
