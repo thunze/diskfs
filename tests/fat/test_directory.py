@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import datetime
+
 import pytest
 
 from diskfs.base import ValidationError
@@ -12,6 +14,7 @@ from diskfs.fat.directory import (
     CASE_INFO_NAME_LOWER,
     DOS_FILENAME_OEM_ENCODING,
     _check_vfat_filename,
+    _dos_filename_checksum,
     _get_case_info,
     _is_valid_dos_filename,
     _is_valid_vfat_filename,
@@ -22,6 +25,8 @@ from diskfs.fat.directory import (
     _unpack_dos_filename,
     _vfat_filename_checksum,
     _vfat_to_dos_filename,
+    pack_dos_datetime,
+    unpack_dos_datetime,
 )
 
 DOS_ENC = DOS_FILENAME_OEM_ENCODING
@@ -402,3 +407,139 @@ def test__vfat_to_dos_filename_multiple(pairs):
     for filename, dos_filename in pairs:
         assert _vfat_to_dos_filename(filename, existing_filenames) == dos_filename
         existing_filenames.append(dos_filename)
+
+
+@pytest.mark.parametrize(
+    ['name_bytes', 'ext_bytes', 'expected'],
+    [
+        (b'_       ', b'   ', 0xFE),
+        (b'C       ', b'   ', 0xFF),
+        (b'C       ', b'C  ', 0xC8),
+        (b'COFFEE  ', b'   ', 0xC4),
+        (b'COFFEE  ', b'CAF', 0x43),
+        (b'COFFEI~1', b'   ', 0xEC),
+        (b'COFFEI~1', b'CAF', 0x2B),
+        (b'#F0E3~1 ', b'!CO', 0x76),
+        (b'_____~1 ', b'___', 0x53),
+    ],
+)
+def test__dos_filename_checksum(name_bytes, ext_bytes, expected):
+    """Test DOS filename checksum generation."""
+    assert _dos_filename_checksum(name_bytes, ext_bytes) == expected
+
+
+@pytest.mark.parametrize(
+    ['dt', 'packed'],
+    [
+        (datetime(1980, 1, 1, 0, 0, 0), (33, 0, 0)),
+        (datetime(1980, 1, 1, 0, 0, 1), (33, 0, 100)),
+        (datetime(1980, 1, 1, 0, 0, 2), (33, 1, 0)),
+        (datetime(1980, 1, 1, 0, 1, 0), (33, 32, 0)),
+        (datetime(1980, 1, 1, 1, 0, 0), (33, 2048, 0)),
+        (datetime(1980, 1, 2, 0, 0, 0), (34, 0, 0)),
+        (datetime(1980, 2, 1, 0, 0, 0), (65, 0, 0)),
+        (datetime(1981, 1, 1, 0, 0, 0), (545, 0, 0)),
+        (datetime(1999, 12, 31, 23, 59, 58), (10143, 49021, 0)),
+        (datetime(1999, 12, 31, 23, 59, 59), (10143, 49021, 100)),
+        (datetime(2000, 1, 1, 0, 0, 0), (10273, 0, 0)),
+        (datetime(2000, 1, 1, 0, 0, 1), (10273, 0, 100)),
+        (datetime(2000, 1, 1, 0, 0, 2), (10273, 1, 0)),
+        (datetime(2099, 12, 31, 23, 59, 58), (61343, 49021, 0)),
+        (datetime(2099, 12, 31, 23, 59, 59), (61343, 49021, 100)),
+        (datetime(2100, 1, 1, 0, 0, 0), (61473, 0, 0)),
+        (datetime(2100, 1, 1, 0, 0, 1), (61473, 0, 100)),
+        (datetime(2100, 1, 1, 0, 0, 2), (61473, 1, 0)),
+        (datetime(2100, 1, 1, 0, 1, 0), (61473, 32, 0)),
+        (datetime(2100, 1, 1, 1, 0, 0), (61473, 2048, 0)),
+        (datetime(2100, 1, 2, 0, 0, 0), (61474, 0, 0)),
+        (datetime(2107, 12, 31, 23, 59, 59), (65439, 49021, 100)),
+    ],
+)
+def test_pack_unpack_dos_datetime(dt, packed):
+    """Test successful DOS datetime packing and unpacking via ``pack_dos_datetime()``
+    and ``unpack_dos_datetime()``.
+    """
+    assert pack_dos_datetime(dt) == packed
+    assert unpack_dos_datetime(*packed) == dt
+
+
+@pytest.mark.parametrize(
+    ['dt', 'packed', 'unpacked'],
+    [
+        (datetime(1980, 1, 1, 0, 0, 0, 0), (33, 0, 0), datetime(1980, 1, 1, 0, 0, 0)),
+        (datetime(1980, 1, 1, 0, 0, 0, 10), (33, 0, 0), datetime(1980, 1, 1, 0, 0, 0)),
+        (
+            datetime(1980, 1, 1, 0, 0, 0, 1000),
+            (33, 0, 0),
+            datetime(1980, 1, 1, 0, 0, 0),
+        ),
+        (
+            datetime(1980, 1, 1, 0, 0, 0, 9999),
+            (33, 0, 0),
+            datetime(1980, 1, 1, 0, 0, 0),
+        ),
+        (
+            datetime(1980, 1, 1, 0, 0, 0, 10000),
+            (33, 0, 1),
+            datetime(1980, 1, 1, 0, 0, 0, 10000),
+        ),
+        (
+            datetime(1980, 1, 1, 0, 0, 0, 19999),
+            (33, 0, 1),
+            datetime(1980, 1, 1, 0, 0, 0, 10000),
+        ),
+        (
+            datetime(1980, 1, 1, 0, 0, 0, 20000),
+            (33, 0, 2),
+            datetime(1980, 1, 1, 0, 0, 0, 20000),
+        ),
+    ],
+)
+def test_pack_dos_datetime_microseconds(dt, packed, unpacked):
+    """Test DOS datetime packing and unpacking for datetimes including microseconds."""
+    assert pack_dos_datetime(dt) == packed
+    assert unpack_dos_datetime(*packed) == unpacked
+
+
+@pytest.mark.parametrize(
+    'dt',
+    [
+        datetime(1979, 1, 1, 0, 0, 0),
+        datetime(1979, 12, 31, 23, 59, 59),
+        datetime(2108, 1, 1, 0, 0, 0),
+        datetime(2108, 12, 31, 23, 59, 59),
+    ],
+)
+def test_pack_dos_datetime_fail_invalid_date(dt):
+    """Test DOS datetime packing for invalid dates."""
+    with pytest.raises(ValueError, match='Invalid DOS date.*'):
+        pack_dos_datetime(dt)
+
+
+@pytest.mark.parametrize(
+    'packed',
+    [
+        (0, 0, 0),
+        (0, 0, 100),
+        (0, 1, 0),
+        (0, 32, 0),
+        (0, 33, 200),
+        (0, 1920, 0),
+        (0, 2048, 0),
+        (0, 2080, 0),
+        (0, 49152, 0),
+        (0, 65535, 0),
+        (1, 33, 0),
+        (32, 33, 0),
+        (417, 33, 0),
+        (511, 33, 0),
+        (544, 33, 0),
+        (2048, 33, 0),
+        (65535, 33, 0),
+    ],
+)
+def test_unpack_dos_datetime_none(packed):
+    """Test that ``unpack_dos_datetime()`` returns ``None`` for invalid packed
+    datetimes.
+    """
+    assert unpack_dos_datetime(*packed) is None
