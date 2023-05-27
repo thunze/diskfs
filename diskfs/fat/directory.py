@@ -63,6 +63,7 @@ CASE_INFO_NAME_LOWER = 0b1000
 CASE_INFO_EXT_LOWER = 0b10000
 DOS_YEAR_MIN = 1980
 DOS_YEAR_MAX = 2107
+DOS_TIME_TEN_MS_MAX = 199
 
 
 class Hint(Enum):
@@ -380,7 +381,17 @@ def pack_dos_datetime(dt: datetime) -> tuple[int, int, int]:
     return date, time, time_ten_ms
 
 
-def unpack_dos_datetime(date: int, time: int = 0, time_ten_ms: int = 0) -> datetime:
+def unpack_dos_datetime(
+    date: int, time: int = 0, time_ten_ms: int = 0
+) -> datetime | None:
+    """Return a datetime object from a DOS datetime packed as ``date``, ``time`` and
+    ``time_ten_ms`` (10 ms count) values or ``None`` if the values passed do not
+    represent an valid DOS datetime.
+    """
+    # Restriction because of the two-second resolution of the seconds field
+    if time_ten_ms >= DOS_TIME_TEN_MS_MAX:
+        return None
+
     y = ((date & 0b1111111000000000) >> 9) + DOS_YEAR_MIN
     m = (date & 0b0000000111100000) >> 5
     d = date & 0b0000000000011111
@@ -388,7 +399,10 @@ def unpack_dos_datetime(date: int, time: int = 0, time_ten_ms: int = 0) -> datet
     mm = (time & 0b0000011111100000) >> 5
     ss = (time & 0b0000000000011111) * 2 + time_ten_ms // 100
     us = (time_ten_ms % 100) * 10_000
-    return datetime(y, m, d, hh, mm, ss, us)
+    try:
+        return datetime(y, m, d, hh, mm, ss, us)
+    except ValueError:
+        return None
 
 
 @dataclass(frozen=True)
@@ -456,17 +470,17 @@ class EightDotThreeEntry(ByteStruct):
         )
 
     @property
-    def created(self) -> datetime:
+    def created(self) -> datetime | None:
         return unpack_dos_datetime(
             self.created_date, self.created_time, self.created_time_ten_ms
         )
 
     @property
-    def last_accessed(self) -> datetime:
+    def last_accessed(self) -> datetime | None:
         return unpack_dos_datetime(self.last_accessed_date)
 
     @property
-    def last_modified(self) -> datetime:
+    def last_modified(self) -> datetime | None:
         return unpack_dos_datetime(self.last_modified_date, self.last_modified_time)
 
 
@@ -599,15 +613,15 @@ class Entry:
         return self._eight_dot_three.attributes
 
     @property
-    def created(self) -> datetime:
+    def created(self) -> datetime | None:
         return self._eight_dot_three.created
 
     @property
-    def last_accessed(self) -> datetime:
+    def last_accessed(self) -> datetime | None:
         return self._eight_dot_three.last_accessed
 
     @property
-    def last_modified(self) -> datetime:
+    def last_modified(self) -> datetime | None:
         return self._eight_dot_three.last_modified
 
     @property

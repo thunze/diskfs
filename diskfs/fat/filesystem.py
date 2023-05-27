@@ -555,9 +555,9 @@ class FileSystem(FileSystemBase):
 
         ino = entry.cluster  # might be zero for empty files
         size = entry.size
-        atime = entry.last_accessed.timestamp()
-        mtime = entry.last_modified.timestamp()
-        ctime = entry.created.timestamp()
+        atime = 0 if entry.last_accessed is None else entry.last_accessed.timestamp()
+        mtime = 0 if entry.last_modified is None else entry.last_modified.timestamp()
+        ctime = 0 if entry.created is None else entry.created.timestamp()
 
         return stat_result((mode, ino, dev, 1, 0, 0, size, atime, mtime, ctime))
 
@@ -801,13 +801,20 @@ class FileSystem(FileSystemBase):
         if dst_entry is not None:
             existing.remove(dst_entry)
 
+        # Replace unparsable datetimes from src_entry with current datetime
+        now = datetime.now()
+        created, last_accessed, last_modified = map(
+            lambda dt: now if dt is None else dt,
+            (src_entry.created, src_entry.last_accessed, src_entry.last_modified),
+        )
+
         new_entry = create_entry(
             existing,
             realdst.name,
             src_entry.attributes,
-            src_entry.created,
-            src_entry.last_accessed,
-            src_entry.last_modified,
+            created,
+            last_accessed,
+            last_modified,
             src_entry.cluster,
             src_entry.size,
             vfat=self._vfat,
