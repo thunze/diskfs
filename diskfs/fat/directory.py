@@ -518,8 +518,9 @@ class VfatEntry(ByteStruct):
         return bool(self.seq & VFAT_FIRST_LFN_ENTRY)
 
     @property
-    def number(self) -> bool:
-        return bool(self.seq & VFAT_ENTRY_NUMBER_MASK)
+    def number(self) -> int:
+        """Sequence number of the VFAT entry."""
+        return self.seq & VFAT_ENTRY_NUMBER_MASK
 
 
 class Entry:
