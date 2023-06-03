@@ -407,7 +407,7 @@ def unpack_dos_datetime(
 
 @dataclass(frozen=True)
 class EightDotThreeEntry(ByteStruct):
-    """Standard 8.3 directory entry."""
+    """8.3 directory entry."""
 
     name: Annotated[bytes, 8]
     extension: Annotated[bytes, 3]
@@ -424,10 +424,7 @@ class EightDotThreeEntry(ByteStruct):
     size: Annotated[int, 4]
 
     def filename(self, *, vfat: bool) -> str:
-        """File name.
-
-        Case information is applied if VFAT support is enabled.
-        """
+        """Filename; case information is applied if VFAT support is enabled."""
         unpacked = _unpack_dos_filename(self.name, self.extension)
         if not vfat:
             return unpacked.rstrip('.')
@@ -442,17 +439,19 @@ class EightDotThreeEntry(ByteStruct):
 
     @property
     def dos_filename(self) -> str:
-        """DOS file name."""
+        """DOS filename."""
         unpacked = _unpack_dos_filename(self.name, self.extension)
         return unpacked.rstrip('.')
 
     def cluster(self, *, fat_32: bool) -> int:
+        """Start cluster of the file or directory."""
         if not fat_32:
             return self._cluster
         return (self._cluster_high_fat_32 << 16) | self._cluster
 
     @property
     def hint(self) -> Hint | None:
+        """Special meaning of the directory entry or ``None``."""
         try:
             return Hint(self.name[0])
         except ValueError:
@@ -460,10 +459,12 @@ class EightDotThreeEntry(ByteStruct):
 
     @property
     def attributes(self) -> Attributes:
+        """Directory entry attributes."""
         return Attributes(self._attributes)
 
     @property
     def volume_label(self) -> bool:
+        """Whether the directory entry represents a volume label."""
         return (
             Attributes.VOLUME_LABEL in self.attributes
             and Attributes.VFAT not in self.attributes
@@ -471,16 +472,19 @@ class EightDotThreeEntry(ByteStruct):
 
     @property
     def created(self) -> datetime | None:
+        """Creation datetime or ``None`` if invalid."""
         return unpack_dos_datetime(
             self.created_date, self.created_time, self.created_time_ten_ms
         )
 
     @property
     def last_accessed(self) -> datetime | None:
+        """Datetime of last access or ``None`` if invalid."""
         return unpack_dos_datetime(self.last_accessed_date)
 
     @property
     def last_modified(self) -> datetime | None:
+        """Datetime of last modification or ``None`` if invalid."""
         return unpack_dos_datetime(self.last_modified_date, self.last_modified_time)
 
 
