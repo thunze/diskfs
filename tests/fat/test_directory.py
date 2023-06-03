@@ -17,6 +17,7 @@ from diskfs.fat.directory import (
     Attributes,
     EightDotThreeEntry,
     Hint,
+    VfatEntry,
     _check_vfat_filename,
     _dos_filename_checksum,
     _get_case_info,
@@ -720,3 +721,77 @@ class TestEightDotThreeEntry:
         assert entry.created == created
         assert entry.last_accessed == last_accessed
         assert entry.last_modified == last_modified
+
+
+VFAT_ENTRY_EXAMPLE = VfatEntry(
+    seq=1,
+    chars_1=b'ABCDEFGHIJ',
+    attributes=15,
+    type=0,
+    checksum=0x12,  # not a real checksum
+    chars_2=b'KLMNOPQRSTUV',
+    cluster=0,
+    chars_3=b'WXYZ',
+)
+
+
+class TestVfatEntry:
+    """Tests for `VfatEntry`."""
+
+    @pytest.mark.parametrize(
+        'replace_kwargs',
+        [
+            {'attributes': 15},
+            {'attributes': 31},
+            {'seq': 2},
+            {'seq': 10},
+            {'seq': 19},
+            {'seq': 20},
+            {'seq': 32 + 20},
+            {'seq': 128 + 20},
+        ],
+    )
+    def test_validate_success(self, replace_kwargs):
+        """Test custom validation logic for succeeding cases."""
+        replace(VFAT_ENTRY_EXAMPLE, **replace_kwargs)
+
+    @pytest.mark.parametrize(
+        ['replace_kwargs', 'msg_contains'],
+        [
+            ({'attributes': 0}, 'Invalid attributes'),
+            ({'attributes': 1}, 'Invalid attributes'),
+            ({'attributes': 3}, 'Invalid attributes'),
+            ({'attributes': 7}, 'Invalid attributes'),
+            ({'attributes': 14}, 'Invalid attributes'),
+            ({'attributes': 16}, 'Invalid attributes'),
+            ({'seq': 0}, 'Sequence number'),
+            ({'seq': 21}, 'Sequence number'),
+            ({'seq': 22}, 'Sequence number'),
+            ({'seq': 32}, 'Sequence number'),
+            ({'seq': 64}, 'Sequence number'),
+            ({'seq': 128 + 22}, 'Sequence number'),
+            ({'cluster': 1}, 'Cluster number'),
+            ({'cluster': 2}, 'Cluster number'),
+        ],
+    )
+    def test_validate_fail(self, replace_kwargs, msg_contains):
+        """Test custom validation logic for failing cases."""
+        with pytest.raises(ValidationError, match=f'.*{msg_contains}.*'):
+            replace(VFAT_ENTRY_EXAMPLE, **replace_kwargs)
+
+    @pytest.mark.parametrize(
+        ['seq', 'first_lfn_entry', 'number'],
+        [
+            (1, False, 1),
+            (20, False, 20),
+            (33, False, 1),
+            (65, True, 1),
+            (84, True, 20),
+            (211, True, 19),
+        ],
+    )
+    def test_properties(self, seq, first_lfn_entry, number):
+        """Test that properties defined on VFAT entries match the expected values."""
+        entry = replace(VFAT_ENTRY_EXAMPLE, seq=seq)
+        assert entry.first_lfn_entry == first_lfn_entry
+        assert entry.number == number
