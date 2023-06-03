@@ -490,7 +490,7 @@ class EightDotThreeEntry(ByteStruct):
 
 @dataclass(frozen=True)
 class VfatEntry(ByteStruct):
-    """VFAT long file name entry."""
+    """VFAT long filename entry."""
 
     seq: Annotated[int, 1]
     chars_1: Annotated[bytes, 10]
@@ -515,6 +515,7 @@ class VfatEntry(ByteStruct):
 
     @property
     def first_lfn_entry(self) -> bool:
+        """Whether this is the first physical VFAT entry of a VFAT entry chain."""
         return bool(self.seq & VFAT_FIRST_LFN_ENTRY)
 
     @property
