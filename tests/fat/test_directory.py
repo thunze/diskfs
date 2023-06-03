@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import datetime
 
 import pytest
@@ -13,6 +14,9 @@ from diskfs.fat.directory import (
     CASE_INFO_EXT_LOWER,
     CASE_INFO_NAME_LOWER,
     DOS_FILENAME_OEM_ENCODING,
+    Attributes,
+    EightDotThreeEntry,
+    Hint,
     _check_vfat_filename,
     _dos_filename_checksum,
     _get_case_info,
@@ -543,3 +547,176 @@ def test_unpack_dos_datetime_none(packed):
     datetimes.
     """
     assert unpack_dos_datetime(*packed) is None
+
+
+EIGHT_DOT_THREE_ENTRY_EXAMPLE = EightDotThreeEntry(
+    name=b'FILENAME',
+    extension=b'EXT',
+    _attributes=0,
+    case_info_vfat=0,
+    created_time_ten_ms=0,
+    created_time=0,
+    created_date=33,  # 1980-01-01
+    last_accessed_date=33,
+    _cluster_high_fat_32=0,
+    last_modified_time=0,
+    last_modified_date=33,
+    _cluster=0,
+    size=0,
+)
+
+
+class TestEightDotThreeEntry:
+    """Tests for ``EightDotThreeEntry``."""
+
+    @pytest.mark.parametrize(
+        ['name', 'extension', 'case_info_vfat', 'filename', 'dos_filename'],
+        [
+            (b'A       ', b'B  ', 0, 'A.B', 'A.B'),
+            (b'A       ', b'B  ', 8, 'a.B', 'A.B'),
+            (b'A       ', b'B  ', 16, 'A.b', 'A.B'),
+            (b'A       ', b'B  ', 24, 'a.b', 'A.B'),
+            (b'FILENAME', b'   ', 0, 'FILENAME', 'FILENAME'),
+            (b'FILENAME', b'   ', 8, 'filename', 'FILENAME'),
+            (b'FILENAME', b'EXT', 0, 'FILENAME.EXT', 'FILENAME.EXT'),
+            (b'FILENAME', b'EXT', 8, 'filename.EXT', 'FILENAME.EXT'),
+            (b'FILENAME', b'EXT', 16, 'FILENAME.ext', 'FILENAME.EXT'),
+            (b'FILENAME', b'EXT', 24, 'filename.ext', 'FILENAME.EXT'),
+            (b'\x05ILENAME', b'EXT', 0, f'{E5}ILENAME.EXT', f'{E5}ILENAME.EXT'),
+            (
+                b'\x05ILENAME',
+                b'EXT',
+                24,
+                f'{E5.lower()}ilename.ext',
+                f'{E5}ILENAME.EXT',
+            ),
+            (b'(1234)6 ', b'{((', 24, '(1234)6.{((', '(1234)6.{(('),
+        ],
+    )
+    def test_filename_and_hint(
+        self, name, extension, case_info_vfat, filename, dos_filename
+    ):
+        """Test that ``filename()`` and the ``dos_filename`` property return the
+        expected values.
+        """
+        entry = replace(
+            EIGHT_DOT_THREE_ENTRY_EXAMPLE,
+            name=name,
+            extension=extension,
+            case_info_vfat=case_info_vfat,
+        )
+        assert entry.filename(vfat=True) == filename
+        assert entry.filename(vfat=False) == dos_filename
+        assert entry.dos_filename == dos_filename
+
+    @pytest.mark.parametrize(
+        ['cluster_low', 'cluster_high', 'fat_32', 'cluster'],
+        [
+            (0, 0, False, 0),
+            (0, 0, True, 0),
+            (65535, 0, False, 65535),
+            (65535, 0, True, 65535),
+            (0, 1, False, 0),
+            (0, 1, True, 65536),
+            (1, 1, True, 65537),
+            (0, 65535, False, 0),
+            (0, 65535, True, 4294901760),
+            (65535, 65535, False, 65535),
+            (65535, 65535, True, 4294967295),
+        ],
+    )
+    def test_cluster(self, cluster_low, cluster_high, fat_32, cluster):
+        """Test that ``cluster()`` returns the correct cluster number based on the
+        file system type and the raw cluster values.
+        """
+        entry = replace(
+            EIGHT_DOT_THREE_ENTRY_EXAMPLE,
+            _cluster=cluster_low,
+            _cluster_high_fat_32=cluster_high,
+        )
+        assert entry.cluster(fat_32=fat_32) == cluster
+
+    @pytest.mark.parametrize(
+        ['name', 'hint'],
+        [
+            (b'FILENAME', None),
+            (b'\x05ILENAME', None),
+            (b'\xE5ILENAME', Hint.DELETED),
+            (b'\x2E       ', Hint.DOT_ENTRY),
+            (b'\x2E\x2E      ', Hint.DOT_ENTRY),
+            (b'\x00' * 8, Hint.END_OF_ENTRIES),
+        ],
+    )
+    def test_hint(self, name, hint):
+        """Test that the ``hint`` property matches the expected value based on the
+        raw filename.
+        """
+        entry = replace(EIGHT_DOT_THREE_ENTRY_EXAMPLE, name=name)
+        assert entry.hint is hint
+
+    @pytest.mark.parametrize(
+        ['attributes_int', 'attributes', 'volume_label'],
+        [
+            (0, Attributes(0), False),
+            (7, Attributes.READ_ONLY | Attributes.HIDDEN | Attributes.SYSTEM, False),
+            (16, Attributes.SUBDIRECTORY, False),
+            (15, Attributes.VFAT, False),
+            (8, Attributes.VOLUME_LABEL, True),
+        ],
+    )
+    def test_attributes(self, attributes_int, attributes, volume_label):
+        """Test that the ``attributes`` and ``volume_label`` properties match the
+        expected values.
+        """
+        entry = replace(EIGHT_DOT_THREE_ENTRY_EXAMPLE, _attributes=attributes_int)
+        assert entry.attributes is attributes
+        assert entry.volume_label is volume_label
+
+    @pytest.mark.parametrize(
+        ['date', 'time', 'time_ten_ms', 'created', 'last_accessed', 'last_modified'],
+        [
+            (0, 0, 0, None, None, None),
+            (
+                33,
+                0,
+                0,
+                datetime(1980, 1, 1),
+                datetime(1980, 1, 1),
+                datetime(1980, 1, 1),
+            ),
+            (
+                33,
+                2081,
+                0,
+                datetime(1980, 1, 1, 1, 1, 2),
+                datetime(1980, 1, 1),
+                datetime(1980, 1, 1, 1, 1, 2),
+            ),
+            (
+                33,
+                2081,
+                100,
+                datetime(1980, 1, 1, 1, 1, 3),
+                datetime(1980, 1, 1),
+                datetime(1980, 1, 1, 1, 1, 2),
+            ),
+        ],
+    )
+    def test_datetime_properties(
+        self, date, time, time_ten_ms, created, last_accessed, last_modified
+    ):
+        """Test that the ``created``, ``last_accessed``, and ``last_modified``
+        properties match the expected datetimes.
+        """
+        entry = replace(
+            EIGHT_DOT_THREE_ENTRY_EXAMPLE,
+            created_time_ten_ms=time_ten_ms,
+            created_time=time,
+            created_date=date,
+            last_accessed_date=date,
+            last_modified_time=time,
+            last_modified_date=date,
+        )
+        assert entry.created == created
+        assert entry.last_accessed == last_accessed
+        assert entry.last_modified == last_modified
