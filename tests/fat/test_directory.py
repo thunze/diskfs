@@ -32,6 +32,7 @@ from diskfs.fat.directory import (
     _unpack_dos_filename,
     _vfat_filename_checksum,
     _vfat_to_dos_filename,
+    entry_match,
     pack_dos_datetime,
     unpack_dos_datetime,
 )
@@ -1152,3 +1153,24 @@ class TestEntry:
         assert entry.dos_filename in repr_
         assert str(entry.attributes) in repr_
         assert str(entry.size) in repr_
+
+
+@pytest.mark.parametrize(
+    ['entry', 'filename', 'vfat', 'result'],
+    [
+        # It doesn't matter if the entry was created with VFAT support enabled or not.
+        (ENTRY_EXAMPLE_ONLY_EDT, 'FILENAME.EXT', True, True),
+        (ENTRY_EXAMPLE_ONLY_EDT, 'FILENAME.EXT', False, True),
+        (ENTRY_EXAMPLE_SINGLE_VFAT, 'c,ffee.caf', True, True),
+        (ENTRY_EXAMPLE_SINGLE_VFAT, 'C_FFEE~1.CAF', True, True),
+        (ENTRY_EXAMPLE_SINGLE_VFAT, 'c,ffee.caf', False, False),
+        (ENTRY_EXAMPLE_SINGLE_VFAT, 'C_FFEE~1.CAF', False, True),
+        (ENTRY_EXAMPLE_MULTIPLE_VFAT, 'Un archivo con nombre largo.dat', True, True),
+        (ENTRY_EXAMPLE_MULTIPLE_VFAT, 'UNARCH~1.DAT', True, True),
+        (ENTRY_EXAMPLE_MULTIPLE_VFAT, 'Un archivo con nombre largo.dat', False, False),
+        (ENTRY_EXAMPLE_MULTIPLE_VFAT, 'UNARCH~1.DAT', False, True),
+    ],
+)
+def test_entry_match(entry, filename, vfat, result):
+    """Test that ``entry_match()`` returns the expected result."""
+    assert entry_match(filename, entry, vfat=vfat) is result
