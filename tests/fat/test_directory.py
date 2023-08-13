@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import replace
 from datetime import datetime
+from typing import Any
 
 import pytest
 
@@ -16,6 +17,7 @@ from diskfs.fat.directory import (
     DOS_FILENAME_OEM_ENCODING,
     Attributes,
     EightDotThreeEntry,
+    Entry,
     Hint,
     VfatEntry,
     _check_vfat_filename,
@@ -794,3 +796,376 @@ class TestVfatEntry:
         entry = replace(VFAT_ENTRY_EXAMPLE, seq=seq)
         assert entry.first_lfn_entry == first_lfn_entry
         assert entry.number == number
+
+
+ENTRY_KWARGS_EXAMPLE_ONLY_EDT: dict[str, Any] = {
+    'eight_dot_three': EIGHT_DOT_THREE_ENTRY_EXAMPLE
+}
+ENTRY_KWARGS_EXAMPLE_SINGLE_VFAT: dict[str, Any] = {
+    'vfat_entries': [
+        VfatEntry(
+            seq=0x41,
+            chars_1=b'c\x00,\x00f\x00f\x00e\x00',
+            attributes=15,
+            type=0,
+            checksum=0xBF,
+            chars_2=b'e\x00.\x00c\x00a\x00f\x00\x00\x00',
+            cluster=0,
+            chars_3=b'\xFF\xFF\xFF\xFF',
+        )
+    ],
+    'eight_dot_three': EightDotThreeEntry(
+        name=b'C_FFEE~1',
+        extension=b'CAF',
+        _attributes=0,
+        case_info_vfat=0,
+        created_time_ten_ms=0,
+        created_time=0,
+        created_date=33,  # 1980-01-01
+        last_accessed_date=33,
+        _cluster_high_fat_32=0,
+        last_modified_time=0,
+        last_modified_date=33,
+        _cluster=0,
+        size=0,
+    ),
+}
+ENTRY_KWARGS_EXAMPLE_MULTIPLE_VFAT: dict[str, Any] = {
+    'vfat_entries': [
+        VfatEntry(
+            seq=0x43,
+            chars_1=b'o\x00.\x00d\x00a\x00t\x00',
+            attributes=15,
+            type=0,
+            checksum=0xB3,
+            chars_2=b'\x00\x00\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF',
+            cluster=0,
+            chars_3=b'\xFF\xFF\xFF\xFF',
+        ),
+        VfatEntry(
+            seq=0x02,
+            chars_1=b'n\x00 \x00n\x00o\x00m\x00',
+            attributes=15,
+            type=0,
+            checksum=0xB3,
+            chars_2=b'b\x00r\x00e\x00 \x00l\x00a\x00',
+            cluster=0,
+            chars_3=b'r\x00g\x00',
+        ),
+        VfatEntry(
+            seq=0x01,
+            chars_1=b'U\x00n\x00 \x00a\x00r\x00',
+            attributes=15,
+            type=0,
+            checksum=0xB3,
+            chars_2=b'c\x00h\x00i\x00v\x00o\x00 \x00',
+            cluster=0,
+            chars_3=b'c\x00o\x00',
+        ),
+    ],
+    'eight_dot_three': EightDotThreeEntry(
+        name=b'UNARCH~1',
+        extension=b'DAT',
+        _attributes=0x20,
+        case_info_vfat=0,
+        created_time_ten_ms=0,
+        created_time=0xB659,
+        created_date=0x4481,
+        last_accessed_date=0x4481,
+        _cluster_high_fat_32=0,
+        last_modified_time=0xB659,
+        last_modified_date=0x4481,
+        _cluster=0x14,
+        size=0x2000,
+    ),
+}
+
+
+class TestEntry:
+    """Tests for ``Entry``."""
+
+    @pytest.mark.parametrize(
+        ['init_kwargs', 'vfat'],
+        [
+            (ENTRY_KWARGS_EXAMPLE_ONLY_EDT, False),
+            (ENTRY_KWARGS_EXAMPLE_ONLY_EDT, True),
+            (ENTRY_KWARGS_EXAMPLE_SINGLE_VFAT, True),
+            (ENTRY_KWARGS_EXAMPLE_MULTIPLE_VFAT, True),
+        ],
+    )
+    @pytest.mark.parametrize('fat_32', [False, True])
+    def test_init_success(self, init_kwargs, vfat, fat_32):
+        """Test ``Entry`` initialization for succeeding cases."""
+        Entry(**init_kwargs, vfat=vfat, fat_32=fat_32)
+
+    @pytest.mark.parametrize(
+        'init_kwargs',
+        [ENTRY_KWARGS_EXAMPLE_SINGLE_VFAT, ENTRY_KWARGS_EXAMPLE_MULTIPLE_VFAT],
+    )
+    @pytest.mark.parametrize('fat_32', [False, True])
+    def test_init_fail_vfat_support(self, init_kwargs, fat_32):
+        """Test that ``Entry`` fails to initialize with VFAT entries if ``vfat`` is
+        ``False``.
+        """
+        with pytest.raises(ValueError, match='.*VFAT support.*'):
+            Entry(**init_kwargs, vfat=False, fat_32=fat_32)
+
+    @pytest.mark.parametrize(
+        ['replace_kwargs', 'msg_contains'],
+        [
+            ({'name': b'\x00ILENAME'}, 'special 8.3 entry'),
+            ({'name': b'\x2EILENAME'}, 'special 8.3 entry'),
+            ({'name': b'\xE5ILENAME'}, 'special 8.3 entry'),
+            ({'_attributes': 0x8}, '8.3 entry.*volume label'),
+            ({'_attributes': 0xF}, '8.3 entry.*VFAT'),
+        ],
+    )
+    @pytest.mark.parametrize('vfat', [False, True])
+    @pytest.mark.parametrize('fat_32', [False, True])
+    def test_init_fail_edt_entry(self, replace_kwargs, msg_contains, vfat, fat_32):
+        """Test that ``Entry`` fails to initialize with 8.3 entries with specific
+        filename hints or specific attributes.
+        """
+        edt_entry = replace(EIGHT_DOT_THREE_ENTRY_EXAMPLE, **replace_kwargs)
+        with pytest.raises(ValueError, match=f'.*{msg_contains}.*'):
+            Entry(edt_entry, vfat=vfat, fat_32=fat_32)
+
+    @pytest.mark.parametrize('fat_32', [False, True])
+    def test_init_fail_too_many_vfat_entries(self, fat_32):
+        """Test that ``Entry`` fails to initialize with more than 20 VFAT entries."""
+        edt_entry = ENTRY_KWARGS_EXAMPLE_MULTIPLE_VFAT['eight_dot_three']
+        vfat_entries = (
+            [ENTRY_KWARGS_EXAMPLE_MULTIPLE_VFAT['vfat_entries'][0]]
+            + [ENTRY_KWARGS_EXAMPLE_MULTIPLE_VFAT['vfat_entries'][1] for _ in range(19)]
+            + [ENTRY_KWARGS_EXAMPLE_MULTIPLE_VFAT['vfat_entries'][-1]]
+        )
+        with pytest.raises(ValidationError, match='.*more than 20 entries.*'):
+            Entry(edt_entry, vfat_entries, vfat=True, fat_32=fat_32)
+
+    @pytest.mark.parametrize(
+        ['edt_entry', 'vfat_entries', 'msg_contains'],
+        [
+            (
+                ENTRY_KWARGS_EXAMPLE_SINGLE_VFAT['eight_dot_three'],
+                [replace(ENTRY_KWARGS_EXAMPLE_SINGLE_VFAT['vfat_entries'][0], seq=0x1)],
+                'sequence number',
+            ),
+            (
+                ENTRY_KWARGS_EXAMPLE_SINGLE_VFAT['eight_dot_three'],
+                [
+                    replace(
+                        ENTRY_KWARGS_EXAMPLE_SINGLE_VFAT['vfat_entries'][0],
+                        checksum=0x1,
+                    )
+                ],
+                'checksum of DOS filename',
+            ),
+            (
+                ENTRY_KWARGS_EXAMPLE_MULTIPLE_VFAT['eight_dot_three'],
+                [
+                    replace(
+                        ENTRY_KWARGS_EXAMPLE_MULTIPLE_VFAT['vfat_entries'][0], seq=0x1
+                    ),
+                    *ENTRY_KWARGS_EXAMPLE_MULTIPLE_VFAT['vfat_entries'][1:],
+                ],
+                'sequence number',
+            ),
+            (
+                ENTRY_KWARGS_EXAMPLE_MULTIPLE_VFAT['eight_dot_three'],
+                [
+                    ENTRY_KWARGS_EXAMPLE_MULTIPLE_VFAT['vfat_entries'][0],
+                    replace(
+                        ENTRY_KWARGS_EXAMPLE_MULTIPLE_VFAT['vfat_entries'][1],
+                        checksum=0x2,
+                    ),
+                    ENTRY_KWARGS_EXAMPLE_MULTIPLE_VFAT['vfat_entries'][2],
+                ],
+                'checksum of DOS filename',
+            ),
+        ],
+    )
+    @pytest.mark.parametrize('fat_32', [False, True])
+    def test_init_fail_vfat_entries(
+        self, edt_entry, vfat_entries, msg_contains, fat_32
+    ):
+        """Test that ``Entry`` fails to initialize with invalid VFAT entries."""
+        with pytest.raises(ValidationError, match=f'.*{msg_contains}.*'):
+            Entry(edt_entry, vfat_entries, vfat=True, fat_32=fat_32)
+
+    @pytest.mark.parametrize(
+        ['init_kwargs', 'expected_bytes'],
+        [
+            (
+                ENTRY_KWARGS_EXAMPLE_ONLY_EDT,
+                (
+                    b'FILENAMEEXT\x00\x00\x00\x00\x00'
+                    b'!\x00!\x00\x00\x00\x00\x00!\x00\x00\x00\x00\x00\x00\x00'
+                ),
+            ),
+            (
+                ENTRY_KWARGS_EXAMPLE_SINGLE_VFAT,
+                (
+                    b'Ac\x00,\x00f\x00f\x00e\x00\x0f\x00\xbfe\x00'
+                    b'.\x00c\x00a\x00f\x00\x00\x00\x00\x00\xff\xff\xff\xff'
+                    b'C_FFEE~1CAF\x00\x00\x00\x00\x00'
+                    b'!\x00!\x00\x00\x00\x00\x00!\x00\x00\x00\x00\x00\x00\x00'
+                ),
+            ),
+            (
+                ENTRY_KWARGS_EXAMPLE_MULTIPLE_VFAT,
+                (
+                    b'\x43\x6f\x00\x2e\x00\x64\x00\x61\x00\x74\x00\x0f\x00\xb3\x00\x00'
+                    b'\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\x00\x00\xff\xff\xff\xff'
+                    b'\x02\x6e\x00\x20\x00\x6e\x00\x6f\x00\x6d\x00\x0f\x00\xb3\x62\x00'
+                    b'\x72\x00\x65\x00\x20\x00\x6c\x00\x61\x00\x00\x00\x72\x00\x67\x00'
+                    b'\x01\x55\x00\x6e\x00\x20\x00\x61\x00\x72\x00\x0f\x00\xb3\x63\x00'
+                    b'\x68\x00\x69\x00\x76\x00\x6f\x00\x20\x00\x00\x00\x63\x00\x6f\x00'
+                    b'\x55\x4e\x41\x52\x43\x48\x7e\x31\x44\x41\x54\x20\x00\x00\x59\xb6'
+                    b'\x81\x44\x81\x44\x00\x00\x59\xb6\x81\x44\x14\x00\x00\x20\x00\x00'
+                ),
+            ),
+        ],
+    )
+    @pytest.mark.parametrize('fat_32', [False, True])
+    def test_bytes(self, init_kwargs, expected_bytes, fat_32):
+        """Test that converting an ``Entry`` to bytes returns the expected value."""
+        entry = Entry(**init_kwargs, vfat=True, fat_32=fat_32)
+        assert bytes(entry) == expected_bytes
+
+    @pytest.mark.parametrize(
+        [
+            'init_kwargs',
+            'filename',
+            'dos_filename',
+            'attributes',
+            'created',
+            'last_accessed',
+            'last_modified',
+            'size',
+            'total_entries',
+            'eight_dot_three',
+            'vfat_entries',
+        ],
+        [
+            (
+                ENTRY_KWARGS_EXAMPLE_ONLY_EDT,
+                'FILENAME.EXT',
+                'FILENAME.EXT',
+                Attributes(0),
+                datetime(1980, 1, 1),
+                datetime(1980, 1, 1),
+                datetime(1980, 1, 1),
+                0,
+                1,
+                EIGHT_DOT_THREE_ENTRY_EXAMPLE,
+                (),
+            ),
+            (
+                ENTRY_KWARGS_EXAMPLE_SINGLE_VFAT,
+                'c,ffee.caf',
+                'C_FFEE~1.CAF',
+                Attributes(0),
+                datetime(1980, 1, 1),
+                datetime(1980, 1, 1),
+                datetime(1980, 1, 1),
+                0,
+                2,
+                ENTRY_KWARGS_EXAMPLE_SINGLE_VFAT['eight_dot_three'],
+                ENTRY_KWARGS_EXAMPLE_SINGLE_VFAT['vfat_entries'],
+            ),
+            (
+                ENTRY_KWARGS_EXAMPLE_MULTIPLE_VFAT,
+                'Un archivo con nombre largo.dat',
+                'UNARCH~1.DAT',
+                Attributes(0x20),
+                datetime(2014, 4, 1, 22, 50, 50),
+                datetime(2014, 4, 1),
+                datetime(2014, 4, 1, 22, 50, 50),
+                8192,
+                4,
+                ENTRY_KWARGS_EXAMPLE_MULTIPLE_VFAT['eight_dot_three'],
+                ENTRY_KWARGS_EXAMPLE_MULTIPLE_VFAT['vfat_entries'],
+            ),
+        ],
+    )
+    def test_properties_and_repr(
+        self,
+        init_kwargs,
+        filename,
+        dos_filename,
+        attributes,
+        created,
+        last_accessed,
+        last_modified,
+        size,
+        total_entries,
+        eight_dot_three,
+        vfat_entries,
+    ):
+        """Test that properties defined on ``Entry`` match the expected values."""
+        entry = Entry(**init_kwargs, vfat=True, fat_32=True)
+        assert entry.filename == filename
+        assert entry.dos_filename == dos_filename
+        assert entry.attributes is attributes
+        assert entry.created == created
+        assert entry.last_accessed == last_accessed
+        assert entry.last_modified == last_modified
+        assert entry.size == size
+        assert entry.total_entries == total_entries
+        assert entry.eight_dot_three is eight_dot_three
+        assert all(
+            actual is expected
+            for actual, expected in zip(entry.vfat_entries, vfat_entries)
+        )
+
+    @pytest.mark.parametrize(
+        ['entry', 'other_entry', 'equal'],
+        [
+            (
+                Entry(**ENTRY_KWARGS_EXAMPLE_ONLY_EDT, vfat=True, fat_32=True),
+                Entry(**ENTRY_KWARGS_EXAMPLE_ONLY_EDT, vfat=True, fat_32=True),
+                True,
+            ),
+            (
+                Entry(**ENTRY_KWARGS_EXAMPLE_SINGLE_VFAT, vfat=True, fat_32=True),
+                Entry(**ENTRY_KWARGS_EXAMPLE_SINGLE_VFAT, vfat=True, fat_32=True),
+                True,
+            ),
+            (
+                Entry(**ENTRY_KWARGS_EXAMPLE_MULTIPLE_VFAT, vfat=True, fat_32=True),
+                Entry(**ENTRY_KWARGS_EXAMPLE_MULTIPLE_VFAT, vfat=True, fat_32=True),
+                True,
+            ),
+            (
+                Entry(**ENTRY_KWARGS_EXAMPLE_MULTIPLE_VFAT, vfat=True, fat_32=True),
+                Entry(**ENTRY_KWARGS_EXAMPLE_MULTIPLE_VFAT, vfat=True, fat_32=False),
+                False,
+            ),
+            (
+                Entry(**ENTRY_KWARGS_EXAMPLE_SINGLE_VFAT, vfat=True, fat_32=True),
+                Entry(**ENTRY_KWARGS_EXAMPLE_MULTIPLE_VFAT, vfat=True, fat_32=True),
+                False,
+            ),
+        ],
+    )
+    def test_eq(self, entry, other_entry, equal):
+        """Test that ``Entry`` equality works as expected."""
+        assert (entry == other_entry) is equal
+
+    @pytest.mark.parametrize(
+        'init_kwargs',
+        [
+            ENTRY_KWARGS_EXAMPLE_ONLY_EDT,
+            ENTRY_KWARGS_EXAMPLE_SINGLE_VFAT,
+            ENTRY_KWARGS_EXAMPLE_MULTIPLE_VFAT,
+        ],
+    )
+    def test_repr(self, init_kwargs):
+        """Test that the ``repr()`` of an ``Entry`` contains useful information."""
+        entry = Entry(**init_kwargs, vfat=True, fat_32=True)
+        repr_ = repr(entry)
+        assert 'Entry' in repr_
+        assert entry.filename in repr_
+        assert entry.dos_filename in repr_
+        assert str(entry.cluster) in repr_
+        assert str(entry.size) in repr_
