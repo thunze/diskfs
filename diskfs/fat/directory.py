@@ -525,9 +525,12 @@ class VfatEntry(ByteStruct):
 
 
 class Entry:
-    """Generalized directory entry.
+    """Directory entry in a FAT file system.
 
-    Represents either an entry for a file or an entry for a directory.
+    Always holds an 8.3 entry. If VFAT support is enabled, it may also hold up to 20
+    VFAT entries.
+
+    VFAT entries are stored in physical order, i.e. as on the disk.
     """
 
     def __init__(
@@ -538,14 +541,13 @@ class Entry:
         vfat: bool,
         fat_32: bool,
     ):
-        """VFAT entries must be passed in *physical* order."""
         vfat_entries = tuple(vfat_entries)
 
         if vfat_entries and not vfat:
-            raise ValueError('VFAT entries passed, but VFAT support disabled')
+            raise ValueError('VFAT entries passed but VFAT support is disabled')
         if eight_dot_three.hint is not None:
             raise ValueError(
-                f'8.3 entry must not be a special 8.3 entry ({eight_dot_three.hint})'
+                f'8.3 entry must not be a special 8.3 entry with {eight_dot_three.hint}'
             )
         if eight_dot_three.volume_label:
             raise ValueError('8.3 entry must not be a volume label entry')
@@ -554,7 +556,8 @@ class Entry:
 
         if len(vfat_entries) > MAX_VFAT_ENTRIES:
             raise ValidationError(
-                f'VFAT entry chain must have a maximum of {MAX_VFAT_ENTRIES} entries'
+                f'VFAT entry chain must not contain more than {MAX_VFAT_ENTRIES} '
+                f'entries'
             )
 
         if vfat_entries:
@@ -563,7 +566,7 @@ class Entry:
                     'First VFAT entry does not have bit 6 of sequence number set'
                 )
 
-            # check DOS file name checksum
+            # Check DOS filename checksum
             expected_checksum = _dos_filename_checksum(
                 eight_dot_three.name, eight_dot_three.extension
             )
@@ -572,8 +575,7 @@ class Entry:
                     # This means that the DOS file name was changed but the VFAT file
                     # name was not.
                     raise ValidationError(
-                        'Checksum in VFAT struct does not match checksum of DOS file '
-                        'name'
+                        'Checksum in VFAT entry does not match checksum of DOS filename'
                     )
 
         self._eight_dot_three = eight_dot_three
@@ -582,17 +584,16 @@ class Entry:
         self._fat_32 = fat_32
 
     def __bytes__(self) -> bytes:
-        return b''.join(bytes(vfat_entry) for vfat_entry in self._vfat_entries) + bytes(
-            self._eight_dot_three
-        )
+        """``bytes`` form of all directory entries represented by this generalized
+        entry in physical order.
+        """
+        # noinspection PyTypeChecker
+        return b''.join(map(bytes, self._vfat_entries)) + bytes(self._eight_dot_three)
 
     @property
     def filename(self) -> str:
-        """File name.
-
-        VFAT file name if VFAT support is enabled.
-        """
-        # TODO: move volume label parsing to FileSystem
+        """Filename; VFAT long filename if VFAT support is enabled."""
+        # TODO: Move volume label parsing to FileSystem
         # if self.volume_label:
         #     return self._eight_dot_three.filename(vfat=False).replace('.', '')
 
@@ -607,43 +608,52 @@ class Entry:
 
     @property
     def dos_filename(self) -> str:
-        """DOS file name."""
+        """DOS filename."""
         return self._eight_dot_three.dos_filename
 
     @property
     def cluster(self) -> int:
+        """Start cluster of the file or directory."""
         return self._eight_dot_three.cluster(fat_32=self._fat_32)
 
     @property
     def attributes(self) -> Attributes:
+        """Directory entry attributes."""
         return self._eight_dot_three.attributes
 
     @property
     def created(self) -> datetime | None:
+        """Creation datetime or ``None`` if invalid."""
         return self._eight_dot_three.created
 
     @property
     def last_accessed(self) -> datetime | None:
+        """Datetime of last access or ``None`` if invalid."""
         return self._eight_dot_three.last_accessed
 
     @property
     def last_modified(self) -> datetime | None:
+        """Datetime of last modification or ``None`` if invalid."""
         return self._eight_dot_three.last_modified
 
     @property
     def size(self) -> int:
+        """File size in bytes; zero for directories and empty files."""
         return self._eight_dot_three.size
 
     @property
     def total_entries(self) -> int:
+        """Total number of directory entries represented by this generalized entry."""
         return 1 + len(self._vfat_entries)
 
     @property
     def eight_dot_three(self) -> EightDotThreeEntry:
+        """8.3 entry."""
         return self._eight_dot_three
 
     @property
     def vfat_entries(self) -> tuple[VfatEntry, ...]:
+        """VFAT entries in physical order; i.e. as on the disk."""
         return self._vfat_entries
 
     def __eq__(self, other: Any) -> bool:
