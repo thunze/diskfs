@@ -893,22 +893,20 @@ class TestEntry:
             (ENTRY_KWARGS_EXAMPLE_MULTIPLE_VFAT, True),
         ],
     )
-    @pytest.mark.parametrize('fat_32', [False, True])
-    def test_init_success(self, init_kwargs, vfat, fat_32):
+    def test_init_success(self, init_kwargs, vfat):
         """Test ``Entry`` initialization for succeeding cases."""
-        Entry(**init_kwargs, vfat=vfat, fat_32=fat_32)
+        Entry(**init_kwargs, vfat=vfat)
 
     @pytest.mark.parametrize(
         'init_kwargs',
         [ENTRY_KWARGS_EXAMPLE_SINGLE_VFAT, ENTRY_KWARGS_EXAMPLE_MULTIPLE_VFAT],
     )
-    @pytest.mark.parametrize('fat_32', [False, True])
-    def test_init_fail_vfat_support(self, init_kwargs, fat_32):
+    def test_init_fail_vfat_support(self, init_kwargs):
         """Test that ``Entry`` fails to initialize with VFAT entries if ``vfat`` is
         ``False``.
         """
         with pytest.raises(ValueError, match='.*VFAT support.*'):
-            Entry(**init_kwargs, vfat=False, fat_32=fat_32)
+            Entry(**init_kwargs, vfat=False)
 
     @pytest.mark.parametrize(
         ['replace_kwargs', 'msg_contains'],
@@ -921,17 +919,15 @@ class TestEntry:
         ],
     )
     @pytest.mark.parametrize('vfat', [False, True])
-    @pytest.mark.parametrize('fat_32', [False, True])
-    def test_init_fail_edt_entry(self, replace_kwargs, msg_contains, vfat, fat_32):
+    def test_init_fail_edt_entry(self, replace_kwargs, msg_contains, vfat):
         """Test that ``Entry`` fails to initialize with 8.3 entries with specific
         filename hints or specific attributes.
         """
         edt_entry = replace(EIGHT_DOT_THREE_ENTRY_EXAMPLE, **replace_kwargs)
         with pytest.raises(ValueError, match=f'.*{msg_contains}.*'):
-            Entry(edt_entry, vfat=vfat, fat_32=fat_32)
+            Entry(edt_entry, vfat=vfat)
 
-    @pytest.mark.parametrize('fat_32', [False, True])
-    def test_init_fail_too_many_vfat_entries(self, fat_32):
+    def test_init_fail_too_many_vfat_entries(self):
         """Test that ``Entry`` fails to initialize with more than 20 VFAT entries."""
         edt_entry = ENTRY_KWARGS_EXAMPLE_MULTIPLE_VFAT['eight_dot_three']
         vfat_entries = (
@@ -940,7 +936,7 @@ class TestEntry:
             + [ENTRY_KWARGS_EXAMPLE_MULTIPLE_VFAT['vfat_entries'][-1]]
         )
         with pytest.raises(ValidationError, match='.*more than 20 entries.*'):
-            Entry(edt_entry, vfat_entries, vfat=True, fat_32=fat_32)
+            Entry(edt_entry, vfat_entries, vfat=True)
 
     @pytest.mark.parametrize(
         ['edt_entry', 'vfat_entries', 'msg_contains'],
@@ -984,13 +980,10 @@ class TestEntry:
             ),
         ],
     )
-    @pytest.mark.parametrize('fat_32', [False, True])
-    def test_init_fail_vfat_entries(
-        self, edt_entry, vfat_entries, msg_contains, fat_32
-    ):
+    def test_init_fail_vfat_entries(self, edt_entry, vfat_entries, msg_contains):
         """Test that ``Entry`` fails to initialize with invalid VFAT entries."""
         with pytest.raises(ValidationError, match=f'.*{msg_contains}.*'):
-            Entry(edt_entry, vfat_entries, vfat=True, fat_32=fat_32)
+            Entry(edt_entry, vfat_entries, vfat=True)
 
     @pytest.mark.parametrize(
         ['init_kwargs', 'expected_bytes'],
@@ -1026,10 +1019,9 @@ class TestEntry:
             ),
         ],
     )
-    @pytest.mark.parametrize('fat_32', [False, True])
-    def test_bytes(self, init_kwargs, expected_bytes, fat_32):
+    def test_bytes(self, init_kwargs, expected_bytes):
         """Test that converting an ``Entry`` to bytes returns the expected value."""
-        entry = Entry(**init_kwargs, vfat=True, fat_32=fat_32)
+        entry = Entry(**init_kwargs, vfat=True)
         assert bytes(entry) == expected_bytes
 
     @pytest.mark.parametrize(
@@ -1037,6 +1029,7 @@ class TestEntry:
             'init_kwargs',
             'filename',
             'dos_filename',
+            'cluster',
             'attributes',
             'created',
             'last_accessed',
@@ -1051,6 +1044,7 @@ class TestEntry:
                 ENTRY_KWARGS_EXAMPLE_ONLY_EDT,
                 'FILENAME.EXT',
                 'FILENAME.EXT',
+                0,
                 Attributes(0),
                 datetime(1980, 1, 1),
                 datetime(1980, 1, 1),
@@ -1064,6 +1058,7 @@ class TestEntry:
                 ENTRY_KWARGS_EXAMPLE_SINGLE_VFAT,
                 'c,ffee.caf',
                 'C_FFEE~1.CAF',
+                0,
                 Attributes(0),
                 datetime(1980, 1, 1),
                 datetime(1980, 1, 1),
@@ -1077,6 +1072,7 @@ class TestEntry:
                 ENTRY_KWARGS_EXAMPLE_MULTIPLE_VFAT,
                 'Un archivo con nombre largo.dat',
                 'UNARCH~1.DAT',
+                20,
                 Attributes(0x20),
                 datetime(2014, 4, 1, 22, 50, 50),
                 datetime(2014, 4, 1),
@@ -1088,11 +1084,12 @@ class TestEntry:
             ),
         ],
     )
-    def test_properties_and_repr(
+    def test_properties(
         self,
         init_kwargs,
         filename,
         dos_filename,
+        cluster,
         attributes,
         created,
         last_accessed,
@@ -1103,9 +1100,11 @@ class TestEntry:
         vfat_entries,
     ):
         """Test that properties defined on ``Entry`` match the expected values."""
-        entry = Entry(**init_kwargs, vfat=True, fat_32=True)
-        assert entry.filename == filename
+        entry = Entry(**init_kwargs, vfat=True)
+        assert entry.filename(vfat=True) == filename
+        assert entry.filename(vfat=False) == dos_filename
         assert entry.dos_filename == dos_filename
+        assert entry.cluster(fat_32=True) == cluster
         assert entry.attributes is attributes
         assert entry.created == created
         assert entry.last_accessed == last_accessed
@@ -1122,28 +1121,23 @@ class TestEntry:
         ['entry', 'other_entry', 'equal'],
         [
             (
-                Entry(**ENTRY_KWARGS_EXAMPLE_ONLY_EDT, vfat=True, fat_32=True),
-                Entry(**ENTRY_KWARGS_EXAMPLE_ONLY_EDT, vfat=True, fat_32=True),
+                Entry(**ENTRY_KWARGS_EXAMPLE_ONLY_EDT, vfat=True),
+                Entry(**ENTRY_KWARGS_EXAMPLE_ONLY_EDT, vfat=True),
                 True,
             ),
             (
-                Entry(**ENTRY_KWARGS_EXAMPLE_SINGLE_VFAT, vfat=True, fat_32=True),
-                Entry(**ENTRY_KWARGS_EXAMPLE_SINGLE_VFAT, vfat=True, fat_32=True),
+                Entry(**ENTRY_KWARGS_EXAMPLE_SINGLE_VFAT, vfat=True),
+                Entry(**ENTRY_KWARGS_EXAMPLE_SINGLE_VFAT, vfat=True),
                 True,
             ),
             (
-                Entry(**ENTRY_KWARGS_EXAMPLE_MULTIPLE_VFAT, vfat=True, fat_32=True),
-                Entry(**ENTRY_KWARGS_EXAMPLE_MULTIPLE_VFAT, vfat=True, fat_32=True),
+                Entry(**ENTRY_KWARGS_EXAMPLE_MULTIPLE_VFAT, vfat=True),
+                Entry(**ENTRY_KWARGS_EXAMPLE_MULTIPLE_VFAT, vfat=True),
                 True,
             ),
             (
-                Entry(**ENTRY_KWARGS_EXAMPLE_MULTIPLE_VFAT, vfat=True, fat_32=True),
-                Entry(**ENTRY_KWARGS_EXAMPLE_MULTIPLE_VFAT, vfat=True, fat_32=False),
-                False,
-            ),
-            (
-                Entry(**ENTRY_KWARGS_EXAMPLE_SINGLE_VFAT, vfat=True, fat_32=True),
-                Entry(**ENTRY_KWARGS_EXAMPLE_MULTIPLE_VFAT, vfat=True, fat_32=True),
+                Entry(**ENTRY_KWARGS_EXAMPLE_SINGLE_VFAT, vfat=True),
+                Entry(**ENTRY_KWARGS_EXAMPLE_MULTIPLE_VFAT, vfat=True),
                 False,
             ),
         ],
@@ -1162,10 +1156,10 @@ class TestEntry:
     )
     def test_repr(self, init_kwargs):
         """Test that the ``repr()`` of an ``Entry`` contains useful information."""
-        entry = Entry(**init_kwargs, vfat=True, fat_32=True)
+        entry = Entry(**init_kwargs, vfat=True)
         repr_ = repr(entry)
         assert 'Entry' in repr_
-        assert entry.filename in repr_
+        assert entry.filename(vfat=True) in repr_
         assert entry.dos_filename in repr_
-        assert str(entry.cluster) in repr_
+        assert str(entry.attributes) in repr_
         assert str(entry.size) in repr_

@@ -539,7 +539,6 @@ class Entry:
         vfat_entries: Iterable[VfatEntry] = (),
         *,
         vfat: bool,
-        fat_32: bool,
     ):
         vfat_entries = tuple(vfat_entries)
 
@@ -580,8 +579,6 @@ class Entry:
 
         self._eight_dot_three = eight_dot_three
         self._vfat_entries = vfat_entries
-        self._vfat = vfat
-        self._fat_32 = fat_32
 
     def __bytes__(self) -> bytes:
         """``bytes`` form of all directory entries represented by this generalized
@@ -590,31 +587,29 @@ class Entry:
         # noinspection PyTypeChecker
         return b''.join(map(bytes, self._vfat_entries)) + bytes(self._eight_dot_three)
 
-    @property
-    def filename(self) -> str:
+    def filename(self, *, vfat: bool) -> str:
         """Filename; VFAT long filename if VFAT support is enabled."""
         # TODO: Move volume label parsing to FileSystem
         # if self.volume_label:
         #     return self._eight_dot_three.filename(vfat=False).replace('.', '')
 
-        if self._vfat_entries:
+        if vfat and self._vfat_entries:
             filename_bytes = b''
             for entry in reversed(self._vfat_entries):
                 filename_bytes += entry.chars_1 + entry.chars_2 + entry.chars_3
             filename = filename_bytes.decode('utf-16le')
             return filename.rstrip('\x00\uffff').rstrip('. ')
 
-        return self._eight_dot_three.filename(vfat=self._vfat)
+        return self._eight_dot_three.filename(vfat=vfat)
 
     @property
     def dos_filename(self) -> str:
         """DOS filename."""
         return self._eight_dot_three.dos_filename
 
-    @property
-    def cluster(self) -> int:
+    def cluster(self, *, fat_32: bool) -> int:
         """Start cluster of the file or directory."""
-        return self._eight_dot_three.cluster(fat_32=self._fat_32)
+        return self._eight_dot_three.cluster(fat_32=fat_32)
 
     @property
     def attributes(self) -> Attributes:
@@ -661,18 +656,14 @@ class Entry:
             return (
                 self._eight_dot_three == other._eight_dot_three
                 and self._vfat_entries == other._vfat_entries
-                # We compare the following attributes because they affect the
-                # properties of the entry.
-                and self._vfat == other._vfat
-                and self._fat_32 == other._fat_32
             )
         return NotImplemented
 
     def __repr__(self) -> str:
         return (
-            f'{self.__class__.__name__}({self.filename!r}, dos_filename='
-            f'{self.dos_filename!r}, attributes={self.attributes}, cluster='
-            f'{self.cluster}, size={self.size}, total_entries={self.total_entries})'
+            f'{self.__class__.__name__}(filename={self.filename(vfat=True)!r}, '
+            f'dos_filename={self.dos_filename!r}, attributes={self.attributes}, '
+            f'size={self.size}, total_entries={self.total_entries})'
         )
 
 
@@ -682,7 +673,7 @@ def entry_match(part: str, entry: Entry, *, vfat: bool) -> bool:
     If VFAT support is enabled, i.e. ``vfat`` is ``True``, ``part`` is additionally
     checked against the DOS file name stored in ``entry``.
     """
-    return part.upper() == entry.filename.upper() or (
+    return part.upper() == entry.filename(vfat=vfat).upper() or (
         vfat and part.upper() == entry.dos_filename
     )
 
@@ -693,7 +684,6 @@ def iter_entries(
     *,
     only_useful: Literal[True] = ...,
     vfat: bool,
-    fat_32: bool,
 ) -> Iterator[Entry]:
     ...
 
@@ -704,7 +694,6 @@ def iter_entries(
     *,
     only_useful: Literal[False] = ...,
     vfat: bool,
-    fat_32: bool,
 ) -> Iterator[Entry | EightDotThreeEntry]:
     ...
 
@@ -714,7 +703,6 @@ def iter_entries(
     *,
     only_useful: Literal[False, True] = True,
     vfat: bool,
-    fat_32: bool,
 ) -> Iterator[Entry | EightDotThreeEntry]:
     """Yield directory entries found in ``bytes_iter``.
 
@@ -788,14 +776,14 @@ def iter_entries(
         else:
             # useful entry
             try:
-                yield Entry(edt_entry, pending_vfat_entries, vfat=vfat, fat_32=fat_32)
+                yield Entry(edt_entry, pending_vfat_entries, vfat=vfat)
             except ValidationError:
                 # continue with 8.3 entry only
                 log.warning(
                     f'Discarded VFAT entries for 8.3 entry {edt_entry.dos_filename!r}'
                 )
                 yield from pending_edt_entries
-                yield Entry(edt_entry, (), vfat=vfat, fat_32=fat_32)
+                yield Entry(edt_entry, (), vfat=vfat)
 
             clear_pending()
 
@@ -902,7 +890,7 @@ def create_entry(
         cluster_low,
         size,
     )
-    return Entry(edt_entry, vfat_entries, vfat=vfat, fat_32=fat_32)
+    return Entry(edt_entry, vfat_entries, vfat=vfat)
 
 
 def updated_entry(
@@ -946,5 +934,5 @@ def updated_entry(
         replacements['last_modified_time'] = last_modified_time
 
     new_edt_entry = replace(old_edt_entry, **replacements)
-    new_entry = Entry(new_edt_entry, entry.vfat_entries, vfat=vfat, fat_32=fat_32)
+    new_entry = Entry(new_edt_entry, entry.vfat_entries, vfat=vfat)
     return new_entry

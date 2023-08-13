@@ -6,7 +6,7 @@ from datetime import datetime
 from io import SEEK_CUR, SEEK_END, SEEK_SET, RawIOBase
 from typing import TYPE_CHECKING
 
-from ..filesystem import FileSystemLimit
+from ..filesystem import FileSystemLimit, FsType
 from .directory import Attributes, Entry
 
 if TYPE_CHECKING:
@@ -185,7 +185,8 @@ class DataIO(_InternalIO):
             # use root directory
             self._chain = list(fs.fat.get_chain(2))
         else:
-            self._chain = list(fs.fat.get_chain(entry.cluster))
+            start_cluster = entry.cluster(fat_32=fs.type is FsType.FAT_32)
+            self._chain = list(fs.fat.get_chain(start_cluster))
 
         if entry is None or Attributes.SUBDIRECTORY in entry.attributes:
             self._size = len(self._chain) * self._cluster_size_bytes

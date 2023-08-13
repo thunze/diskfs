@@ -313,10 +313,10 @@ class FileSystem(FileSystemBase):
 
         If ``entry`` is ``None``, the root directory is scanned.
         """
-        if entry is not None and (
-            Attributes.SUBDIRECTORY not in entry.attributes or entry.cluster == 0
-        ):
-            return  # file or empty directory
+        if entry is not None:
+            cluster = entry.cluster(fat_32=self._fat_32)
+            if Attributes.SUBDIRECTORY not in entry.attributes or cluster == 0:
+                return  # file or empty directory
 
         with self._get_internal_io(entry) as stream:
             with BufferedReader(stream, stream.unit_size) as reader:
@@ -332,7 +332,6 @@ class FileSystem(FileSystemBase):
                     bytes_gen(),
                     only_useful=only_useful,
                     vfat=self._vfat,
-                    fat_32=self._fat_32,
                 )
 
     def _get_children(self, node: Node | Root) -> Iterator[Node]:
@@ -444,7 +443,8 @@ class FileSystem(FileSystemBase):
 
                 for entry in existing_entries:
                     if isinstance(entry, Entry):
-                        if entry_match(old_entry.filename, entry, vfat=self._vfat):
+                        old_entry_filename = old_entry.filename(vfat=self._vfat)
+                        if entry_match(old_entry_filename, entry, vfat=self._vfat):
                             found_entry = entry
                             break
                         old_entries_start += entry.total_entries
@@ -553,7 +553,7 @@ class FileSystem(FileSystemBase):
         else:
             mode = S_IFREG | PERMISSIONS_FILE
 
-        ino = entry.cluster  # might be zero for empty files
+        ino = entry.cluster(fat_32=self._fat_32)  # may be zero
         size = entry.size
         atime = 0 if entry.last_accessed is None else entry.last_accessed.timestamp()
         mtime = 0 if entry.last_modified is None else entry.last_modified.timestamp()
@@ -687,7 +687,9 @@ class FileSystem(FileSystemBase):
             path = '.'
         node = self._find_node_or_root(path)
         _check_directory(node, hint=path)
-        return [child.entry.filename for child in self._get_children(node)]
+        return [
+            child.entry.filename(vfat=self._vfat) for child in self._get_children(node)
+        ]
 
     def scandir(self, path: StrPath = None) -> Generator[DirEntry, None, None]:
         with self._lock:
@@ -707,7 +709,8 @@ class FileSystem(FileSystemBase):
                 break
             else:
                 stat = self._stat_for_entry(child.entry)
-                yield DirEntry(self, realpath, child.entry.filename, stat)
+                filename = child.entry.filename(vfat=self._vfat)
+                yield DirEntry(self, realpath, filename, stat)
 
     @locked
     def mkdir(self, path: StrPath, mode: int = 0o777) -> None:
@@ -815,7 +818,7 @@ class FileSystem(FileSystemBase):
             created,
             last_accessed,
             last_modified,
-            src_entry.cluster,
+            src_entry.cluster(fat_32=self._fat_32),
             src_entry.size,
             vfat=self._vfat,
             fat_32=self._fat_32,
@@ -904,7 +907,7 @@ class FileSystem(FileSystemBase):
         entry = node.entry
         new_entry = updated_entry(
             entry,
-            entry.cluster,
+            entry.cluster(fat_32=self._fat_32),
             entry.size,
             last_accessed,
             last_modified,
