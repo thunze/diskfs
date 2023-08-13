@@ -34,8 +34,7 @@ from diskfs.fat.directory import (
     unpack_dos_datetime,
 )
 
-DOS_ENC = DOS_FILENAME_OEM_ENCODING
-E5 = b'\xE5'.decode(DOS_ENC)
+E5 = b'\xE5'.decode(DOS_FILENAME_OEM_ENCODING)
 
 
 @pytest.mark.parametrize(
@@ -736,7 +735,7 @@ VFAT_ENTRY_EXAMPLE = VfatEntry(
 
 
 class TestVfatEntry:
-    """Tests for `VfatEntry`."""
+    """Tests for ``VfatEntry``."""
 
     @pytest.mark.parametrize(
         'replace_kwargs',

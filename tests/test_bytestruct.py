@@ -22,8 +22,6 @@ class ArbitraryClass:
 class EmptyByteStruct(ByteStruct):
     """``ByteStruct`` without any fields."""
 
-    pass
-
 
 @dataclass(frozen=True)
 class ArbitraryByteStruct(ByteStruct):
