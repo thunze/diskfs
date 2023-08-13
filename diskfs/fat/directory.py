@@ -661,6 +661,10 @@ class Entry:
             return (
                 self._eight_dot_three == other._eight_dot_three
                 and self._vfat_entries == other._vfat_entries
+                # We compare the following attributes because they affect the
+                # properties of the entry.
+                and self._vfat == other._vfat
+                and self._fat_32 == other._fat_32
             )
         return NotImplemented
 
