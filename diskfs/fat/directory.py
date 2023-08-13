@@ -667,15 +667,13 @@ class Entry:
         )
 
 
-def entry_match(part: str, entry: Entry, *, vfat: bool) -> bool:
-    """Check whether ``part`` matches the file name stored in ``entry``.
-
-    If VFAT support is enabled, i.e. ``vfat`` is ``True``, ``part`` is additionally
-    checked against the DOS file name stored in ``entry``.
-    """
-    return part.upper() == entry.filename(vfat=vfat).upper() or (
-        vfat and part.upper() == entry.dos_filename
-    )
+def entry_match(filename: str, entry: Entry, *, vfat: bool) -> bool:
+    """Check whether ``filename`` matches one of the filenames stored in ``entry``."""
+    entry_filename = entry.filename(vfat=vfat).upper()
+    if vfat:
+        return filename.upper() in (entry_filename, entry.dos_filename)
+    else:
+        return filename.upper() == entry_filename
 
 
 @overload
