@@ -358,7 +358,7 @@ def _vfat_to_dos_filename(filename: str, existing_filenames: Iterable[str]) -> s
 
     raise FileSystemLimit(
         f'Could not find a DOS filename for VFAT filename {filename}'
-    )  # pragma: nocover
+    )  # pragma: no cover
 
 
 def _dos_filename_checksum(name_bytes: bytes, ext_bytes: bytes) -> int:
@@ -496,7 +496,7 @@ class VfatEntry(ByteStruct):
     chars_1: Annotated[bytes, 10]
     attributes: Annotated[int, 1]
     type: Annotated[int, 1]
-    checksum: Annotated[int, 1]  # checksum of DOS file name
+    checksum: Annotated[int, 1]  # Checksum of DOS filename
     chars_2: Annotated[bytes, 12]
     cluster: Annotated[int, 2]
     chars_3: Annotated[bytes, 4]
@@ -571,8 +571,8 @@ class Entry:
             )
             for vfat_entry in vfat_entries:
                 if vfat_entry.checksum != expected_checksum:
-                    # This means that the DOS file name was changed but the VFAT file
-                    # name was not.
+                    # This means that the DOS filename was changed but the VFAT
+                    # filename was not.
                     raise ValidationError(
                         'Checksum in VFAT entry does not match checksum of DOS filename'
                     )
@@ -813,9 +813,9 @@ def create_entry(
     vfat_entries = []  # physical order
 
     if requires_vfat and not vfat:
-        raise ValueError(f'File name {filename!r} requires VFAT')
+        raise ValueError(f'Filename {filename!r} requires VFAT')
 
-    # check whether a file with the same file name already exists
+    # Check whether a file with the same filename already exists
     for entry in existing_entries:
         if entry_match(filename, entry, vfat=vfat):
             raise ValueError(f'File with name {filename!r} already exists')
