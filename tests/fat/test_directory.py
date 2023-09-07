@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import replace
 from datetime import datetime
+from itertools import product
 from typing import Any
 
 import pytest
@@ -33,6 +34,7 @@ from diskfs.fat.directory import (
     _vfat_filename_checksum,
     _vfat_to_dos_filename,
     entry_match,
+    iter_entries,
     pack_dos_datetime,
     unpack_dos_datetime,
 )
@@ -1174,3 +1176,211 @@ class TestEntry:
 def test_entry_match(entry, filename, vfat, result):
     """Test that ``entry_match()`` returns the expected result."""
     assert entry_match(filename, entry, vfat=vfat) is result
+
+
+END_OF_ENTRIES_EXAMPLE = EightDotThreeEntry.from_bytes(b'\x00' * 32)
+DELETED_ENTRY_EXAMPLE = replace(EIGHT_DOT_THREE_ENTRY_EXAMPLE, name=b'\xE5ILENAME')
+DOT_ENTRY_EXAMPLE = replace(
+    EIGHT_DOT_THREE_ENTRY_EXAMPLE, name=b'.       ', extension=b'   '
+)
+DOT_ENTRY_EXAMPLE_2 = replace(
+    EIGHT_DOT_THREE_ENTRY_EXAMPLE, name=b'..      ', extension=b'   '
+)
+
+VFAT_ENTRY_EXAMPLE_AS_EDT = EightDotThreeEntry.from_bytes(bytes(VFAT_ENTRY_EXAMPLE))
+
+# Validation will fail for VfatEntry (invalid sequence number)
+ENTRY_PARTS_EXAMPLE_MULTIPLE_VFAT_INVALID_VFAT = (
+    ENTRY_EXAMPLE_MULTIPLE_VFAT.vfat_entries[0],
+    EightDotThreeEntry.from_bytes(
+        b'\x20' + bytes(ENTRY_EXAMPLE_MULTIPLE_VFAT.vfat_entries[1])[1:]
+    ),
+    ENTRY_EXAMPLE_MULTIPLE_VFAT.vfat_entries[2],
+    ENTRY_EXAMPLE_MULTIPLE_VFAT.eight_dot_three,
+)
+ENTRY_PARTS_EXAMPLE_MULTIPLE_VFAT_INVALID_VFAT_AS_EDT = tuple(
+    EightDotThreeEntry.from_bytes(bytes(entry))
+    for entry in ENTRY_PARTS_EXAMPLE_MULTIPLE_VFAT_INVALID_VFAT
+)
+
+# Validation will fail for Entry (invalid checksum)
+ENTRY_PARTS_EXAMPLE_MULTIPLE_VFAT_INIT_FAIL = (
+    ENTRY_EXAMPLE_MULTIPLE_VFAT.vfat_entries[0],
+    replace(ENTRY_EXAMPLE_MULTIPLE_VFAT.vfat_entries[1], checksum=0),
+    ENTRY_EXAMPLE_MULTIPLE_VFAT.vfat_entries[2],
+    ENTRY_EXAMPLE_MULTIPLE_VFAT.eight_dot_three,
+)
+ENTRY_PARTS_EXAMPLE_MULTIPLE_VFAT_INIT_FAIL_AS_EDT = tuple(
+    EightDotThreeEntry.from_bytes(bytes(entry))
+    for entry in ENTRY_PARTS_EXAMPLE_MULTIPLE_VFAT_INIT_FAIL
+)
+
+
+# noinspection DuplicatedCode
+@pytest.mark.parametrize(
+    ['input_edt_entries', 'output_entries'],
+    [
+        # First collection: Input entries
+        # Second collection: 4 tuples of output entries, one for each combination of
+        #     only_useful and vfat: (False, False), (False, True), (True, False),
+        #     (True, True)
+        ((), [(), (), (), ()]),
+        ((END_OF_ENTRIES_EXAMPLE,), [(), (), (), ()]),
+        ((END_OF_ENTRIES_EXAMPLE, EIGHT_DOT_THREE_ENTRY_EXAMPLE), [(), (), (), ()]),
+        ((EIGHT_DOT_THREE_ENTRY_EXAMPLE,), [(ENTRY_EXAMPLE_ONLY_EDT,)] * 4),
+        (
+            (VFAT_ENTRY_EXAMPLE,),
+            [(VFAT_ENTRY_EXAMPLE_AS_EDT,), (VFAT_ENTRY_EXAMPLE_AS_EDT,), (), ()],
+        ),
+        (
+            (EIGHT_DOT_THREE_ENTRY_EXAMPLE, VFAT_ENTRY_EXAMPLE),
+            [
+                (ENTRY_EXAMPLE_ONLY_EDT, VFAT_ENTRY_EXAMPLE_AS_EDT),
+                (ENTRY_EXAMPLE_ONLY_EDT, VFAT_ENTRY_EXAMPLE_AS_EDT),
+                (ENTRY_EXAMPLE_ONLY_EDT,),
+                (ENTRY_EXAMPLE_ONLY_EDT,),
+            ],
+        ),
+        (
+            (DELETED_ENTRY_EXAMPLE, EIGHT_DOT_THREE_ENTRY_EXAMPLE),
+            [
+                (DELETED_ENTRY_EXAMPLE, ENTRY_EXAMPLE_ONLY_EDT),
+                (DELETED_ENTRY_EXAMPLE, ENTRY_EXAMPLE_ONLY_EDT),
+                (ENTRY_EXAMPLE_ONLY_EDT,),
+                (ENTRY_EXAMPLE_ONLY_EDT,),
+            ],
+        ),
+        (
+            (EIGHT_DOT_THREE_ENTRY_EXAMPLE, DELETED_ENTRY_EXAMPLE),
+            [
+                (ENTRY_EXAMPLE_ONLY_EDT, DELETED_ENTRY_EXAMPLE),
+                (ENTRY_EXAMPLE_ONLY_EDT, DELETED_ENTRY_EXAMPLE),
+                (ENTRY_EXAMPLE_ONLY_EDT,),
+                (ENTRY_EXAMPLE_ONLY_EDT,),
+            ],
+        ),
+        (
+            (DOT_ENTRY_EXAMPLE, EIGHT_DOT_THREE_ENTRY_EXAMPLE),
+            [
+                (DOT_ENTRY_EXAMPLE, ENTRY_EXAMPLE_ONLY_EDT),
+                (DOT_ENTRY_EXAMPLE, ENTRY_EXAMPLE_ONLY_EDT),
+                (ENTRY_EXAMPLE_ONLY_EDT,),
+                (ENTRY_EXAMPLE_ONLY_EDT,),
+            ],
+        ),
+        (
+            ENTRY_PARTS_EXAMPLE_MULTIPLE_VFAT_INVALID_VFAT,
+            [
+                (
+                    *ENTRY_PARTS_EXAMPLE_MULTIPLE_VFAT_INVALID_VFAT_AS_EDT[:3],
+                    Entry(ENTRY_EXAMPLE_MULTIPLE_VFAT.eight_dot_three, vfat=False),
+                ),
+                (
+                    *ENTRY_PARTS_EXAMPLE_MULTIPLE_VFAT_INVALID_VFAT_AS_EDT[:3],
+                    Entry(ENTRY_EXAMPLE_MULTIPLE_VFAT.eight_dot_three, vfat=True),
+                ),
+                (Entry(ENTRY_EXAMPLE_MULTIPLE_VFAT.eight_dot_three, vfat=False),),
+                (Entry(ENTRY_EXAMPLE_MULTIPLE_VFAT.eight_dot_three, vfat=True),),
+            ],
+        ),
+        (
+            ENTRY_PARTS_EXAMPLE_MULTIPLE_VFAT_INIT_FAIL,
+            [
+                (
+                    *ENTRY_PARTS_EXAMPLE_MULTIPLE_VFAT_INIT_FAIL_AS_EDT[:3],
+                    Entry(ENTRY_EXAMPLE_MULTIPLE_VFAT.eight_dot_three, vfat=False),
+                ),
+                (
+                    *ENTRY_PARTS_EXAMPLE_MULTIPLE_VFAT_INIT_FAIL_AS_EDT[:3],
+                    Entry(ENTRY_EXAMPLE_MULTIPLE_VFAT.eight_dot_three, vfat=True),
+                ),
+                (Entry(ENTRY_EXAMPLE_MULTIPLE_VFAT.eight_dot_three, vfat=False),),
+                (Entry(ENTRY_EXAMPLE_MULTIPLE_VFAT.eight_dot_three, vfat=True),),
+            ],
+        ),
+        (
+            ENTRY_EXAMPLE_MULTIPLE_VFAT.vfat_entries,
+            [
+                tuple(
+                    EightDotThreeEntry.from_bytes(bytes(entry))
+                    for entry in ENTRY_EXAMPLE_MULTIPLE_VFAT.vfat_entries
+                ),
+                tuple(
+                    EightDotThreeEntry.from_bytes(bytes(entry))
+                    for entry in ENTRY_EXAMPLE_MULTIPLE_VFAT.vfat_entries
+                ),
+                (),
+                (),
+            ],
+        ),
+        (
+            (
+                DOT_ENTRY_EXAMPLE,
+                DOT_ENTRY_EXAMPLE_2,
+                DELETED_ENTRY_EXAMPLE,
+                ENTRY_EXAMPLE_ONLY_EDT.eight_dot_three,
+                *ENTRY_EXAMPLE_SINGLE_VFAT.vfat_entries,
+                ENTRY_EXAMPLE_SINGLE_VFAT.eight_dot_three,
+                DELETED_ENTRY_EXAMPLE,
+                *ENTRY_EXAMPLE_MULTIPLE_VFAT.vfat_entries,
+                ENTRY_EXAMPLE_MULTIPLE_VFAT.eight_dot_three,
+            ),
+            [
+                (
+                    DOT_ENTRY_EXAMPLE,
+                    DOT_ENTRY_EXAMPLE_2,
+                    DELETED_ENTRY_EXAMPLE,
+                    ENTRY_EXAMPLE_ONLY_EDT,
+                    EightDotThreeEntry.from_bytes(
+                        bytes(ENTRY_EXAMPLE_SINGLE_VFAT.vfat_entries[0])
+                    ),
+                    Entry(ENTRY_EXAMPLE_SINGLE_VFAT.eight_dot_three, vfat=False),
+                    DELETED_ENTRY_EXAMPLE,
+                    *(
+                        EightDotThreeEntry.from_bytes(bytes(entry))
+                        for entry in ENTRY_EXAMPLE_MULTIPLE_VFAT.vfat_entries
+                    ),
+                    Entry(ENTRY_EXAMPLE_MULTIPLE_VFAT.eight_dot_three, vfat=False),
+                ),
+                (
+                    DOT_ENTRY_EXAMPLE,
+                    DOT_ENTRY_EXAMPLE_2,
+                    DELETED_ENTRY_EXAMPLE,
+                    ENTRY_EXAMPLE_ONLY_EDT,
+                    ENTRY_EXAMPLE_SINGLE_VFAT,
+                    DELETED_ENTRY_EXAMPLE,
+                    ENTRY_EXAMPLE_MULTIPLE_VFAT,
+                ),
+                (
+                    ENTRY_EXAMPLE_ONLY_EDT,
+                    Entry(ENTRY_EXAMPLE_SINGLE_VFAT.eight_dot_three, vfat=False),
+                    Entry(ENTRY_EXAMPLE_MULTIPLE_VFAT.eight_dot_three, vfat=False),
+                ),
+                (
+                    ENTRY_EXAMPLE_ONLY_EDT,
+                    ENTRY_EXAMPLE_SINGLE_VFAT,
+                    ENTRY_EXAMPLE_MULTIPLE_VFAT,
+                ),
+            ],
+        ),
+    ],
+)
+@pytest.mark.parametrize('add_end_of_entries', [False, True])
+def test_iter_entries(
+    input_edt_entries: tuple[Entry | EightDotThreeEntry | VfatEntry, ...],
+    output_entries: list[tuple[Entry | EightDotThreeEntry, ...]],
+    add_end_of_entries: bool,
+):
+    """Test that ``iter_entries()`` yields the expected entries."""
+    iter_bytes = [bytes(entry) for entry in input_edt_entries]
+    if add_end_of_entries:
+        iter_bytes.append(bytes(END_OF_ENTRIES_EXAMPLE))
+
+    only_useful_vfat_product = product((False, True), repeat=2)
+    assert len(output_entries) == 4
+
+    for output, (only_useful, vfat) in zip(output_entries, only_useful_vfat_product):
+        generator = iter_entries(
+            iter_bytes, only_useful=only_useful, vfat=vfat
+        )  # type: ignore[call-overload]
+        assert tuple(generator) == output
