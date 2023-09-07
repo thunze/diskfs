@@ -678,7 +678,7 @@ def entry_match(filename: str, entry: Entry, *, vfat: bool) -> bool:
 
 @overload
 def iter_entries(
-    bytes_iter: Iterable[bytes],
+    iter_bytes: Iterable[bytes],
     *,
     only_useful: Literal[True] = ...,
     vfat: bool,
@@ -688,7 +688,7 @@ def iter_entries(
 
 @overload
 def iter_entries(
-    bytes_iter: Iterable[bytes],
+    iter_bytes: Iterable[bytes],
     *,
     only_useful: Literal[False] = ...,
     vfat: bool,
@@ -697,40 +697,39 @@ def iter_entries(
 
 
 def iter_entries(
-    bytes_iter: Iterable[bytes],
+    iter_bytes: Iterable[bytes],
     *,
     only_useful: Literal[False, True] = True,
     vfat: bool,
 ) -> Iterator[Entry | EightDotThreeEntry]:
-    """Yield directory entries found in ``bytes_iter``.
+    """Yield directory entries found in ``iter_bytes``.
 
-    Each element of ``bytes_iter`` should represent the ``bytes`` form of one 8.3
-    entry, i.e. 32 bytes.
+    Each element of ``iter_bytes`` is expected to represent the ``bytes`` form of one
+    8.3 directory entry or one VFAT directory entry, i.e. 32 bytes.
 
-    Directory entries are yielded either as ``Entry`` -- if an entry or VFAT entry
-    chain is considered useful -- or as ``EightDotThreeEntry`` -- if an entry is not
-    considered useful.
-    Entries starting with ``0x00`` mark the end of the directory table and are not
-    yielded.
+    A directory entry is yielded either as an ``Entry`` instance -- if a single entry
+    or a VFAT entry chain is considered useful -- or as an ``EightDotThreeEntry``
+    instance -- if an entry is not considered useful.
 
     A directory entry is *not* considered useful if it is:
 
-    - A deleted entry (starting with ``0xE5``).
-    - A dot entry (starting with ``0x2E``).
-    - A VFAT entry and VFAT support is disabled.
-    - A non-VFAT entry which has the volume label attribute set.
+    - A deleted entry (starting with byte ``0xE5``),
+    - A dot entry (starting with byte ``0x2E``),
+    - A VFAT entry when VFAT support is disabled,
+    - A non-VFAT entry which has the volume label attribute set or
     - Part of a VFAT entry chain which does not match its assigned 8.3 entry or
-        violates any other rule checked against for VFAT entry chains. In this case
-        it is assumed that the according 8.3 entry was edited by a system which does
-        not support VFAT: All VFAT entries in the chain are considered useless and
-        only the 8.3 entry succeeding the chain is yielded as ``Entry``.
+        violates any other rule checked against for VFAT entry chains. In this case,
+        it is assumed that the associated 8.3 entry was edited in an incompatible
+        manner by a system that does not support VFAT. Thus, all VFAT entries in the
+        chain are considered useless and only the 8.3 entry succeeding the chain is
+        yielded as an ``Entry`` instance.
 
-    If ``only_useful`` is set to ``True``, only entries considered useful, meaning
+    If ``only_useful`` is ``True``, only entries that are considered useful, i.e.
     instances of ``Entry``, are yielded.
+    Entries starting with byte ``0x00`` mark the end of the directory table and are
+    never yielded.
     """
-    cursor = 0  # current byte
-
-    # collected entries in VFAT chain
+    # Entries collected from the current VFAT chain
     pending_edt_entries: list[EightDotThreeEntry] = []
     pending_vfat_entries: list[VfatEntry] = []
 
@@ -738,19 +737,16 @@ def iter_entries(
         pending_edt_entries.clear()
         pending_vfat_entries.clear()
 
-    for entry_bytes in bytes_iter:
+    for entry_bytes in iter_bytes:
         edt_entry = EightDotThreeEntry.from_bytes(entry_bytes)
 
         if edt_entry.hint is Hint.END_OF_ENTRIES:
             yield from pending_edt_entries
+            clear_pending()
             break
 
-        if (
-            edt_entry.hint is Hint.DELETED
-            or edt_entry.hint is Hint.DOT_ENTRY
-            or edt_entry.volume_label
-        ):
-            # keep, but don't really deal with them
+        if edt_entry.hint in (Hint.DELETED, Hint.DOT_ENTRY) or edt_entry.volume_label:
+            # Keep, but don't really deal with them.
             yield from pending_edt_entries
             if not only_useful:
                 yield edt_entry
@@ -769,14 +765,14 @@ def iter_entries(
                 else:
                     pending_vfat_entries.append(vfat_entry)
             elif not only_useful:
-                yield edt_entry  # fallback if no VFAT support
+                yield edt_entry  # Fallback if VFAT support is disabled
 
         else:
-            # useful entry
+            # A useful 8.3 entry
             try:
                 yield Entry(edt_entry, pending_vfat_entries, vfat=vfat)
             except ValidationError:
-                # continue with 8.3 entry only
+                # Continue with 8.3 entry only
                 log.warning(
                     f'Discarded VFAT entries for 8.3 entry {edt_entry.dos_filename!r}'
                 )
@@ -785,7 +781,7 @@ def iter_entries(
 
             clear_pending()
 
-        cursor += ENTRY_SIZE
+    yield from pending_edt_entries  # if there is no indicated end of entries
 
 
 def create_entry(
