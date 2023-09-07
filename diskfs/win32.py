@@ -31,7 +31,7 @@ from ctypes.wintypes import (
     LPVOID,
     WPARAM,
 )
-from typing import BinaryIO, TypeVar
+from typing import TypeVar
 
 from .base import DeviceProperties, SectorSize
 
@@ -169,7 +169,7 @@ _DeviceIoControl.restype = BOOL
 
 
 def device_io_control(
-    file: BinaryIO,
+    fd: int,
     control_code: int,
     in_buffer: Array[c_char] = None,
     out_buffer: Array[c_char] = None,
@@ -179,7 +179,7 @@ def device_io_control(
 
     Wrapper for ``DeviceIoControl()``.
     """
-    handle = msvcrt.get_osfhandle(file.fileno())
+    handle = msvcrt.get_osfhandle(fd)
     in_buffer_size = len(in_buffer) if in_buffer is not None else 0
     out_buffer_size = len(out_buffer) if out_buffer is not None else 0
     result_buffer = DWORD()
@@ -202,13 +202,13 @@ _S = TypeVar('_S', bound=Structure)
 
 
 def storage_query_property(
-    file: BinaryIO,
+    fd: int,
     storage_property_query: STORAGE_PROPERTY_QUERY,
     out_structure_type: type[_S],
 ) -> _S:
     """Wrapper for calling ``DeviceIoControl()`` with ``IOCTL_STORAGE_QUERY_PROPERTY``.
 
-    :param file: IO handle for the block device.
+    :param fd: File descriptor for the block device.
     :param storage_property_query: ``STORAGE_PROPERTY_QUERY`` to use as the input.
     :param out_structure_type: ``Structure`` subclass used to parse the output.
 
@@ -217,23 +217,25 @@ def storage_query_property(
     # noinspection PyTypeChecker
     in_buffer = create_string_buffer(bytes(storage_property_query))
     out_buffer = create_string_buffer(sizeof(out_structure_type))
-    device_io_control(file, IOCTL_STORAGE_QUERY_PROPERTY, in_buffer, out_buffer)
+    device_io_control(fd, IOCTL_STORAGE_QUERY_PROPERTY, in_buffer, out_buffer)
     return out_structure_type.from_buffer_copy(out_buffer)
 
 
-def device_properties(file: BinaryIO) -> DeviceProperties:
+# noinspection PyUnusedLocal
+def device_properties(fd: int, path: str) -> DeviceProperties:
     """Return additional properties of a block device.
 
-    :param file: IO handle for the block device.
+    :param fd: File descriptor for the block device.
+    :param path: Path of the block device.
     """
     query = STORAGE_PROPERTY_QUERY(
         PropertyId=STORAGE_DEVICE_PROPERTY,
         QueryType=PROPERTY_STANDARD_QUERY,
         AdditionalParameters=(BYTE * 1)(0),
     )
-    header = storage_query_property(file, query, STORAGE_DESCRIPTOR_HEADER)
+    header = storage_query_property(fd, query, STORAGE_DESCRIPTOR_HEADER)
     storage_device_descriptor = STORAGE_DEVICE_DESCRIPTOR(header.Size)
-    properties = storage_query_property(file, query, storage_device_descriptor)
+    properties = storage_query_property(fd, query, storage_device_descriptor)
 
     def unpack_ascii_string(offset: int) -> str | None:
         """Unpack ASCII string starting at byte ``offset`` in ``out_buffer`` and
@@ -259,34 +261,34 @@ def device_properties(file: BinaryIO) -> DeviceProperties:
     return DeviceProperties(removable, vendor, model)
 
 
-def device_size(file: BinaryIO) -> int:
+def device_size(fd: int) -> int:
     """Return the size of a block device.
 
-    :param file: IO handle for the block device.
+    :param fd: File descriptor for the block device.
     """
     out_buffer = create_string_buffer(sizeof(GET_LENGTH_INFORMATION))
-    device_io_control(file, IOCTL_DISK_GET_LENGTH_INFO, out_buffer=out_buffer)
+    device_io_control(fd, IOCTL_DISK_GET_LENGTH_INFO, out_buffer=out_buffer)
     length_information = GET_LENGTH_INFORMATION.from_buffer_copy(out_buffer)
     return length_information.Length
 
 
-def device_sector_size(file: BinaryIO) -> SectorSize:
+def device_sector_size(fd: int) -> SectorSize:
     """Return the logical and physical sector size of a block device.
 
-    :param file: IO handle for the block device.
+    :param fd: File descriptor for the block device.
     """
     query = STORAGE_PROPERTY_QUERY(
         PropertyId=STORAGE_ACCESS_ALIGNMENT_PROPERTY,
         QueryType=PROPERTY_STANDARD_QUERY,
         AdditionalParameters=(BYTE * 1)(0),
     )
-    alignment = storage_query_property(file, query, STORAGE_ACCESS_ALIGNMENT_DESCRIPTOR)
+    alignment = storage_query_property(fd, query, STORAGE_ACCESS_ALIGNMENT_DESCRIPTOR)
     return SectorSize(alignment.BytesPerLogicalSector, alignment.BytesPerPhysicalSector)
 
 
-def reread_partition_table(file: BinaryIO) -> None:
+def reread_partition_table(fd: int) -> None:
     """Update the operating system's view of a block device's partition table.
 
-    :param file: IO handle for the block device.
+    :param fd: File descriptor for the block device.
     """
-    device_io_control(file, IOCTL_DISK_UPDATE_PROPERTIES)
+    device_io_control(fd, IOCTL_DISK_UPDATE_PROPERTIES)

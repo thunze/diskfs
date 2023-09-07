@@ -8,7 +8,6 @@ from __future__ import annotations
 import logging
 import os
 import sys
-from io import BufferedRandom, BufferedReader
 from stat import S_ISBLK, S_ISREG
 from types import TracebackType
 from typing import TYPE_CHECKING, Any
@@ -36,6 +35,22 @@ __all__ = ['Disk']
 log = logging.getLogger(__name__)
 
 
+if hasattr(os, 'pread') and hasattr(os, 'pwrite'):
+    _read = os.pread
+    _write = os.pwrite
+else:
+
+    def _read(fd: int, size: int, pos: int) -> bytes:
+        """Read ``size`` bytes from file descriptor ``fd`` starting at byte ``pos``."""
+        os.lseek(fd, pos, os.SEEK_SET)
+        return os.read(fd, size)
+
+    def _write(fd: int, b: ReadableBuffer, pos: int) -> int:
+        """Write raw bytes ``b`` to file descriptor ``fd`` starting at byte ``pos``."""
+        os.lseek(fd, pos, os.SEEK_SET)
+        return os.write(fd, b)
+
+
 class Disk:
     """File or block device that one can access and manipulate.
 
@@ -46,15 +61,21 @@ class Disk:
 
     def __init__(
         self,
-        file: BufferedReader | BufferedRandom,
-        device: bool,
+        fd: int,
+        path: str,
         size: int,
         sector_size: SectorSize,
+        device: bool,
+        writable: bool,
     ):
-        self._file = file
-        self._device = device
+        self._fd = fd
+        self._path = path
         self._size = size
         self._sector_size = sector_size
+        self._device = device
+        self._writable = writable
+
+        self._closed = False
         self._table: Table | None = None
 
         log.info(f'Opened disk {self}')
@@ -69,13 +90,14 @@ class Disk:
         if sector_size <= 0:
             raise ValueError('Sector size must be greater than 0')
 
-        # noinspection PyTypeChecker
-        file: BufferedRandom = open(path, 'xb+')  # skipcq: PTC-W6004
+        flags = os.O_CREAT | os.O_EXCL | os.O_RDWR | getattr(os, 'O_BINARY', 0)
+        fd = os.open(path, flags, 0o666)
         try:
-            file.truncate(size)
-            return cls(file, False, size, SectorSize(sector_size, sector_size))
+            os.truncate(fd, size)
+            simulated_sector_size = SectorSize(sector_size, sector_size)
+            return cls(fd, path, size, simulated_sector_size, False, True)
         except BaseException:
-            file.close()
+            os.close(fd)
             raise
 
     @classmethod
@@ -83,38 +105,37 @@ class Disk:
         cls, path: StrPath, *, sector_size: int = None, readonly: bool = True
     ) -> Disk:
         """Open block device or disk image at ``path``."""
-        file: BufferedReader | BufferedRandom
-        if readonly:
-            # noinspection PyTypeChecker
-            file = open(path, 'rb')
-        else:
-            # noinspection PyTypeChecker
-            file = open(path, 'rb+')
+        read_write_flag = os.O_RDONLY if readonly else os.O_RDWR
+        flags = read_write_flag | getattr(os, 'O_BINARY', 0)
+        fd = os.open(path, flags)
 
         try:
-            stat = os.stat(file.name)
+            stat = os.fstat(fd)
             block_device = S_ISBLK(stat.st_mode)
             regular_file = S_ISREG(stat.st_mode)
 
             if block_device:
                 if sector_size is not None:
                     raise ValueError('Sector size cannot be set for block devices')
-                size = device_size(file)
-                real_sector_size = device_sector_size(file)
-                return cls(file, True, size, real_sector_size)
+
+                size = device_size(fd)
+                real_sector_size = device_sector_size(fd)
+                return cls(fd, path, size, real_sector_size, True, not readonly)
 
             if regular_file:
                 if sector_size is None:
                     raise ValueError('Sector size must be set for regular file')
                 if sector_size <= 0:
                     raise ValueError('Sector size must be greater than 0')
+
                 size = stat.st_size
-                return cls(file, False, size, SectorSize(sector_size, sector_size))
+                simulated_sector_size = SectorSize(sector_size, sector_size)
+                return cls(fd, path, size, simulated_sector_size, False, not readonly)
 
             raise ValueError('File is neither a block device nor a regular file')
 
         except BaseException:
-            file.close()
+            os.close(fd)
             raise
 
     def read_at(self, pos: int, size: int) -> bytes:
@@ -138,22 +159,7 @@ class Disk:
         if pos_bytes + size_bytes > self._size:
             raise ValueError('Sector range out of disk bounds')
 
-        try:
-            self._file.seek(pos_bytes)
-            b = self._file.read(size_bytes)
-        except PermissionError:
-            # Special case for block devices on Windows:
-            # When trying to read sectors from a block device beyond its size,
-            # PermissionError is raised. Thus, trying to read the last few sectors
-            # of a block device might also raise PermissionError if buffered IO is
-            # used (which is the case here). We solve this by using a separate,
-            # unbuffered file object to read from the block device.
-            if sys.platform == 'win32' and self._device:
-                with open(self._file.name, 'rb', buffering=0) as unbuf_file:
-                    unbuf_file.seek(pos_bytes)
-                    b = unbuf_file.read(size_bytes)
-            else:
-                raise
+        b = _read(self._fd, size_bytes, pos_bytes)
 
         if len(b) != size_bytes:
             raise ValueError(
@@ -165,7 +171,7 @@ class Disk:
     def write_at(
         self, pos: int, b: ReadableBuffer, *, fill_zeroes: bool = False
     ) -> None:
-        """Write raw bytes ``b`` to the disk while starting at sector ``pos``.
+        """Write raw bytes ``b`` to the disk starting at sector ``pos``.
 
         Uses the logical sector size of the disk.
 
@@ -204,8 +210,8 @@ class Disk:
         if pos_bytes + size > self._size:
             raise ValueError('Sector range out of disk bounds')
 
-        self._file.seek(pos_bytes)
-        bytes_written = self._file.write(b)
+        bytes_written = _write(self._fd, b, pos_bytes)
+
         if bytes_written != size:
             raise ValueError(
                 f'Did not write the expected amount of bytes (expected {size} '
@@ -254,7 +260,7 @@ class Disk:
         self._table = None
 
         if self._device:
-            reread_partition_table(self._file)
+            reread_partition_table(self._fd)
         raise NotImplementedError
 
     def partition(self, table: Table) -> None:
@@ -282,7 +288,7 @@ class Disk:
         self._table = table
 
         if self._device:
-            reread_partition_table(self._file)
+            reread_partition_table(self._fd)
 
     def volume(self, partition: int = None) -> Volume:
         """Get the volume corresponding to partition ``partition`` on the disk.
@@ -323,7 +329,10 @@ class Disk:
 
         This method has no effect if the IO object is already closed.
         """
-        self._file.close()
+        if self._closed:
+            return
+        os.close(self._fd)
+        self._closed = True
         log.info(f'Closed disk {self}')
 
     def __enter__(self) -> Disk:
@@ -366,30 +375,31 @@ class Disk:
     @property
     def closed(self) -> bool:
         """Whether the underlying file or block device is closed."""
-        return self._file.closed
+        return self._closed
 
     @property
     def writable(self) -> bool:
         """Whether the underlying file or block device supports writing."""
-        return self._file.writable()
+        self.check_closed()
+        return self._writable
 
     def check_closed(self) -> None:
         """Raise ``ValueError`` if the underlying file or block device is closed."""
-        if self.closed:
+        if self._closed:
             raise ValueError('I/O operation on closed disk')
 
     def check_writable(self) -> None:
         """Raise ``ValueError`` if the underlying file or block device is read-only."""
-        if not self.writable:
+        if not self._writable:
             raise ValueError('Disk is not writable')
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Disk):
-            return self._file.name == other._file.name
+            return self._path == other._path
         return NotImplemented
 
     def __str__(self) -> str:
-        return self._file.name
+        return self._path
 
     def __repr__(self) -> str:
-        return f'{self.__class__.__name__}({self._file.name}, size={self._size})'
+        return f'{self.__class__.__name__}({self._path}, size={self._size})'

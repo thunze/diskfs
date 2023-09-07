@@ -6,12 +6,10 @@ import sys
 
 assert sys.platform == 'linux'  # skipcq: BAN-B101
 
-import io
 import os
 from ctypes import c_uint
 from fcntl import ioctl
 from pathlib import Path
-from typing import BinaryIO
 
 from .base import DeviceProperties, SectorSize
 
@@ -23,21 +21,23 @@ BLKPBSZGET = 0x127B
 BLKRRPART = 0x125F
 
 
-def device_properties(file: BinaryIO) -> DeviceProperties:
+# noinspection PyUnusedLocal
+def device_properties(fd: int, path: str) -> DeviceProperties:
     """Return additional properties of a block device.
 
-    :param file: IO handle for the block device.
+    :param fd: File descriptor for the block device.
+    :param path: Path of the block device.
     """
-    device = os.fstat(file.fileno()).st_rdev
+    device = os.fstat(fd).st_rdev
     major, minor = os.major(device), os.minor(device)
     sysfs_base = Path(f'/sys/dev/block/{major}:{minor}')
 
-    def read_text_or_none(path: Path) -> str | None:
+    def read_text_or_none(path_: Path) -> str | None:
         """Return text of file at ``path`` and ``rstrip()`` the resulting text or
         return ``None`` if ``path`` is not a file.
         """
         try:
-            return path.read_text(encoding='utf-8').rstrip()
+            return path_.read_text(encoding='utf-8').rstrip()
         except FileNotFoundError:
             return None
 
@@ -55,28 +55,28 @@ def device_properties(file: BinaryIO) -> DeviceProperties:
     return DeviceProperties(removable, vendor, model)
 
 
-def device_size(file: BinaryIO) -> int:
+def device_size(fd: int) -> int:
     """Return the size of a block device.
 
-    :param file: IO handle for the block device.
+    :param fd: File descriptor for the block device.
     """
-    return file.seek(0, io.SEEK_END)
+    return os.lseek(fd, 0, os.SEEK_END)
 
 
-def device_sector_size(file: BinaryIO) -> SectorSize:
+def device_sector_size(fd: int) -> SectorSize:
     """Return the logical and physical sector size of a block device.
 
-    :param file: IO handle for the block device.
+    :param fd: File descriptor for the block device.
     """
     logical, physical = c_uint(), c_uint()  # see blkdev.h
-    ioctl(file, BLKSSZGET, logical)
-    ioctl(file, BLKPBSZGET, physical)
+    ioctl(fd, BLKSSZGET, logical)
+    ioctl(fd, BLKPBSZGET, physical)
     return SectorSize(logical.value, physical.value)
 
 
-def reread_partition_table(file: BinaryIO) -> None:
+def reread_partition_table(fd: int) -> None:
     """Update the operating system's view of a block device's partition table.
 
-    :param file: IO handle for the block device.
+    :param fd: File descriptor for the block device.
     """
-    ioctl(file, BLKRRPART)
+    ioctl(fd, BLKRRPART)

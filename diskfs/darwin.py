@@ -10,7 +10,7 @@ import os
 from contextlib import contextmanager
 from ctypes import c_uint32, c_uint64, create_string_buffer
 from fcntl import ioctl
-from typing import BinaryIO, Iterator, TypeVar, Union, cast
+from typing import Iterator, TypeVar, Union, cast
 
 from ._darwin import (
     ENCODING_UTF_8,
@@ -92,13 +92,15 @@ def _unpack_cf_string(string: CFString | None) -> str | None:
     return buffer.value.decode('utf-8')
 
 
-def device_properties(file: BinaryIO) -> DeviceProperties:
+# noinspection PyUnusedLocal
+def device_properties(fd: int, path: str) -> DeviceProperties:
     """Return additional properties of a block device.
 
-    :param file: IO handle for the block device.
+    :param fd: File descriptor for the block device.
+    :param path: Path of the block device.
     """
     with _releasing(DASessionCreate(None)) as session:
-        bsd_name = os.fsencode(file.name)
+        bsd_name = os.fsencode(path)
         disk = DADiskCreateFromBSDName(None, session, bsd_name)
 
     with _releasing(disk) as disk:
@@ -127,32 +129,32 @@ def device_properties(file: BinaryIO) -> DeviceProperties:
     return DeviceProperties(removable, vendor, model)
 
 
-def device_size(file: BinaryIO) -> int:
+def device_size(fd: int) -> int:
     """Return the size of a block device.
 
-    :param file: IO handle for the block device.
+    :param fd: File descriptor for the block device.
     """
     sector_size, sector_count = c_uint32(), c_uint64()  # see disk.h
-    ioctl(file, DKIOCGETBLOCKSIZE, sector_size)
-    ioctl(file, DKIOCGETBLOCKCOUNT, sector_count)
+    ioctl(fd, DKIOCGETBLOCKSIZE, sector_size)
+    ioctl(fd, DKIOCGETBLOCKCOUNT, sector_count)
     return sector_size.value * sector_count.value
 
 
-def device_sector_size(file: BinaryIO) -> SectorSize:
+def device_sector_size(fd: int) -> SectorSize:
     """Return the logical and physical sector size of a block device.
 
-    :param file: IO handle for the block device.
+    :param fd: File descriptor for the block device.
     """
     logical, physical = c_uint32(), c_uint32()  # see disk.h
-    ioctl(file, DKIOCGETBLOCKSIZE, logical)
-    ioctl(file, DKIOCGETPHYSICALBLOCKSIZE, physical)
+    ioctl(fd, DKIOCGETBLOCKSIZE, logical)
+    ioctl(fd, DKIOCGETPHYSICALBLOCKSIZE, physical)
     return SectorSize(logical.value, physical.value)
 
 
 # skipcq: PYL-W0613
 # noinspection PyUnusedLocal
-def reread_partition_table(file: BinaryIO) -> None:
+def reread_partition_table(fd: int) -> None:
     """Update the operating system's view of a block device's partition table.
 
-    :param file: IO handle for the block device.
+    :param fd: File descriptor for the block device.
     """
