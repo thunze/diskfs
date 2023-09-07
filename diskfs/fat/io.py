@@ -138,10 +138,6 @@ class _InternalIO(RawIOBase):
             self._free(size)
         return size
 
-    def flush(self) -> None:
-        self._check_closed()
-        self._volume.flush()
-
     def seekable(self) -> bool:
         return True
 

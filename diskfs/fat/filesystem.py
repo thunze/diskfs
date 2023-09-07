@@ -612,7 +612,6 @@ class FileSystem(FileSystemBase):
     @locked
     def closefd(self, fd: int) -> None:
         stream, _, path = self._find_in_fd_table(fd)
-        stream.flush()
         self._update_entry_by_stream(stream, path)
 
         # free file descriptor
@@ -659,14 +658,12 @@ class FileSystem(FileSystemBase):
         if not flags.writable:
             raise UnsupportedOperation('File not open for writing')
         res = stream.truncate(size)
-        stream.flush()
         self._update_entry_by_stream(stream, path)
         return res
 
     @locked
     def flushfd(self, fd: int) -> None:
         stream, _, path = self._find_in_fd_table(fd)
-        stream.flush()
         self._update_entry_by_stream(stream, path)
 
     @locked

@@ -221,7 +221,7 @@ class Disk:
     def flush(self) -> None:
         """Flush write buffers of the underlying file or block device, if applicable."""
         self.check_closed()
-        self._file.flush()
+        os.fsync(self._fd)
 
     def read_table(self) -> None:
         """Try to read a partition table on the disk and update the ``Disk`` object
