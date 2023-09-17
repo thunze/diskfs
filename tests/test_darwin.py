@@ -50,4 +50,5 @@ def test_device_properties_all_none(tempfile):
     object for a regular file instead of a block device.
     """
     with tempfile.open('rb') as f:
-        assert device_properties(f) == DeviceProperties(None, None, None)
+        properties = device_properties(f.fileno(), tempfile)
+        assert properties == DeviceProperties(None, None, None)

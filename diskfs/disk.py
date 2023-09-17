@@ -48,7 +48,7 @@ else:
     def _write(fd: int, b: ReadableBuffer, pos: int) -> int:
         """Write raw bytes ``b`` to file descriptor ``fd`` starting at byte ``pos``."""
         os.lseek(fd, pos, os.SEEK_SET)
-        return os.write(fd, b)
+        return os.write(fd, b)  # type: ignore[arg-type]
 
 
 class Disk:
@@ -62,14 +62,14 @@ class Disk:
     def __init__(
         self,
         fd: int,
-        path: str,
+        path: StrPath,
         size: int,
         sector_size: SectorSize,
         device: bool,
         writable: bool,
     ):
         self._fd = fd
-        self._path = path
+        self._path = str(path)
         self._size = size
         self._sector_size = sector_size
         self._device = device

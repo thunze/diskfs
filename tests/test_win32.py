@@ -26,5 +26,5 @@ def test_device_io_control_fail(tempfile):
     pass ``tempfile`` instead.
     """
     with tempfile.open('rb') as f, pytest.raises(OSError) as exc_info:
-        device_io_control(f, IOCTL_STORAGE_QUERY_PROPERTY)
+        device_io_control(f.fileno(), IOCTL_STORAGE_QUERY_PROPERTY)
         assert exc_info.value.winerror is not None

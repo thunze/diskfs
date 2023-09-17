@@ -34,6 +34,7 @@ from ctypes.wintypes import (
 from typing import TypeVar
 
 from .base import DeviceProperties, SectorSize
+from .typing import StrPath
 
 __all__ = [
     'device_io_control',
@@ -222,7 +223,7 @@ def storage_query_property(
 
 
 # noinspection PyUnusedLocal
-def device_properties(fd: int, path: str) -> DeviceProperties:
+def device_properties(fd: int, path: StrPath) -> DeviceProperties:
     """Return additional properties of a block device.
 
     :param fd: File descriptor for the block device.

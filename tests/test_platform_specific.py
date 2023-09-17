@@ -56,7 +56,8 @@ def test_device_properties(block_device) -> None:
     contains the expected values.
     """
     with open(block_device, 'rb') as f:
-        assert platform_specific.device_properties(f) == DEVICE_PROPERTIES
+        properties = platform_specific.device_properties(f.fileno(), block_device)
+        assert properties == DEVICE_PROPERTIES
 
 
 @pytest.mark.privileged
@@ -76,8 +77,8 @@ def test_device_size_sector_size(
     values.
     """
     with open(block_device, 'rb') as f:
-        size_actual = platform_specific.device_size(f)
-        sector_size_actual = platform_specific.device_sector_size(f)
+        size_actual = platform_specific.device_size(f.fileno())
+        sector_size_actual = platform_specific.device_sector_size(f.fileno())
 
     # Check size
     assert size_actual == size_expected
@@ -104,4 +105,4 @@ def test_reread_partition_table(block_device):
     exception.
     """
     with open(block_device, 'rb') as f:
-        platform_specific.reread_partition_table(f)
+        platform_specific.reread_partition_table(f.fileno())

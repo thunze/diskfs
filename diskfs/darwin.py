@@ -31,6 +31,7 @@ from ._darwin import (
     DASessionCreate,
 )
 from .base import DeviceProperties, SectorSize
+from .typing import StrPath
 
 __all__ = ['device_size', 'device_sector_size', 'reread_partition_table']
 
@@ -93,7 +94,7 @@ def _unpack_cf_string(string: CFString | None) -> str | None:
 
 
 # noinspection PyUnusedLocal
-def device_properties(fd: int, path: str) -> DeviceProperties:
+def device_properties(fd: int, path: StrPath) -> DeviceProperties:
     """Return additional properties of a block device.
 
     :param fd: File descriptor for the block device.
