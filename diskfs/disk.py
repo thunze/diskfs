@@ -144,7 +144,6 @@ class Disk:
         Uses the logical sector size of the disk.
         """
         self.check_closed()
-        log.debug(f'{self} - Reading {size} sectors starting at sector {pos}')
 
         if pos < 0:
             raise ValueError('Position to read from must be zero or positive')
@@ -202,9 +201,6 @@ class Disk:
             zeroes = b'\x00' * (lss - remainder)
             b = bytes(b) + zeroes
             size = len(b)
-
-        size_sectors = size // lss
-        log.debug(f'{self} - Writing {size_sectors} sectors starting at sector {pos}')
 
         pos_bytes = pos * self.sector_size.logical
         if pos_bytes + size > self._size:
