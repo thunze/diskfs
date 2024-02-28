@@ -48,7 +48,7 @@ else:
     def _write(fd: int, b: ReadableBuffer, pos: int) -> int:
         """Write raw bytes `b` to file descriptor `fd` starting at byte `pos`."""
         os.lseek(fd, pos, os.SEEK_SET)
-        return os.write(fd, b)  # type: ignore[arg-type]
+        return os.write(fd, b)
 
 
 class Disk:

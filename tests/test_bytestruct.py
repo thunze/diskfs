@@ -296,7 +296,7 @@ class TestByteStructMeta:
             iv: InitVar[str]
             f_2: Annotated[int, 1, "signed"]
 
-            def __post_init__(self, iv: str) -> None:  # type: ignore[override]
+            def __post_init__(self, iv: str) -> None:
                 super().__post_init__()
                 assert iv == "test"
 
