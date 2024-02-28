@@ -67,7 +67,7 @@ check_untyped_defs = true
 [tool.pytest.ini_options]
 markers = [
     "privileged: mark the test as requiring elevated privileges",
-    "serial"
+    "serial",
 ]
 
 [tool.ruff]
