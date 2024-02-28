@@ -26,6 +26,7 @@ python = "^3.8"
 typing-extensions = "^4.0.0"
 
 [tool.poetry.group.dev.dependencies]
+devtools = "^0.12.2"
 pytest = "^7.1.2"
 pytest-cov = "^4.1.0"
 coveralls = "^3.3.1"
