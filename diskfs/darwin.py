@@ -10,7 +10,7 @@ import os
 from contextlib import contextmanager
 from ctypes import c_uint32, c_uint64, create_string_buffer
 from fcntl import ioctl
-from typing import Iterator, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Iterator, TypeVar, Union, cast
 
 from ._darwin import (
     ENCODING_UTF_8,
@@ -31,7 +31,9 @@ from ._darwin import (
     DASessionCreate,
 )
 from .base import DeviceProperties, SectorSize
-from .typing import StrPath
+
+if TYPE_CHECKING:
+    from .typing import StrPath
 
 __all__ = ['device_size', 'device_sector_size', 'reread_partition_table']
 

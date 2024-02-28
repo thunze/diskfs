@@ -10,9 +10,12 @@ import os
 from ctypes import c_uint
 from fcntl import ioctl
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from .base import DeviceProperties, SectorSize
-from .typing import StrPath
+
+if TYPE_CHECKING:
+    from .typing import StrPath
 
 __all__ = ['device_size', 'device_sector_size', 'reread_partition_table']
 

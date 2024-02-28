@@ -31,10 +31,12 @@ from ctypes.wintypes import (
     LPVOID,
     WPARAM,
 )
-from typing import TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
 from .base import DeviceProperties, SectorSize
-from .typing import StrPath
+
+if TYPE_CHECKING:
+    from .typing import StrPath
 
 __all__ = [
     'device_io_control',
