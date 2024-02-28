@@ -11,20 +11,20 @@ from typing_extensions import Annotated, get_args, get_origin, get_type_hints
 from .base import ValidationError
 from .typing import NoneType
 
-__all__ = ['ByteStruct']
+__all__ = ["ByteStruct"]
 
 
-INT_CONVERSION = {1: 'B', 2: 'H', 4: 'I', 8: 'Q'}
-FLOAT_CONVERSION = {2: 'e', 4: 'f', 8: 'd'}
-SIGNED_SPECIFIERS = ('signed', 'unsigned')
+INT_CONVERSION = {1: "B", 2: "H", 4: "I", 8: "Q"}
+FLOAT_CONVERSION = {2: "e", 4: "f", 8: "d"}
+SIGNED_SPECIFIERS = ("signed", "unsigned")
 INTERNAL_NAMES = (
-    '__bytestruct_fields__',
-    '__bytestruct_format__',
-    '__bytestruct_size__',
-    '__bytestruct_cached__',
+    "__bytestruct_fields__",
+    "__bytestruct_format__",
+    "__bytestruct_size__",
+    "__bytestruct_cached__",
 )
 
-_Bs = TypeVar('_Bs', bound='ByteStruct')
+_Bs = TypeVar("_Bs", bound="ByteStruct")
 
 
 class _FieldDescriptor(NamedTuple):
@@ -78,14 +78,14 @@ class _ByteStructMeta(type):
         name: str,
         bases: tuple[type, ...],
         namespace: dict[str, Any],
-        byteorder: Literal['<', '>', '!', '='] = '<',
+        byteorder: Literal["<", ">", "!", "="] = "<",
     ):
         super().__init__(name, bases, namespace)
         if not bases:
             return  # cls is ByteStruct
 
         type_hints = get_type_hints(cls, include_extras=True)
-        format_ = f'{byteorder}'
+        format_ = f"{byteorder}"
         fields = {}
 
         for name, type_ in type_hints.items():
@@ -98,14 +98,14 @@ class _ByteStructMeta(type):
 
             # Embedded ByteStruct, treat as bytes
             if isinstance(type_, cls.__class__) and type_ is not ByteStruct:
-                format_ += f'{len(type_)}s'
+                format_ += f"{len(type_)}s"
                 fields[name] = _FieldDescriptor(type_, is_bytestruct=True)
                 continue
 
             if origin is not Annotated:
                 raise TypeError(
-                    f'Unannotated type {type_} of field {name!r} is not allowed for '
-                    f'ByteStruct'
+                    f"Unannotated type {type_} of field {name!r} is not allowed for "
+                    f"ByteStruct"
                 )
 
             # Annotated type
@@ -113,23 +113,23 @@ class _ByteStructMeta(type):
             annotated_type = args[0]
             size = args[1]
             if not isinstance(size, int):
-                raise TypeError('Field size must be specified as int')
+                raise TypeError("Field size must be specified as int")
             if size < 1:
-                raise ValueError('Field size must be greater than or equal to 1')
+                raise ValueError("Field size must be greater than or equal to 1")
 
             if annotated_type is int:
                 signed = False
                 if len(args) > 2:
                     if args[2] not in SIGNED_SPECIFIERS:
                         raise ValueError(
-                            f'Invalid specifier {args[2]} on field {name!r}, must be '
-                            f'one of {SIGNED_SPECIFIERS}'
+                            f"Invalid specifier {args[2]} on field {name!r}, must be "
+                            f"one of {SIGNED_SPECIFIERS}"
                         )
-                    signed = args[2] == 'signed'
+                    signed = args[2] == "signed"
                 if size not in INT_CONVERSION.keys():
                     raise ValueError(
-                        f'Invalid int field size {size}, must be one of '
-                        f'{tuple(INT_CONVERSION.keys())}'
+                        f"Invalid int field size {size}, must be one of "
+                        f"{tuple(INT_CONVERSION.keys())}"
                     )
                 format_specifier = INT_CONVERSION[size]
                 if signed:
@@ -139,19 +139,19 @@ class _ByteStructMeta(type):
             elif annotated_type is float:
                 if size not in FLOAT_CONVERSION.keys():
                     raise ValueError(
-                        f'Invalid float field size {size}, must be one of '
-                        f'{tuple(FLOAT_CONVERSION.keys())}'
+                        f"Invalid float field size {size}, must be one of "
+                        f"{tuple(FLOAT_CONVERSION.keys())}"
                     )
                 format_ += FLOAT_CONVERSION[size]
 
             elif annotated_type is bytes:
-                format_ += f'{size}s'
+                format_ += f"{size}s"
             elif annotated_type is NoneType:
-                format_ += f'{size}x'  # pad bytes
+                format_ += f"{size}x"  # pad bytes
             else:
                 raise TypeError(
-                    f'Annotated type {args[0]} of field {name!r} is not allowed for '
-                    f'ByteStruct'
+                    f"Annotated type {args[0]} of field {name!r} is not allowed for "
+                    f"ByteStruct"
                 )
 
             fields[name] = _FieldDescriptor(annotated_type, args[1:])
@@ -211,7 +211,7 @@ class ByteStruct(metaclass=_ByteStructMeta):
     """
 
     # Populated per class
-    __bytestruct_fields__: 'dict[str, _FieldDescriptor]'
+    __bytestruct_fields__: "dict[str, _FieldDescriptor]"
     __bytestruct_format__: str
     __bytestruct_size__: int
 
@@ -224,16 +224,16 @@ class ByteStruct(metaclass=_ByteStructMeta):
         and not a subclass of ``ByteStruct``.
         """
         if cls.__bases__ == (object,):
-            raise TypeError(f'Cannot directly instantiate {cls.__name__}')
+            raise TypeError(f"Cannot directly instantiate {cls.__name__}")
 
     @classmethod
     def _check_frozen_dataclass(cls) -> None:
         """Raise ``TypeError`` if it is tried to instantiate a subclass of
         ``ByteStruct`` which is not a frozen ``dataclass``.
         """
-        params: Any = getattr(cls, '__dataclass_params__', None)
+        params: Any = getattr(cls, "__dataclass_params__", None)
         if params is None or not params.frozen:
-            raise TypeError('ByteStruct subclass must be a frozen dataclass')
+            raise TypeError("ByteStruct subclass must be a frozen dataclass")
 
     # noinspection PyUnusedLocal
     def __init__(self, *args: Any, **kwargs: Any):
@@ -247,7 +247,7 @@ class ByteStruct(metaclass=_ByteStructMeta):
         Triggers the internal and the user-defined validation logic.
         """
         self._check_frozen_dataclass()
-        if not hasattr(self, '__bytestruct_cached__'):
+        if not hasattr(self, "__bytestruct_cached__"):
             self._validate_and_cache()
         self.validate()
 
@@ -279,8 +279,8 @@ class ByteStruct(metaclass=_ByteStructMeta):
                 size = descriptor.type_args[0]
                 if len(value) != size:
                     raise ValidationError(
-                        f'Value of field {name!r} must be of length {size} bytes, '
-                        f'got {len(value)} bytes'
+                        f"Value of field {name!r} must be of length {size} bytes, "
+                        f"got {len(value)} bytes"
                     )
 
             values.append(value)
@@ -290,12 +290,12 @@ class ByteStruct(metaclass=_ByteStructMeta):
             bytes_ = struct.pack(self.__bytestruct_format__, *values)
         except (struct.error, OverflowError) as e:
             raise ValidationError(
-                f'Value out of range (format is {self.__bytestruct_format__!r})'
+                f"Value out of range (format is {self.__bytestruct_format__!r})"
             ) from e
 
         # Keep packed version of ByteStruct in memory
         # Avoid __setattr__() here because this is a frozen dataclass.
-        self.__dict__['__bytestruct_cached__'] = bytes_
+        self.__dict__["__bytestruct_cached__"] = bytes_
 
     def validate(self) -> None:
         """Custom validation logic.
@@ -313,7 +313,7 @@ class ByteStruct(metaclass=_ByteStructMeta):
         size = cls.__bytestruct_size__
 
         if len(b) != size:
-            raise ValueError(f'Structure is {size} bytes long, got {len(b)} bytes')
+            raise ValueError(f"Structure is {size} bytes long, got {len(b)} bytes")
 
         unpacked_values = struct.unpack(cls.__bytestruct_format__, b)
         values: list[Any] = []
@@ -337,7 +337,7 @@ class ByteStruct(metaclass=_ByteStructMeta):
 
         # Keep packed version of ByteStruct in memory
         # Avoid __setattr__() here because this is a frozen dataclass.
-        self.__dict__['__bytestruct_cached__'] = b
+        self.__dict__["__bytestruct_cached__"] = b
         return self
 
     def __bytes__(self) -> bytes:

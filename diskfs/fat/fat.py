@@ -12,7 +12,7 @@ from .reserved import BootSector
 if TYPE_CHECKING:
     from ..volume import Volume
 
-__all__ = ['Fat']
+__all__ = ["Fat"]
 
 
 CLUSTER_EMPTY = 0
@@ -58,8 +58,8 @@ class Fat:
         # Reading from clusters ...FF6 and ...FF7 should be allowed if they exist
         if expected_fat_clusters > read_max + 1:
             raise ValueError(
-                f'Total cluster number {boot_sector.total_clusters} is greater than '
-                f'possible for FAT type {fat_type!s}'
+                f"Total cluster number {boot_sector.total_clusters} is greater than "
+                f"possible for FAT type {fat_type!s}"
             )
 
         # Round up for FAT12
@@ -68,12 +68,12 @@ class Fat:
 
         if actual_fat_size_bytes < expected_fat_size_bytes:
             raise ValueError(
-                f'FAT is too small for total cluster number (expected at least '
-                f'{expected_fat_size_bytes} bytes, got {actual_fat_size_bytes} bytes)'
+                f"FAT is too small for total cluster number (expected at least "
+                f"{expected_fat_size_bytes} bytes, got {actual_fat_size_bytes} bytes)"
             )
 
         if not 0 <= main_fat < fat_count:
-            raise ValueError(f'Main FAT number must be in range (0, {fat_count - 1})')
+            raise ValueError(f"Main FAT number must be in range (0, {fat_count - 1})")
 
         self._volume = volume
         self._entries = expected_fat_clusters  # entries per FAT
@@ -93,20 +93,20 @@ class Fat:
         actual_media_type = self[0] & 0xFF
         if actual_media_type != expected_media_type:
             raise ValidationError(
-                'Media descriptor in FAT does not match media descriptor in BPB'
+                "Media descriptor in FAT does not match media descriptor in BPB"
             )
 
     def _check_cluster_key(self, cluster: int) -> None:
         """Raise ``IndexError`` if ``cluster`` not a valid cluster index for the FAT."""
         key_max = self._entries - 1
         if not 0 <= cluster <= key_max:
-            raise IndexError(f'Cluster index must not exceed FAT bounds (0, {key_max})')
+            raise IndexError(f"Cluster index must not exceed FAT bounds (0, {key_max})")
 
     def _check_cluster_value(self, cluster: int) -> None:
         """Raise ``ValueError`` if ``cluster`` not a valid cluster value for the FAT."""
         value_max = CLUSTER_EOC[self._fat_type]
         if not 0 <= cluster <= value_max:
-            raise ValueError(f'Cluster value must be in range (0, {value_max})')
+            raise ValueError(f"Cluster value must be in range (0, {value_max})")
 
     def _check_cluster_data_read(self, cluster: int) -> None:
         """Raise ``ValueError`` if ``cluster`` is not the number of a readable cluster
@@ -115,7 +115,7 @@ class Fat:
         read_max = self._entries - 1
         if not 2 <= cluster <= read_max:
             raise ValueError(
-                f'Cluster number for read operation must be in range (2, {read_max})'
+                f"Cluster number for read operation must be in range (2, {read_max})"
             )
 
     def _check_cluster_data_write(self, cluster: int) -> None:
@@ -125,7 +125,7 @@ class Fat:
         write_max = min(self._entries, CLUSTER_AVOID_DATA[self._fat_type]) - 1
         if not 2 <= cluster <= write_max:
             raise ValueError(
-                f'Cluster number for write operation must be in range (2, {write_max})'
+                f"Cluster number for write operation must be in range (2, {write_max})"
             )
 
     def __len__(self) -> int:
@@ -143,7 +143,7 @@ class Fat:
         have to worry about FAT12 entries spanning a sector boundary.
         """
         if sector_offset >= self._fat_size:
-            raise ValueError(f'Offset {sector_offset} exceeds FAT size')
+            raise ValueError(f"Offset {sector_offset} exceeds FAT size")
 
         if self._buffer[1] == sector_offset:
             return  # Same part of the FAT, do nothing
@@ -196,7 +196,7 @@ class Fat:
         buffer, _, _ = self._buffer
 
         value_bytes = buffer[bytes_offset_buffer : bytes_offset_buffer + byte_count]
-        value = int.from_bytes(value_bytes, 'little')
+        value = int.from_bytes(value_bytes, "little")
 
         if self._fat_type is FatType.FAT_12:
             if key & 1:
@@ -224,7 +224,7 @@ class Fat:
             old_value_bytes = buffer[
                 bytes_offset_sector : bytes_offset_sector + byte_count
             ]
-            old_value = int.from_bytes(old_value_bytes, 'little')
+            old_value = int.from_bytes(old_value_bytes, "little")
 
             if self._fat_type is FatType.FAT_12:
                 if key & 1:
@@ -236,7 +236,7 @@ class Fat:
                 # High 4 bits are reserved, we must keep them
                 value = (old_value & 0xF0000000) | value
 
-        value_bytes = value.to_bytes(byte_count, 'little')
+        value_bytes = value.to_bytes(byte_count, "little")
         buffer[bytes_offset_sector : bytes_offset_sector + byte_count] = value_bytes
         self._buffer = (buffer, sector_offset, True)  # We altered the buffer
 
@@ -274,7 +274,7 @@ class Fat:
             if value == CLUSTER_EMPTY:
                 yield key
                 found += 1
-        raise FileSystemLimit('Not enough free clusters available')
+        raise FileSystemLimit("Not enough free clusters available")
 
     def free_clusters(self) -> int:
         """Return the total count of free clusters.

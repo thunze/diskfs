@@ -8,13 +8,13 @@ Buffer = bytes | _CData | None  # c_char_p
 CFIndex = int  # c_int
 CFStringEncoding = int  # c_uint32
 
-CFTypeRef = NewType('CFTypeRef', c_void_p)  # explicitly not None
-CFAllocator = NewType('CFAllocator', CFTypeRef)
-CFBoolean = NewType('CFBoolean', CFTypeRef)
-CFDictionary = NewType('CFDictionary', CFTypeRef)
-CFString = NewType('CFString', CFTypeRef)
-DADisk = NewType('DADisk', CFTypeRef)
-DASession = NewType('DASession', CFTypeRef)
+CFTypeRef = NewType("CFTypeRef", c_void_p)  # explicitly not None
+CFAllocator = NewType("CFAllocator", CFTypeRef)
+CFBoolean = NewType("CFBoolean", CFTypeRef)
+CFDictionary = NewType("CFDictionary", CFTypeRef)
+CFString = NewType("CFString", CFTypeRef)
+DADisk = NewType("DADisk", CFTypeRef)
+DASession = NewType("DASession", CFTypeRef)
 
 ENCODING_UTF_8: CFStringEncoding
 REMOVABLE_KEY: CFString

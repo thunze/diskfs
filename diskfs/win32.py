@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import sys
 
-assert sys.platform == 'win32'  # skipcq: BAN-B101
+assert sys.platform == "win32"  # skipcq: BAN-B101
 
 # noinspection PyCompatibility
 import msvcrt
@@ -39,10 +39,10 @@ if TYPE_CHECKING:
     from .typing import StrPath
 
 __all__ = [
-    'device_io_control',
-    'device_size',
-    'device_sector_size',
-    'reread_partition_table',
+    "device_io_control",
+    "device_size",
+    "device_sector_size",
+    "reread_partition_table",
 ]
 
 
@@ -67,7 +67,7 @@ PROPERTY_STANDARD_QUERY = 0  # value of enum STORAGE_QUERY_TYPE
 class GET_LENGTH_INFORMATION(Structure):
     """Input structure for ``IOCTL_DISK_GET_LENGTH_INFO``."""
 
-    _fields_ = [('Length', LARGE_INTEGER)]
+    _fields_ = [("Length", LARGE_INTEGER)]
     Length: int
 
 
@@ -76,9 +76,9 @@ class STORAGE_PROPERTY_QUERY(Structure):
     """Input structure for ``IOCTL_STORAGE_QUERY_PROPERTY``."""
 
     _fields_ = [
-        ('PropertyId', c_uint),  # enum STORAGE_PROPERTY_ID
-        ('QueryType', c_uint),  # enum STORAGE_QUERY_TYPE
-        ('AdditionalParameters', BYTE * 1),
+        ("PropertyId", c_uint),  # enum STORAGE_PROPERTY_ID
+        ("QueryType", c_uint),  # enum STORAGE_QUERY_TYPE
+        ("AdditionalParameters", BYTE * 1),
     ]
 
 
@@ -91,8 +91,8 @@ class STORAGE_DESCRIPTOR_HEADER(Structure):
     """
 
     _fields_ = [
-        ('Version', DWORD),
-        ('Size', DWORD),
+        ("Version", DWORD),
+        ("Size", DWORD),
     ]
 
 
@@ -106,24 +106,25 @@ def STORAGE_DEVICE_DESCRIPTOR(size: int) -> type[Structure]:
         """Return the ``STORAGE_DEVICE_DESCRIPTOR`` structure with the field
         ``RawDeviceProperties`` being of size ``raw_properties_size``.
         """
+
         # noinspection PyPep8Naming
         class STORAGE_DEVICE_DESCRIPTOR_(Structure):
             """``STORAGE_DEVICE_DESCRIPTOR`` structure of dynamic size."""
 
             _fields_ = [
-                ('Version', DWORD),
-                ('Size', DWORD),
-                ('DeviceType', BYTE),
-                ('DeviceTypeModifier', BYTE),
-                ('RemovableMedia', BOOLEAN),
-                ('CommandQueueing', BOOLEAN),
-                ('VendorIdOffset', DWORD),
-                ('ProductIdOffset', DWORD),
-                ('ProductRevisionOffset', DWORD),
-                ('SerialNumberOffset', DWORD),
-                ('BusType', c_uint),  # enum STORAGE_BUS_TYPE
-                ('RawPropertiesLength', DWORD),
-                ('RawDeviceProperties', BYTE * raw_properties_size),
+                ("Version", DWORD),
+                ("Size", DWORD),
+                ("DeviceType", BYTE),
+                ("DeviceTypeModifier", BYTE),
+                ("RemovableMedia", BOOLEAN),
+                ("CommandQueueing", BOOLEAN),
+                ("VendorIdOffset", DWORD),
+                ("ProductIdOffset", DWORD),
+                ("ProductRevisionOffset", DWORD),
+                ("SerialNumberOffset", DWORD),
+                ("BusType", c_uint),  # enum STORAGE_BUS_TYPE
+                ("RawPropertiesLength", DWORD),
+                ("RawDeviceProperties", BYTE * raw_properties_size),
             ]
 
         return STORAGE_DEVICE_DESCRIPTOR_
@@ -131,8 +132,8 @@ def STORAGE_DEVICE_DESCRIPTOR(size: int) -> type[Structure]:
     size_without_raw_properties = sizeof(with_raw_properties_size(0))
     if size < size_without_raw_properties:
         raise ValueError(
-            f'Size must be greater than or equal to size without raw properties block '
-            f'(got {size} instead of at least {size_without_raw_properties} bytes)'
+            f"Size must be greater than or equal to size without raw properties block "
+            f"(got {size} instead of at least {size_without_raw_properties} bytes)"
         )
 
     return with_raw_properties_size(size - size_without_raw_properties)
@@ -145,13 +146,13 @@ class STORAGE_ACCESS_ALIGNMENT_DESCRIPTOR(Structure):
     """
 
     _fields_ = [
-        ('Version', DWORD),
-        ('Size', DWORD),
-        ('BytesPerCacheLine', DWORD),
-        ('BytesOffsetForCacheAlignment', DWORD),
-        ('BytesPerLogicalSector', DWORD),
-        ('BytesPerPhysicalSector', DWORD),
-        ('BytesOffsetForSectorAlignment', DWORD),
+        ("Version", DWORD),
+        ("Size", DWORD),
+        ("BytesPerCacheLine", DWORD),
+        ("BytesOffsetForCacheAlignment", DWORD),
+        ("BytesPerLogicalSector", DWORD),
+        ("BytesPerPhysicalSector", DWORD),
+        ("BytesOffsetForSectorAlignment", DWORD),
     ]
 
 
@@ -201,7 +202,7 @@ def device_io_control(
         raise WinError()
 
 
-_S = TypeVar('_S', bound=Structure)
+_S = TypeVar("_S", bound=Structure)
 
 
 def storage_query_property(
@@ -255,7 +256,7 @@ def device_properties(fd: int, path: StrPath) -> DeviceProperties:
 
         if string_bytes is None:
             return None
-        return string_bytes.decode('ascii').rstrip()
+        return string_bytes.decode("ascii").rstrip()
 
     removable = bool(properties.RemovableMedia)
     vendor = unpack_ascii_string(properties.VendorIdOffset)

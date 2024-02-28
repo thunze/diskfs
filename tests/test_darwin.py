@@ -6,9 +6,9 @@ from typing import TYPE_CHECKING
 import pytest
 
 # Make mypy and pytest collection logic happy
-if not TYPE_CHECKING and sys.platform != 'darwin':
-    pytest.skip('Skipping Darwin-only tests', allow_module_level=True)
-assert sys.platform == 'darwin'
+if not TYPE_CHECKING and sys.platform != "darwin":
+    pytest.skip("Skipping Darwin-only tests", allow_module_level=True)
+assert sys.platform == "darwin"
 
 
 from diskfs.base import DeviceProperties
@@ -49,6 +49,6 @@ def test_device_properties_all_none(tempfile):
     This is for example the case when Disk Arbitration is contacted based on a file
     object for a regular file instead of a block device.
     """
-    with tempfile.open('rb') as f:
+    with tempfile.open("rb") as f:
         properties = device_properties(f.fileno(), tempfile)
         assert properties == DeviceProperties(None, None, None)

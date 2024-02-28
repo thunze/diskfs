@@ -6,7 +6,7 @@ from enum import Enum
 
 from ..filesystem import FsType
 
-__all__ = ['FatType']
+__all__ = ["FatType"]
 
 
 class FatType(Enum):

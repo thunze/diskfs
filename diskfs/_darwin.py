@@ -6,29 +6,29 @@ from typing import NewType
 
 __all__ = [
     # Types
-    'CFIndex',
-    'CFStringEncoding',
-    'CFAllocator',
-    'CFBoolean',
-    'CFDictionary',
-    'CFString',
-    'DADisk',
-    'DASession',
+    "CFIndex",
+    "CFStringEncoding",
+    "CFAllocator",
+    "CFBoolean",
+    "CFDictionary",
+    "CFString",
+    "DADisk",
+    "DASession",
     # Functions
-    'CFBooleanGetValue',
-    'CFDictionaryGetValue',
-    'CFRelease',
-    'CFStringGetCString',
-    'CFStringGetLength',
-    'CFStringGetMaximumSizeForEncoding',
-    'DADiskCopyDescription',
-    'DADiskCreateFromBSDName',
-    'DASessionCreate',
+    "CFBooleanGetValue",
+    "CFDictionaryGetValue",
+    "CFRelease",
+    "CFStringGetCString",
+    "CFStringGetLength",
+    "CFStringGetMaximumSizeForEncoding",
+    "DADiskCopyDescription",
+    "DADiskCreateFromBSDName",
+    "DASessionCreate",
     # Constants
-    'ENCODING_UTF_8',
-    'MODEL_KEY',
-    'REMOVABLE_KEY',
-    'VENDOR_KEY',
+    "ENCODING_UTF_8",
+    "MODEL_KEY",
+    "REMOVABLE_KEY",
+    "VENDOR_KEY",
 ]
 
 
@@ -37,30 +37,30 @@ __all__ = [
 CFIndex = int
 CFStringEncoding = int
 
-CFTypeRef = NewType('CFTypeRef', c_void_p)
-CFAllocator = NewType('CFAllocator', CFTypeRef)
-CFBoolean = NewType('CFBoolean', CFTypeRef)
-CFDictionary = NewType('CFDictionary', CFTypeRef)
-CFString = NewType('CFString', CFTypeRef)
-DADisk = NewType('DADisk', CFTypeRef)
-DASession = NewType('DASession', CFTypeRef)
+CFTypeRef = NewType("CFTypeRef", c_void_p)
+CFAllocator = NewType("CFAllocator", CFTypeRef)
+CFBoolean = NewType("CFBoolean", CFTypeRef)
+CFDictionary = NewType("CFDictionary", CFTypeRef)
+CFString = NewType("CFString", CFTypeRef)
+DADisk = NewType("DADisk", CFTypeRef)
+DASession = NewType("DASession", CFTypeRef)
 
 
 # Functions and constants
 
-FRAMEWORK_BASE = Path('/System/Library/Frameworks')
+FRAMEWORK_BASE = Path("/System/Library/Frameworks")
 
 
 def framework(name: str) -> CDLL:
     """Return a ``ctypes`` shared library object for the framework available under the
     name ``name``.
     """
-    path = FRAMEWORK_BASE / f'{name}.framework' / name
+    path = FRAMEWORK_BASE / f"{name}.framework" / name
     return CDLL(str(path))
 
 
-CoreFoundation = framework('CoreFoundation')
-DiskArbitration = framework('DiskArbitration')
+CoreFoundation = framework("CoreFoundation")
+DiskArbitration = framework("DiskArbitration")
 
 
 ENCODING_UTF_8 = 134217984  # value of enum CFStringBuiltInEncodings

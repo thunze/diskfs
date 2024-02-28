@@ -8,7 +8,7 @@ from diskfs.base import DeviceProperties, SectorSize, is_power_of_two
 
 # Test logic is the same, only parametrization has to be adjusted per platform.
 
-if sys.platform == 'win32':
+if sys.platform == "win32":
     from diskfs import win32 as platform_specific
 
     # 3 MiB is minimum required by New-VHD
@@ -17,9 +17,9 @@ if sys.platform == 'win32':
     # Only combinations allowed by New-VHD
     SECTOR_SIZES = [SectorSize(512, 512), SectorSize(512, 4096), SectorSize(4096, 4096)]
     SECTOR_SIZE_CUSTOMIZABLE = (True, True)  # LSS and PSS customizable
-    DEVICE_PROPERTIES = DeviceProperties(False, 'Msft', 'Virtual Disk')
+    DEVICE_PROPERTIES = DeviceProperties(False, "Msft", "Virtual Disk")
 
-elif sys.platform == 'linux':
+elif sys.platform == "linux":
     from diskfs import linux as platform_specific
 
     SIZES = [2 * 4096, 3 * 4096]
@@ -31,16 +31,16 @@ elif sys.platform == 'linux':
     SECTOR_SIZE_CUSTOMIZABLE = (True, False)  # only LSS customizable
     DEVICE_PROPERTIES = DeviceProperties(False, None, None)
 
-elif sys.platform == 'darwin':
+elif sys.platform == "darwin":
     from diskfs import darwin as platform_specific
 
     SIZES = [2 * 4096, 3 * 4096]
     SECTOR_SIZES = [SectorSize(512, 512)]
     SECTOR_SIZE_CUSTOMIZABLE = (False, False)  # not customizable at all
-    DEVICE_PROPERTIES = DeviceProperties(True, 'Apple', 'Disk Image')
+    DEVICE_PROPERTIES = DeviceProperties(True, "Apple", "Disk Image")
 
 else:
-    raise RuntimeError(f'Unspported platform {sys.platform!r}')
+    raise RuntimeError(f"Unspported platform {sys.platform!r}")
 
 
 # Test logic
@@ -50,25 +50,25 @@ SECTOR_SIZE_MAX_SANE = 16 * 1024 * 1024
 
 
 @pytest.mark.privileged
-@pytest.mark.parametrize('block_device', [(SIZES[0], SECTOR_SIZES[0])], indirect=True)
+@pytest.mark.parametrize("block_device", [(SIZES[0], SECTOR_SIZES[0])], indirect=True)
 def test_device_properties(block_device) -> None:
     """Test that the ``DeviceProperties`` tuple obtained from ``device_properties()``
     contains the expected values.
     """
-    with open(block_device, 'rb') as f:
+    with open(block_device, "rb") as f:
         properties = platform_specific.device_properties(f.fileno(), block_device)
         assert properties == DEVICE_PROPERTIES
 
 
 @pytest.mark.privileged
 @pytest.mark.parametrize(
-    ['block_device', 'size_expected', 'sector_size_expected'],
+    ["block_device", "size_expected", "sector_size_expected"],
     [
         ((size, sector_size), size, sector_size)  # pass to fixture and to test function
         for size in SIZES
         for sector_size in SECTOR_SIZES
     ],
-    indirect=['block_device'],
+    indirect=["block_device"],
 )
 def test_device_size_sector_size(
     block_device, size_expected, sector_size_expected
@@ -76,7 +76,7 @@ def test_device_size_sector_size(
     """Test that ``device_size()`` and ``device_sector_size()`` return the expected
     values.
     """
-    with open(block_device, 'rb') as f:
+    with open(block_device, "rb") as f:
         size_actual = platform_specific.device_size(f.fileno())
         sector_size_actual = platform_specific.device_sector_size(f.fileno())
 
@@ -99,10 +99,10 @@ def test_device_size_sector_size(
 
 
 @pytest.mark.privileged
-@pytest.mark.parametrize('block_device', [(SIZES[0], SECTOR_SIZES[0])], indirect=True)
+@pytest.mark.parametrize("block_device", [(SIZES[0], SECTOR_SIZES[0])], indirect=True)
 def test_reread_partition_table(block_device):
     """Test that correctly invoking ``reread_partition_table()`` does not raise an
     exception.
     """
-    with open(block_device, 'rb') as f:
+    with open(block_device, "rb") as f:
         platform_specific.reread_partition_table(f.fileno())

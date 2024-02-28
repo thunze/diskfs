@@ -5,14 +5,14 @@ from __future__ import annotations
 from typing import NamedTuple
 
 __all__ = [
-    'ValidationError',
-    'ValidationWarning',
-    'BoundsError',
-    'BoundsWarning',
-    'AlignmentWarning',
-    'DeviceProperties',
-    'SectorSize',
-    'is_power_of_two',
+    "ValidationError",
+    "ValidationWarning",
+    "BoundsError",
+    "BoundsWarning",
+    "AlignmentWarning",
+    "DeviceProperties",
+    "SectorSize",
+    "is_power_of_two",
 ]
 
 
@@ -81,5 +81,5 @@ def is_power_of_two(value: int) -> bool:
     an integer greater than or equal to zero.
     """
     if value <= 0:
-        raise ValueError('Value must be greater than 0')
+        raise ValueError("Value must be greater than 0")
     return value & (value - 1) == 0

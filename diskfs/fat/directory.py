@@ -16,17 +16,17 @@ from ..bytestruct import ByteStruct
 from ..filesystem import FileSystemLimit
 
 __all__ = [
-    'ENTRY_SIZE',
-    'Attributes',
-    'Hint',
-    'Entry',
-    'EightDotThreeEntry',
-    'entry_match',
-    'iter_entries',
-    'create_entry',
-    'updated_entry',
-    'pack_dos_datetime',
-    'unpack_dos_datetime',
+    "ENTRY_SIZE",
+    "Attributes",
+    "Hint",
+    "Entry",
+    "EightDotThreeEntry",
+    "entry_match",
+    "iter_entries",
+    "create_entry",
+    "updated_entry",
+    "pack_dos_datetime",
+    "unpack_dos_datetime",
 ]
 
 
@@ -36,7 +36,7 @@ log = logging.getLogger(__name__)
 ENTRY_SIZE = 32
 MAX_VFAT_ENTRIES = 20
 
-DOS_FILENAME_OEM_ENCODING = '850'
+DOS_FILENAME_OEM_ENCODING = "850"
 """OEM encoding used for DOS filenames.
 
 DOS filenames support characters < 256, but the encoding of characters >= 128 depends
@@ -51,10 +51,10 @@ or by calling ``GetConsoleOutputCP()`` found in ``kernel32.dll``.
 # Applies to already unpacked DOS filenames.
 # Implicitly includes characters already found in VFAT_FILENAME_FORBIDDEN and all
 # lowercase characters (depending on the OEM code page).
-DOS_FILENAME_FORBIDDEN = '+,.;=[]'
+DOS_FILENAME_FORBIDDEN = "+,.;=[]"
 
 VFAT_FILENAME_MAX_LENGTH = 255
-VFAT_FILENAME_FORBIDDEN = ''.join(map(chr, range(32))) + '"*/:<>?\\|\x7F'
+VFAT_FILENAME_FORBIDDEN = "".join(map(chr, range(32))) + '"*/:<>?\\|\x7F'
 VFAT_FIRST_LFN_ENTRY = 0b0100_0000
 VFAT_ENTRY_NUMBER_MASK = 0b0001_1111
 
@@ -102,10 +102,10 @@ def _split_filename(filename: str) -> tuple[str, str]:
         - 'thing.json.txt' -> ('thing.json', 'txt')
         - 'thing' -> ('thing', '')
     """
-    split_ = filename.rsplit('.', maxsplit=1)
+    split_ = filename.rsplit(".", maxsplit=1)
     assert len(split_) <= 2
     if len(split_) == 1:
-        return split_[0], ''
+        return split_[0], ""
     return split_[0], split_[1]
 
 
@@ -132,15 +132,15 @@ def _unpack_dos_filename(name_bytes: bytes, ext_bytes: bytes) -> str:
     Characters which cannot be decoded using ``DOS_FILENAME_OEM_ENCODING`` are
     replaced by the Unicode replacement character ``U+FFFD``.
     """
-    unpacked_name = name_bytes.rstrip(b' ')
-    unpacked_ext = ext_bytes.rstrip(b' ')
+    unpacked_name = name_bytes.rstrip(b" ")
+    unpacked_ext = ext_bytes.rstrip(b" ")
     if unpacked_name[0] == ACTUALLY_E5:
         unpacked_name = bytes([Hint.DELETED.value]) + unpacked_name[1:]
 
-    name_str = unpacked_name.decode(DOS_FILENAME_OEM_ENCODING, errors='replace')
-    ext_str = unpacked_ext.decode(DOS_FILENAME_OEM_ENCODING, errors='replace')
+    name_str = unpacked_name.decode(DOS_FILENAME_OEM_ENCODING, errors="replace")
+    ext_str = unpacked_ext.decode(DOS_FILENAME_OEM_ENCODING, errors="replace")
     if ext_str:
-        return f'{name_str}.{ext_str}'
+        return f"{name_str}.{ext_str}"
     return name_str
 
 
@@ -180,7 +180,7 @@ def _is_valid_dos_filename(filename: str) -> bool:
         _is_valid_vfat_filename(filename)
         and len(name) <= 8
         and len(ext) <= 3
-        and not filename.startswith('.')
+        and not filename.startswith(".")
         and not _has_invalid_dos_character(filename)
     )
 
@@ -188,14 +188,14 @@ def _is_valid_dos_filename(filename: str) -> bool:
 def _is_valid_vfat_filename(filename: str) -> bool:
     """Return whether ``filename`` is a valid VFAT filename."""
     try:
-        filename.encode('utf-16le')
+        filename.encode("utf-16le")
     except UnicodeEncodeError:
         return False
 
     return (
         0 < len(filename) <= VFAT_FILENAME_MAX_LENGTH
-        and not filename.endswith(' ')
-        and not filename.endswith('.')
+        and not filename.endswith(" ")
+        and not filename.endswith(".")
         and not any(char in VFAT_FILENAME_FORBIDDEN for char in filename)
     )
 
@@ -207,7 +207,7 @@ def _check_vfat_filename(filename: str) -> None:
     filename must pass.
     """
     if not _is_valid_vfat_filename(filename):
-        raise ValidationError(f'Invalid filename {filename!r}')
+        raise ValidationError(f"Invalid filename {filename!r}")
 
 
 def _requires_vfat(filename: str) -> bool:
@@ -227,8 +227,8 @@ def _to_be_saved_as_vfat(filename: str) -> bool:
     """
     name, ext = _split_filename(filename)
     return (
-        not (name == '' or name.isupper() or name.islower())
-        or not (ext == '' or ext.isupper() or ext.islower())
+        not (name == "" or name.isupper() or name.islower())
+        or not (ext == "" or ext.isupper() or ext.islower())
         # Pass filename.upper() because _is_valid_dos_filename() rejects lowercase parts
         or not _is_valid_dos_filename(filename.upper())
     )
@@ -303,16 +303,16 @@ def _vfat_to_dos_filename(filename: str, existing_filenames: Iterable[str]) -> s
         """Remove all dots and spaces of ``part_`` and replace each character not
         allowed in DOS filenames with an underscore.
         """
-        sanitized_ = part_.replace('.', '').replace(' ', '')
+        sanitized_ = part_.replace(".", "").replace(" ", "")
         for index, char in enumerate(sanitized_):
             if _is_invalid_dos_character(char):
-                sanitized_ = sanitized_[:index] + '_' + sanitized_[index + 1 :]
+                sanitized_ = sanitized_[:index] + "_" + sanitized_[index + 1 :]
         return sanitized_
 
     name_sanitized = sanitize(name)
     ext_sanitized = sanitize(ext)
 
-    sanitized = f'{name_sanitized[:8]}.{ext_sanitized[:3]}'.rstrip('.')
+    sanitized = f"{name_sanitized[:8]}.{ext_sanitized[:3]}".rstrip(".")
     sanitizing_did_something = sanitized != filename_upper
 
     if _is_valid_dos_filename(filename_upper) and not sanitizing_did_something:
@@ -320,10 +320,10 @@ def _vfat_to_dos_filename(filename: str, existing_filenames: Iterable[str]) -> s
 
     # A tilde (~) variant of the filename is now definitely required.
 
-    if filename.startswith('.') and name.lstrip('.').lstrip(' ') == '':
+    if filename.startswith(".") and name.lstrip(".").lstrip(" ") == "":
         # In certain special cases, ext is used as name.
         name_6 = ext_sanitized[:6]
-        ext_3 = ''
+        ext_3 = ""
     else:
         name_6 = name_sanitized[:6]
         ext_3 = ext_sanitized[:3]
@@ -337,27 +337,27 @@ def _vfat_to_dos_filename(filename: str, existing_filenames: Iterable[str]) -> s
     # is used.
     if len(name_6) > 2:
         for i in range(1, 5):
-            proposed_name = f'{name_6}~{i}'
+            proposed_name = f"{name_6}~{i}"
             if proposed_name not in existing_names_ext_match:
-                found = f'{proposed_name}.{ext_3}'
-                return found.rstrip('.')
+                found = f"{proposed_name}.{ext_3}"
+                return found.rstrip(".")
 
     # A two-(or-less-)letter variant of the filename is now definitely required.
     checksum = _vfat_filename_checksum(filename)
-    new_name_6 = f'{name_6[:2]}{checksum:04X}'
+    new_name_6 = f"{name_6[:2]}{checksum:04X}"
 
     for char_count in range(len(new_name_6), -1, -1):
         new_name_part = new_name_6[:char_count]
         exp = len(new_name_6) - char_count  # (0, 1, 2, ...)
 
         for i in range(10**exp, 10 ** (exp + 1)):
-            proposed_name = f'{new_name_part}~{i}'
+            proposed_name = f"{new_name_part}~{i}"
             if proposed_name not in existing_names_ext_match:
-                found = f'{proposed_name}.{ext_3}'
-                return found.rstrip('.')
+                found = f"{proposed_name}.{ext_3}"
+                return found.rstrip(".")
 
     raise FileSystemLimit(
-        f'Could not find a DOS filename for VFAT filename {filename}'
+        f"Could not find a DOS filename for VFAT filename {filename}"
     )  # pragma: no cover
 
 
@@ -374,7 +374,7 @@ def pack_dos_datetime(dt: datetime) -> tuple[int, int, int]:
     datetime object ``dt``.
     """
     if dt.year < DOS_YEAR_MIN or dt.year > DOS_YEAR_MAX:
-        raise ValueError(f'Invalid DOS date {dt}')
+        raise ValueError(f"Invalid DOS date {dt}")
     date = ((dt.year - DOS_YEAR_MIN) << 9) | (dt.month << 5) | dt.day
     time = (dt.hour << 11) | (dt.minute << 5) | (dt.second // 2)
     time_ten_ms = (dt.second % 2) * 100 + dt.microsecond // 10_000
@@ -427,7 +427,7 @@ class EightDotThreeEntry(ByteStruct):
         """Filename; case information is applied if VFAT support is enabled."""
         unpacked = _unpack_dos_filename(self.name, self.extension)
         if not vfat:
-            return unpacked.rstrip('.')
+            return unpacked.rstrip(".")
 
         name, ext = _split_filename(unpacked)
         if self.case_info_vfat & CASE_INFO_NAME_LOWER:
@@ -435,13 +435,13 @@ class EightDotThreeEntry(ByteStruct):
         if self.case_info_vfat & CASE_INFO_EXT_LOWER:
             ext = ext.lower()
 
-        return f'{name}.{ext}'.rstrip('.')
+        return f"{name}.{ext}".rstrip(".")
 
     @property
     def dos_filename(self) -> str:
         """DOS filename."""
         unpacked = _unpack_dos_filename(self.name, self.extension)
-        return unpacked.rstrip('.')
+        return unpacked.rstrip(".")
 
     def cluster(self, *, fat_32: bool) -> int:
         """Start cluster of the file or directory."""
@@ -504,14 +504,14 @@ class VfatEntry(ByteStruct):
     def validate(self) -> None:
         if Attributes.VFAT not in Attributes(self.attributes):
             raise ValidationError(
-                f'Invalid attributes {self.attributes} for VFAT entry'
+                f"Invalid attributes {self.attributes} for VFAT entry"
             )
         if not 1 <= self.number <= MAX_VFAT_ENTRIES:
             raise ValidationError(
-                f'Sequence number must be in range (1, {MAX_VFAT_ENTRIES})'
+                f"Sequence number must be in range (1, {MAX_VFAT_ENTRIES})"
             )
         if self.cluster != 0:
-            raise ValidationError('Cluster number in VFAT entry must be 0')
+            raise ValidationError("Cluster number in VFAT entry must be 0")
 
     @property
     def first_lfn_entry(self) -> bool:
@@ -543,26 +543,26 @@ class Entry:
         vfat_entries = tuple(vfat_entries)
 
         if vfat_entries and not vfat:
-            raise ValueError('VFAT entries passed but VFAT support is disabled')
+            raise ValueError("VFAT entries passed but VFAT support is disabled")
         if eight_dot_three.hint is not None:
             raise ValueError(
-                f'8.3 entry must not be a special 8.3 entry with {eight_dot_three.hint}'
+                f"8.3 entry must not be a special 8.3 entry with {eight_dot_three.hint}"
             )
         if eight_dot_three.volume_label:
-            raise ValueError('8.3 entry must not be a volume label entry')
+            raise ValueError("8.3 entry must not be a volume label entry")
         if Attributes.VFAT in eight_dot_three.attributes:
-            raise ValueError('8.3 entry must not be a VFAT entry')
+            raise ValueError("8.3 entry must not be a VFAT entry")
 
         if len(vfat_entries) > MAX_VFAT_ENTRIES:
             raise ValidationError(
-                f'VFAT entry chain must not contain more than {MAX_VFAT_ENTRIES} '
-                f'entries'
+                f"VFAT entry chain must not contain more than {MAX_VFAT_ENTRIES} "
+                f"entries"
             )
 
         if vfat_entries:
             if not vfat_entries[0].first_lfn_entry:
                 raise ValidationError(
-                    'First VFAT entry does not have bit 6 of sequence number set'
+                    "First VFAT entry does not have bit 6 of sequence number set"
                 )
 
             # Check DOS filename checksum
@@ -574,7 +574,7 @@ class Entry:
                     # This means that the DOS filename was changed but the VFAT
                     # filename was not.
                     raise ValidationError(
-                        'Checksum in VFAT entry does not match checksum of DOS filename'
+                        "Checksum in VFAT entry does not match checksum of DOS filename"
                     )
 
         self._eight_dot_three = eight_dot_three
@@ -585,7 +585,7 @@ class Entry:
         entry in physical order.
         """
         # noinspection PyTypeChecker
-        return b''.join(map(bytes, self._vfat_entries)) + bytes(self._eight_dot_three)
+        return b"".join(map(bytes, self._vfat_entries)) + bytes(self._eight_dot_three)
 
     def filename(self, *, vfat: bool) -> str:
         """Filename; VFAT long filename if VFAT support is enabled."""
@@ -594,11 +594,11 @@ class Entry:
         #     return self._eight_dot_three.filename(vfat=False).replace('.', '')
 
         if vfat and self._vfat_entries:
-            filename_bytes = b''
+            filename_bytes = b""
             for entry in reversed(self._vfat_entries):
                 filename_bytes += entry.chars_1 + entry.chars_2 + entry.chars_3
-            filename = filename_bytes.decode('utf-16le')
-            return filename.rstrip('\x00\uffff').rstrip('. ')
+            filename = filename_bytes.decode("utf-16le")
+            return filename.rstrip("\x00\uffff").rstrip(". ")
 
         return self._eight_dot_three.filename(vfat=vfat)
 
@@ -661,9 +661,9 @@ class Entry:
 
     def __repr__(self) -> str:
         return (
-            f'{self.__class__.__name__}(filename={self.filename(vfat=True)!r}, '
-            f'dos_filename={self.dos_filename!r}, attributes={self.attributes}, '
-            f'size={self.size}, total_entries={self.total_entries})'
+            f"{self.__class__.__name__}(filename={self.filename(vfat=True)!r}, "
+            f"dos_filename={self.dos_filename!r}, attributes={self.attributes}, "
+            f"size={self.size}, total_entries={self.total_entries})"
         )
 
 
@@ -759,7 +759,7 @@ def iter_entries(
                 try:
                     vfat_entry = VfatEntry.from_bytes(entry_bytes)
                 except ValidationError:
-                    log.warning(f'Failed to parse VFAT entry {edt_entry}')
+                    log.warning(f"Failed to parse VFAT entry {edt_entry}")
                     yield from pending_edt_entries
                     clear_pending()
                 else:
@@ -774,7 +774,7 @@ def iter_entries(
             except ValidationError:
                 # Continue with 8.3 entry only
                 log.warning(
-                    f'Discarded VFAT entries for 8.3 entry {edt_entry.dos_filename!r}'
+                    f"Discarded VFAT entries for 8.3 entry {edt_entry.dos_filename!r}"
                 )
                 yield from pending_edt_entries
                 yield Entry(edt_entry, (), vfat=vfat)
@@ -802,9 +802,9 @@ def create_entry(
     Not to be used to create a volume label.
     """
     if Attributes.VOLUME_LABEL in attributes:
-        raise ValueError('New entry must not have the volume label attribute')
+        raise ValueError("New entry must not have the volume label attribute")
 
-    filename = filename.rstrip('. ')
+    filename = filename.rstrip(". ")
     _check_vfat_filename(filename)
     requires_vfat = _requires_vfat(filename)
     to_be_saved_as_vfat = _to_be_saved_as_vfat(filename)
@@ -813,12 +813,12 @@ def create_entry(
     vfat_entries = []  # physical order
 
     if requires_vfat and not vfat:
-        raise ValueError(f'Filename {filename!r} requires VFAT')
+        raise ValueError(f"Filename {filename!r} requires VFAT")
 
     # Check whether a file with the same filename already exists
     for entry in existing_entries:
         if entry_match(filename, entry, vfat=vfat):
-            raise ValueError(f'File with name {filename!r} already exists')
+            raise ValueError(f"File with name {filename!r} already exists")
 
     if requires_vfat and to_be_saved_as_vfat:
         # 8.3 entry and VFAT entry chain
@@ -830,13 +830,13 @@ def create_entry(
             # physical_index: 0, 1, 2, ...
             # start: ..., 26, 13, 0
             chars_str = filename[start : start + 13]
-            chars = chars_str.encode('utf-16le')
+            chars = chars_str.encode("utf-16le")
             seq = start // 13 + 1  # ..., 3, 2, 1 (logical)
 
             if physical_index == 0:
                 if len(chars_str) < 13:
-                    chars += b'\x00\x00'
-                    chars = chars.ljust(26, b'\xFF')
+                    chars += b"\x00\x00"
+                    chars = chars.ljust(26, b"\xFF")
                 seq |= VFAT_FIRST_LFN_ENTRY
 
             chars_1, chars_2, chars_3 = chars[:10], chars[10:22], chars[22:]
@@ -866,7 +866,7 @@ def create_entry(
 
     if not fat_32 and cluster_high != 0:
         raise ValueError(
-            'High bits of cluster number can only be used on FAT32 file systems'
+            "High bits of cluster number can only be used on FAT32 file systems"
         )
 
     edt_entry = EightDotThreeEntry(
@@ -910,22 +910,22 @@ def updated_entry(
         cluster_high = new_cluster >> 16
         if not fat_32 and cluster_high != 0:
             raise ValueError(
-                'High bits of cluster number can only be used on FAT32 file systems'
+                "High bits of cluster number can only be used on FAT32 file systems"
             )
-        replacements['_cluster'] = cluster_low
-        replacements['_cluster_high_fat_32'] = cluster_high
+        replacements["_cluster"] = cluster_low
+        replacements["_cluster_high_fat_32"] = cluster_high
 
     if new_size is not None:
-        replacements['size'] = new_size
+        replacements["size"] = new_size
 
     if last_accessed is not None:
         last_accessed_date, _, _ = pack_dos_datetime(last_accessed)
-        replacements['last_accessed_date'] = last_accessed_date
+        replacements["last_accessed_date"] = last_accessed_date
 
     if last_modified is not None:
         last_modified_date, last_modified_time, _ = pack_dos_datetime(last_modified)
-        replacements['last_modified_date'] = last_modified_date
-        replacements['last_modified_time'] = last_modified_time
+        replacements["last_modified_date"] = last_modified_date
+        replacements["last_modified_time"] = last_modified_time
 
     new_edt_entry = replace(old_edt_entry, **replacements)
     new_entry = Entry(new_edt_entry, entry.vfat_entries, vfat=vfat)

@@ -19,7 +19,7 @@ from .table import TableType, check_alignment, check_bounds, check_overlapping
 if TYPE_CHECKING:
     from .disk import Disk
 
-__all__ = ['Table', 'PartitionEntry', 'PartitionAttributes', 'PartitionType']
+__all__ = ["Table", "PartitionEntry", "PartitionAttributes", "PartitionType"]
 
 
 log = logging.getLogger(__name__)
@@ -29,7 +29,7 @@ MIN_LSS = 512  # minimum logical sector size required for GPT partitioning
 
 PRIMARY_HEADER_LBA = 1
 
-SIGNATURE = b'EFI PART'
+SIGNATURE = b"EFI PART"
 REVISION = 0x00010000  # 1.0
 MIN_PARTITION_ENTRIES = 128
 
@@ -40,12 +40,12 @@ def _check_lss(lss: int) -> None:
     """Check if a logical sector size of ``lss`` works with GPT partitioning."""
     if lss < MIN_LSS:
         raise ValueError(
-            f'GPT partitioning requires a logical sector size of at least '
-            f'{MIN_LSS} bytes'
+            f"GPT partitioning requires a logical sector size of at least "
+            f"{MIN_LSS} bytes"
         )
     if not is_power_of_two(lss):
         raise ValueError(
-            'Logical sector size must be a power of 2 for GPT partitioning'
+            "Logical sector size must be a power of 2 for GPT partitioning"
         )
 
 
@@ -59,7 +59,7 @@ def _partition_array_sectors(entries_count: int, entry_size: int, lss: int) -> i
     """
     if lss % entry_size != 0:
         raise ValueError(
-            'Logical sector size must be a multiple of the partition entry size'
+            "Logical sector size must be a multiple of the partition entry size"
         )
     return (entries_count * entry_size - 1) // lss + 1
 
@@ -77,7 +77,7 @@ def _partition_entries_written(entries_count: int, entry_size: int, lss: int) ->
     """
     if lss % entry_size != 0:
         raise ValueError(
-            'Logical sector size must be a multiple of the partition entry size'
+            "Logical sector size must be a multiple of the partition entry size"
         )
     sectors_written = _partition_array_sectors(entries_count, entry_size, lss)
     entries_per_sector = lss // entry_size
@@ -88,37 +88,37 @@ def _partition_entries_written(entries_count: int, entry_size: int, lss: int) ->
 class PartitionType(Enum):
     """Common GPT partition type."""
 
-    UNUSED = UUID('00000000-0000-0000-0000-000000000000')
-    MBR_PARTITION_SCHEME = UUID('024DEE41-33E7-11D3-9D69-0008C781F39F')
-    EFI_SYSTEM_PARTITION = UUID('C12A7328-F81F-11D2-BA4B-00A0C93EC93B')
-    GRUB_BIOS_BOOT = UUID('21686148-6449-6E6F-744E-656564454649')
+    UNUSED = UUID("00000000-0000-0000-0000-000000000000")
+    MBR_PARTITION_SCHEME = UUID("024DEE41-33E7-11D3-9D69-0008C781F39F")
+    EFI_SYSTEM_PARTITION = UUID("C12A7328-F81F-11D2-BA4B-00A0C93EC93B")
+    GRUB_BIOS_BOOT = UUID("21686148-6449-6E6F-744E-656564454649")
 
-    MICROSOFT_BASIC_DATA = UUID('EBD0A0A2-B9E5-4433-87C0-68B6B72699C7')
-    MICROSOFT_LDM_DATA = UUID('AF9B60A0-1431-4F62-BC68-3311714A69AD')
-    MICROSOFT_LDM_METADATA = UUID('5808C8AA-7E8F-42E0-85D2-E1E90434CFB3')
-    MICROSOFT_MSFT_RECOVERY = UUID('DE94BBA4-06D1-4D40-A16A-BFD50179D6AC')
-    MICROSOFT_MSFT_RESERVED = UUID('E3C9E316-0B5C-4DB8-817D-F92DF00215AE')
+    MICROSOFT_BASIC_DATA = UUID("EBD0A0A2-B9E5-4433-87C0-68B6B72699C7")
+    MICROSOFT_LDM_DATA = UUID("AF9B60A0-1431-4F62-BC68-3311714A69AD")
+    MICROSOFT_LDM_METADATA = UUID("5808C8AA-7E8F-42E0-85D2-E1E90434CFB3")
+    MICROSOFT_MSFT_RECOVERY = UUID("DE94BBA4-06D1-4D40-A16A-BFD50179D6AC")
+    MICROSOFT_MSFT_RESERVED = UUID("E3C9E316-0B5C-4DB8-817D-F92DF00215AE")
 
-    LINUX_FILESYSTEM = UUID('0FC63DAF-8483-4772-8E79-3D69D8477DE4')
-    LINUX_RAID = UUID('A19D880F-05FC-4D3B-A006-743F0F84911E')
-    LINUX_ROOT_X86 = UUID('44479540-F297-41B2-9AF7-D131D5F0458A')
-    LINUX_ROOT_X86_64 = UUID('4F68BCE3-E8CD-4DB1-96E7-FBCAF984B709')
-    LINUX_ROOT_ARM32 = UUID('69DAD710-2CE4-4E3C-B16C-21A1D49ABED3')
-    LINUX_ROOT_ARM64 = UUID('B921B045-1DF0-41C3-AF44-4C6F280D3FAE')
-    LINUX_BOOT = UUID('BC13C2FF-59E6-4262-A352-B275FD6F7172')
-    LINUX_HOME = UUID('933AC7E1-2EB4-4F13-B844-0E14E2AEF915')
-    LINUX_SRV = UUID('3B8F8425-20E0-4F3B-907F-1A25A76F98E8')
-    LINUX_SWAP = UUID('0657FD6D-A4AB-43C4-84E5-0933C84B4F4F')
-    LINUX_LVM = UUID('E6D6D379-F507-44C2-A23C-238F2A3DF928')
-    LINUX_DMCRYPT = UUID('7FFEC5C9-2D00-49B7-8941-3EA10A5586B7')
-    LINUX_LUKS = UUID('CA7D7CCB-63ED-4C53-861C-1742536059CC')
+    LINUX_FILESYSTEM = UUID("0FC63DAF-8483-4772-8E79-3D69D8477DE4")
+    LINUX_RAID = UUID("A19D880F-05FC-4D3B-A006-743F0F84911E")
+    LINUX_ROOT_X86 = UUID("44479540-F297-41B2-9AF7-D131D5F0458A")
+    LINUX_ROOT_X86_64 = UUID("4F68BCE3-E8CD-4DB1-96E7-FBCAF984B709")
+    LINUX_ROOT_ARM32 = UUID("69DAD710-2CE4-4E3C-B16C-21A1D49ABED3")
+    LINUX_ROOT_ARM64 = UUID("B921B045-1DF0-41C3-AF44-4C6F280D3FAE")
+    LINUX_BOOT = UUID("BC13C2FF-59E6-4262-A352-B275FD6F7172")
+    LINUX_HOME = UUID("933AC7E1-2EB4-4F13-B844-0E14E2AEF915")
+    LINUX_SRV = UUID("3B8F8425-20E0-4F3B-907F-1A25A76F98E8")
+    LINUX_SWAP = UUID("0657FD6D-A4AB-43C4-84E5-0933C84B4F4F")
+    LINUX_LVM = UUID("E6D6D379-F507-44C2-A23C-238F2A3DF928")
+    LINUX_DMCRYPT = UUID("7FFEC5C9-2D00-49B7-8941-3EA10A5586B7")
+    LINUX_LUKS = UUID("CA7D7CCB-63ED-4C53-861C-1742536059CC")
 
-    FREEBSD_BOOT = UUID('83BD6B9D-7F41-11DC-BE0B-001560B84F0F')
-    FREEBSD_DISKLABEL = UUID('516E7CB4-6ECF-11D6-8FF8-00022D09712B')
-    FREEBSD_SWAP = UUID('516E7CB5-6ECF-11D6-8FF8-00022D09712B')
-    FREEBSD_UFS = UUID('516E7CB6-6ECF-11D6-8FF8-00022D09712B')
+    FREEBSD_BOOT = UUID("83BD6B9D-7F41-11DC-BE0B-001560B84F0F")
+    FREEBSD_DISKLABEL = UUID("516E7CB4-6ECF-11D6-8FF8-00022D09712B")
+    FREEBSD_SWAP = UUID("516E7CB5-6ECF-11D6-8FF8-00022D09712B")
+    FREEBSD_UFS = UUID("516E7CB6-6ECF-11D6-8FF8-00022D09712B")
 
-    VMWARE_VMFS = UUID('AA31E02A-400F-11DB-9590-000C2911D1B8')
+    VMWARE_VMFS = UUID("AA31E02A-400F-11DB-9590-000C2911D1B8")
 
 
 class PartitionAttributes(Flag):
@@ -142,7 +142,7 @@ class PartitionEntry:
     """
 
     SIZE = 128
-    FORMAT = '<16s16sQQQ72s'
+    FORMAT = "<16s16sQQQ72s"
 
     def __init__(
         self,
@@ -169,7 +169,7 @@ class PartitionEntry:
         *,
         attributes: PartitionAttributes | int = 0,
         guid: UUID = None,
-        name: str = '',
+        name: str = "",
     ) -> PartitionEntry:
         """New non-empty partition entry.
 
@@ -183,7 +183,7 @@ class PartitionEntry:
 
         if type_uuid == PartitionType.UNUSED.value:
             raise ValueError(
-                'Use PartitionEntry.new_empty() to create an empty partition entry'
+                "Use PartitionEntry.new_empty() to create an empty partition entry"
             )
 
         if isinstance(attributes, PartitionAttributes):
@@ -196,39 +196,39 @@ class PartitionEntry:
 
         if length_lba <= 0:
             raise ValueError(
-                f'Invalid partition length {length_lba} sectors, must be greater than 0'
+                f"Invalid partition length {length_lba} sectors, must be greater than 0"
             )
         if not 2 < start_lba < eight_byte_max:
             raise ValueError(
-                f'Invalid partition starting sector {start_lba}, must be an 8-byte '
-                f'value greater than 2'
+                f"Invalid partition starting sector {start_lba}, must be an 8-byte "
+                f"value greater than 2"
             )
         if not 2 < end_lba < eight_byte_max:
             raise ValueError(
-                f'Invalid partition ending sector {end_lba}, must be an 8-byte value '
-                f'value greater than 2'
+                f"Invalid partition ending sector {end_lba}, must be an 8-byte value "
+                f"value greater than 2"
             )
         if not 0 <= attributes_int < eight_byte_max:
             raise ValueError(
-                f'Invalid partition attributes {hex(attributes_int)}, must be an '
-                f'8-byte value'
+                f"Invalid partition attributes {hex(attributes_int)}, must be an "
+                f"8-byte value"
             )
         if len(name) > PARTITION_NAME_MAX_LEN:
             raise ValueError(
-                f'Partition name must not be longer than {PARTITION_NAME_MAX_LEN} '
-                f'characters, got {name!r}'
+                f"Partition name must not be longer than {PARTITION_NAME_MAX_LEN} "
+                f"characters, got {name!r}"
             )
 
         if guid is None:
             guid = uuid4()
-        name = name.rstrip('\x00')
+        name = name.rstrip("\x00")
 
         return cls(start_lba, end_lba, type_uuid, attributes_int, guid, name)
 
     @classmethod
     def new_empty(cls) -> PartitionEntry:
         """New empty / unused partition entry."""
-        return cls(0, 0, PartitionType.UNUSED.value, 0, uuid4(), '')
+        return cls(0, 0, PartitionType.UNUSED.value, 0, uuid4(), "")
 
     @classmethod
     def from_bytes(cls, b: bytes) -> PartitionEntry:
@@ -238,12 +238,12 @@ class PartitionEntry:
         # >= 128 bytes as partition entry lengths.
         if len(b) < cls.SIZE:
             raise ValueError(
-                f'GPT partition entry must be a minimum of {cls.SIZE} bytes long, '
-                f'got {len(b)} bytes'
+                f"GPT partition entry must be a minimum of {cls.SIZE} bytes long, "
+                f"got {len(b)} bytes"
             )
         if not is_power_of_two(len(b)):
             raise ValueError(
-                f'GPT partition entry size must be a power of 2, got {len(b)} bytes'
+                f"GPT partition entry size must be a power of 2, got {len(b)} bytes"
             )
 
         (
@@ -262,22 +262,22 @@ class PartitionEntry:
             return cls.new_empty()
 
         if start_lba <= 2:
-            raise ValidationError('Starting sector of partition must be greater than 2')
+            raise ValidationError("Starting sector of partition must be greater than 2")
 
         if start_lba > end_lba:
             raise ValidationError(
-                f'Starting sector of partition must be greater or equal to the ending '
-                f'sector (got starting sector {start_lba}, ending sector {end_lba})'
+                f"Starting sector of partition must be greater or equal to the ending "
+                f"sector (got starting sector {start_lba}, ending sector {end_lba})"
             )
 
         guid = UUID(bytes_le=guid_bytes)
-        name = name_bytes.decode('utf-16le').rstrip('\x00')
+        name = name_bytes.decode("utf-16le").rstrip("\x00")
         return cls(start_lba, end_lba, type_, attributes, guid, name)
 
     def __bytes__(self) -> bytes:
         """Get ``bytes`` representation of partition entry."""
         if self.empty:
-            return b'\x00' * self.SIZE
+            return b"\x00" * self.SIZE
 
         return struct.pack(
             self.FORMAT,
@@ -286,7 +286,7 @@ class PartitionEntry:
             self._start_lba,
             self._end_lba,
             self._attributes,
-            self.name.encode('utf-16le'),
+            self.name.encode("utf-16le"),
         )
 
     @property
@@ -340,10 +340,10 @@ class PartitionEntry:
 
     def __repr__(self) -> str:
         return (
-            f'gpt.{self.__class__.__name__}(start_lba={self._start_lba}, '
-            f'end_lba={self._end_lba}, type={self._type!r}, '
-            f'attributes={hex(self._attributes)}, guid={self._guid!r}, '
-            f'name={self._name!r})'
+            f"gpt.{self.__class__.__name__}(start_lba={self._start_lba}, "
+            f"end_lba={self._end_lba}, type={self._type!r}, "
+            f"attributes={hex(self._attributes)}, guid={self._guid!r}, "
+            f"name={self._name!r})"
         )
 
 
@@ -354,7 +354,7 @@ class Table:
     """
 
     HEADER_SIZE = 92
-    HEADER_FORMAT = '<8sIIIIQQQQ16sQIII'
+    HEADER_FORMAT = "<8sIIIIQQQQ16sQIII"
 
     def __init__(
         self,
@@ -417,51 +417,51 @@ class Table:
         ) = struct.unpack(cls.HEADER_FORMAT, header_sector[: cls.HEADER_SIZE])
 
         if signature != SIGNATURE:
-            raise ValidationError(f'Invalid GPT signature {signature!r}')
+            raise ValidationError(f"Invalid GPT signature {signature!r}")
 
         if revision != REVISION:
-            raise ValidationError(f'Invalid GPT header revision number {revision}')
+            raise ValidationError(f"Invalid GPT header revision number {revision}")
 
         if not cls.HEADER_SIZE <= header_size <= lss:
             raise ValidationError(
-                f'Header size specified in GPT header must be in range '
-                f'({cls.HEADER_SIZE}, {lss}), got {header_size}'
+                f"Header size specified in GPT header must be in range "
+                f"({cls.HEADER_SIZE}, {lss}), got {header_size}"
             )
 
         header = header_sector[:header_size]
-        header_for_crc32 = header[:16] + b'\x00' * 4 + header[20:]
+        header_for_crc32 = header[:16] + b"\x00" * 4 + header[20:]
 
         if crc32(header_for_crc32) != header_crc32:
-            raise ValidationError('CRC32 of GPT header does not match')
+            raise ValidationError("CRC32 of GPT header does not match")
 
         if header_lba != expected_header_lba:
             raise ValidationError(
-                f'Header sector does not match (expected LBA {expected_header_lba}, '
-                f'got LBA {header_lba})'
+                f"Header sector does not match (expected LBA {expected_header_lba}, "
+                f"got LBA {header_lba})"
             )
 
         if alternate_header_lba != expected_alternate_header_lba:
             raise ValidationError(
-                f'Alternate header sector does not match (expected LBA '
-                f'{expected_alternate_header_lba}, got LBA {alternate_header_lba})'
+                f"Alternate header sector does not match (expected LBA "
+                f"{expected_alternate_header_lba}, got LBA {alternate_header_lba})"
             )
 
         if partition_entry_size < PartitionEntry.SIZE:
             raise ValidationError(
-                f'GPT partition entry size must be a minimum of {PartitionEntry.SIZE} '
-                f'bytes, got {partition_entry_size} bytes'
+                f"GPT partition entry size must be a minimum of {PartitionEntry.SIZE} "
+                f"bytes, got {partition_entry_size} bytes"
             )
         if not is_power_of_two(partition_entry_size):
             raise ValidationError(
-                f'GPT partition entry size must be a power of 2, got '
-                f'{partition_entry_size} bytes'
+                f"GPT partition entry size must be a power of 2, got "
+                f"{partition_entry_size} bytes"
             )
 
         if partition_entries_count < MIN_PARTITION_ENTRIES:
             raise ValidationError(
-                f'GPT partition entry array must hold a minimum of '
-                f'{MIN_PARTITION_ENTRIES} partition entries, got '
-                f'{partition_entries_count}'
+                f"GPT partition entry array must hold a minimum of "
+                f"{MIN_PARTITION_ENTRIES} partition entries, got "
+                f"{partition_entries_count}"
             )
 
         partition_array_sectors = _partition_array_sectors(
@@ -484,8 +484,8 @@ class Table:
                 < alternate_header_lba
             ):
                 raise ValidationError(
-                    'Invalid combination of logical block addresses found in primary '
-                    'GPT header'
+                    "Invalid combination of logical block addresses found in primary "
+                    "GPT header"
                 )
         else:
             # backup GPT
@@ -502,8 +502,8 @@ class Table:
                 < header_lba
             ):
                 raise ValidationError(
-                    'Invalid combination of logical block addresses found in '
-                    'secondary GPT header'
+                    "Invalid combination of logical block addresses found in "
+                    "secondary GPT header"
                 )
 
     @classmethod
@@ -522,13 +522,13 @@ class Table:
         expected_array_size = entries_count * entry_size
         if len(partition_array) != expected_array_size:
             raise ValueError(
-                f'Calculated partition array size does not match passed partition '
-                f'array (expected {expected_array_size} bytes, got '
-                f'{len(partition_array)} bytes)'
+                f"Calculated partition array size does not match passed partition "
+                f"array (expected {expected_array_size} bytes, got "
+                f"{len(partition_array)} bytes)"
             )
 
         if crc32(partition_array) != array_crc32:
-            raise ValidationError('CRC32 of partition entry array does not match')
+            raise ValidationError("CRC32 of partition entry array does not match")
 
     @classmethod
     def from_disk(cls, disk: Disk) -> Table:
@@ -562,7 +562,7 @@ class Table:
 
         except ValidationError as e:
             # parsing of primary table failed, try backup table
-            log.debug(f'Failed to parse primary GPT: {e}')
+            log.debug(f"Failed to parse primary GPT: {e}")
             header_sector = disk.read_at(last_sector_lba, 1)
 
             try:
@@ -572,8 +572,8 @@ class Table:
                 cls._validate_partition_array(header_sector, partition_array)
 
             except ValidationError as e2:
-                log.debug(f'Failed to parse secondary GPT: {e2}')
-                raise ValidationError('No valid GPT found')
+                log.debug(f"Failed to parse secondary GPT: {e2}")
+                raise ValidationError("No valid GPT found")
 
         _h = struct.unpack(cls.HEADER_FORMAT, header_sector[: cls.HEADER_SIZE])
         _, _, _, _, _, _, _, _, _, disk_guid_bytes, _, entries_count, entry_size, _ = _h
@@ -637,7 +637,7 @@ class Table:
         empty_entries_count = entries_count - len(self._partitions)
         empty_entries = [PartitionEntry.new_empty() for _ in range(empty_entries_count)]
         entries = self._partitions + tuple(empty_entries)
-        entry_array = b''.join(bytes(entry) for entry in entries)
+        entry_array = b"".join(bytes(entry) for entry in entries)
 
         # prepare headers
         backup_header_lba = disk_size // lss - 1
@@ -676,8 +676,8 @@ class Table:
         backup_header = struct.pack(self.HEADER_FORMAT, *backup_header_fields)
 
         # insert header CRC32
-        ph_crc32 = crc32(primary_header).to_bytes(4, 'little')
-        bh_crc32 = crc32(backup_header).to_bytes(4, 'little')
+        ph_crc32 = crc32(primary_header).to_bytes(4, "little")
+        bh_crc32 = crc32(backup_header).to_bytes(4, "little")
         primary_header = primary_header[:16] + ph_crc32 + primary_header[20:]
         backup_header = backup_header[:16] + bh_crc32 + backup_header[20:]
 
@@ -773,6 +773,6 @@ class Table:
 
     def __repr__(self) -> str:
         return (
-            f'gpt.{self.__class__.__name__}({len(self._partitions)}, '
-            f'disk_guid={self._disk_guid!r})'
+            f"gpt.{self.__class__.__name__}({len(self._partitions)}, "
+            f"disk_guid={self._disk_guid!r})"
         )

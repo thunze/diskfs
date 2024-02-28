@@ -6,9 +6,9 @@ from typing import TYPE_CHECKING
 import pytest
 
 # Make mypy and pytest collection logic happy
-if not TYPE_CHECKING and sys.platform != 'win32':
-    pytest.skip('Skipping Windows-only tests', allow_module_level=True)
-assert sys.platform == 'win32'
+if not TYPE_CHECKING and sys.platform != "win32":
+    pytest.skip("Skipping Windows-only tests", allow_module_level=True)
+assert sys.platform == "win32"
 
 
 # noinspection PyProtectedMember
@@ -25,6 +25,6 @@ def test_device_io_control_fail(tempfile):
     the file handle passed to ``DeviceIoControl()`` must be one of a block device; we
     pass ``tempfile`` instead.
     """
-    with tempfile.open('rb') as f, pytest.raises(OSError) as exc_info:
+    with tempfile.open("rb") as f, pytest.raises(OSError) as exc_info:
         device_io_control(f.fileno(), IOCTL_STORAGE_QUERY_PROPERTY)
         assert exc_info.value.winerror is not None

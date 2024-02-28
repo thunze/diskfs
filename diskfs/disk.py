@@ -17,25 +17,25 @@ from .base import SectorSize, ValidationError
 from .table import Table
 from .volume import Volume
 
-if sys.platform == 'win32':
+if sys.platform == "win32":
     from .win32 import device_sector_size, device_size, reread_partition_table
-elif sys.platform == 'linux':
+elif sys.platform == "linux":
     from .linux import device_sector_size, device_size, reread_partition_table
-elif sys.platform == 'darwin':
+elif sys.platform == "darwin":
     from .darwin import device_sector_size, device_size, reread_partition_table
 else:
-    raise RuntimeError(f'Unspported platform {sys.platform!r}')
+    raise RuntimeError(f"Unspported platform {sys.platform!r}")
 
 if TYPE_CHECKING:
     from .typing import ReadableBuffer, StrPath
 
-__all__ = ['Disk']
+__all__ = ["Disk"]
 
 
 log = logging.getLogger(__name__)
 
 
-if hasattr(os, 'pread') and hasattr(os, 'pwrite'):
+if hasattr(os, "pread") and hasattr(os, "pwrite"):
     _read = os.pread
     _write = os.pwrite
 else:
@@ -78,19 +78,19 @@ class Disk:
         self._closed = False
         self._table: Table | None = None
 
-        log.info(f'Opened disk {self}')
-        log.info(f'{self} - Size: {size} bytes, {sector_size}')
+        log.info(f"Opened disk {self}")
+        log.info(f"{self} - Size: {size} bytes, {sector_size}")
         self.read_table()
 
     @classmethod
     def new(cls, path: StrPath, size: int, *, sector_size: int = 512) -> Disk:
         """Create a new disk image at ``path``."""
         if size <= 0:
-            raise ValueError('Disk size must be greater than 0')
+            raise ValueError("Disk size must be greater than 0")
         if sector_size <= 0:
-            raise ValueError('Sector size must be greater than 0')
+            raise ValueError("Sector size must be greater than 0")
 
-        flags = os.O_CREAT | os.O_EXCL | os.O_RDWR | getattr(os, 'O_BINARY', 0)
+        flags = os.O_CREAT | os.O_EXCL | os.O_RDWR | getattr(os, "O_BINARY", 0)
         fd = os.open(path, flags, 0o666)
         try:
             os.truncate(fd, size)
@@ -106,7 +106,7 @@ class Disk:
     ) -> Disk:
         """Open block device or disk image at ``path``."""
         read_write_flag = os.O_RDONLY if readonly else os.O_RDWR
-        flags = read_write_flag | getattr(os, 'O_BINARY', 0)
+        flags = read_write_flag | getattr(os, "O_BINARY", 0)
         fd = os.open(path, flags)
 
         try:
@@ -116,7 +116,7 @@ class Disk:
 
             if block_device:
                 if sector_size is not None:
-                    raise ValueError('Sector size cannot be set for block devices')
+                    raise ValueError("Sector size cannot be set for block devices")
 
                 size = device_size(fd)
                 real_sector_size = device_sector_size(fd)
@@ -124,15 +124,15 @@ class Disk:
 
             if regular_file:
                 if sector_size is None:
-                    raise ValueError('Sector size must be set for regular file')
+                    raise ValueError("Sector size must be set for regular file")
                 if sector_size <= 0:
-                    raise ValueError('Sector size must be greater than 0')
+                    raise ValueError("Sector size must be greater than 0")
 
                 size = stat.st_size
                 simulated_sector_size = SectorSize(sector_size, sector_size)
                 return cls(fd, path, size, simulated_sector_size, False, not readonly)
 
-            raise ValueError('File is neither a block device nor a regular file')
+            raise ValueError("File is neither a block device nor a regular file")
 
         except BaseException:
             os.close(fd)
@@ -146,24 +146,24 @@ class Disk:
         self.check_closed()
 
         if pos < 0:
-            raise ValueError('Position to read from must be zero or positive')
+            raise ValueError("Position to read from must be zero or positive")
         if size < 0:
-            raise ValueError('Amount of sectors to read must be zero or positive')
+            raise ValueError("Amount of sectors to read must be zero or positive")
         if size == 0:
-            return b''
+            return b""
 
         pos_bytes = pos * self.sector_size.logical
         size_bytes = size * self.sector_size.logical
 
         if pos_bytes + size_bytes > self._size:
-            raise ValueError('Sector range out of disk bounds')
+            raise ValueError("Sector range out of disk bounds")
 
         b = _read(self._fd, size_bytes, pos_bytes)
 
         if len(b) != size_bytes:
             raise ValueError(
-                f'Did not read the expected amount of bytes (expected {size} bytes, '
-                f'got {len(b)} bytes)'
+                f"Did not read the expected amount of bytes (expected {size} bytes, "
+                f"got {len(b)} bytes)"
             )
         return b
 
@@ -183,9 +183,9 @@ class Disk:
         self.check_writable()
 
         if pos < 0:
-            raise ValueError('Position to write at must be zero or positive')
+            raise ValueError("Position to write at must be zero or positive")
         if not isinstance(b, memoryview):
-            b = memoryview(b).cast('B')
+            b = memoryview(b).cast("B")
         size = b.nbytes
         if size == 0:
             return
@@ -196,22 +196,22 @@ class Disk:
         if remainder != 0:
             if not fill_zeroes:
                 raise ValueError(
-                    f'Can only write in multiples of {lss} bytes (logical sector size)'
+                    f"Can only write in multiples of {lss} bytes (logical sector size)"
                 )
-            zeroes = b'\x00' * (lss - remainder)
+            zeroes = b"\x00" * (lss - remainder)
             b = bytes(b) + zeroes
             size = len(b)
 
         pos_bytes = pos * self.sector_size.logical
         if pos_bytes + size > self._size:
-            raise ValueError('Sector range out of disk bounds')
+            raise ValueError("Sector range out of disk bounds")
 
         bytes_written = _write(self._fd, b, pos_bytes)
 
         if bytes_written != size:
             raise ValueError(
-                f'Did not write the expected amount of bytes (expected {size} '
-                f'bytes, wrote {bytes_written} bytes)'
+                f"Did not write the expected amount of bytes (expected {size} "
+                f"bytes, wrote {bytes_written} bytes)"
             )
 
     def flush(self) -> None:
@@ -236,9 +236,9 @@ class Disk:
                 self._table = None
 
         if self._table is None:
-            log.info(f'{self} - No valid partition table found')
+            log.info(f"{self} - No valid partition table found")
         else:
-            log.info(f'{self} - Found partition table {self._table}')
+            log.info(f"{self} - Found partition table {self._table}")
 
     def clear(self) -> None:
         """Clear the disk by overwriting specific parts of the disk with zeroes.
@@ -250,7 +250,7 @@ class Disk:
         """
         self.check_closed()
         self.check_writable()
-        log.info(f'{self} - Clearing disk')
+        log.info(f"{self} - Clearing disk")
 
         self.flush()
         self._table = None
@@ -273,9 +273,9 @@ class Disk:
 
         if self._table is not None:
             raise ValueError(
-                'Disk is already partitioned; clear disk first to re-partition'
+                "Disk is already partitioned; clear disk first to re-partition"
             )
-        log.info(f'{self} - Partitioning disk using partition table {table}')
+        log.info(f"{self} - Partitioning disk using partition table {table}")
 
         # skipcq: PYL-W0212
         # noinspection PyProtectedMember
@@ -296,7 +296,7 @@ class Disk:
         if partition is None:
             if self._table is not None:
                 raise ValueError(
-                    'Disk is partitioned; please specify a partition number'
+                    "Disk is partitioned; please specify a partition number"
                 )
             disk_end = self._size // self.sector_size.logical - 1
             return Volume(self, 0, disk_end)
@@ -304,10 +304,10 @@ class Disk:
         if partition is not None:
             if self._table is None:
                 raise ValueError(
-                    'Disk is unpartitioned; you cannot specify a partition number'
+                    "Disk is unpartitioned; you cannot specify a partition number"
                 )
             if not 0 <= partition < len(self._table.partitions):
-                raise IndexError('Partition number out of range')
+                raise IndexError("Partition number out of range")
 
             entry = self._table.partitions[partition]
             return Volume(self, entry.start_lba, entry.end_lba)
@@ -316,8 +316,8 @@ class Disk:
         """Dismount all volumes associated with the disk."""
         self.check_closed()
         if not self._device:
-            raise ValueError('Can only dismount volumes of block devices')
-        log.info(f'{self} - Dismounting volumes')
+            raise ValueError("Can only dismount volumes of block devices")
+        log.info(f"{self} - Dismounting volumes")
         raise NotImplementedError
 
     def close(self) -> None:
@@ -329,7 +329,7 @@ class Disk:
             return
         os.close(self._fd)
         self._closed = True
-        log.info(f'Closed disk {self}')
+        log.info(f"Closed disk {self}")
 
     def __enter__(self) -> Disk:
         """Context management protocol."""
@@ -382,12 +382,12 @@ class Disk:
     def check_closed(self) -> None:
         """Raise ``ValueError`` if the underlying file or block device is closed."""
         if self._closed:
-            raise ValueError('I/O operation on closed disk')
+            raise ValueError("I/O operation on closed disk")
 
     def check_writable(self) -> None:
         """Raise ``ValueError`` if the underlying file or block device is read-only."""
         if not self._writable:
-            raise ValueError('Disk is not writable')
+            raise ValueError("Disk is not writable")
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Disk):
@@ -398,4 +398,4 @@ class Disk:
         return self._path
 
     def __repr__(self) -> str:
-        return f'{self.__class__.__name__}({self._path}, size={self._size})'
+        return f"{self.__class__.__name__}({self._path}, size={self._size})"

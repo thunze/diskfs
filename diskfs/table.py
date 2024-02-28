@@ -12,12 +12,12 @@ if TYPE_CHECKING:
     from .disk import Disk
 
 __all__ = [
-    'Table',
-    'TableType',
-    'PartitionEntry',
-    'check_alignment',
-    'check_bounds',
-    'check_overlapping',
+    "Table",
+    "TableType",
+    "PartitionEntry",
+    "check_alignment",
+    "check_bounds",
+    "check_overlapping",
 ]
 
 
@@ -125,7 +125,7 @@ def check_overlapping(
         prev_partition_end_lba = partition.end_lba
 
     if overlapping:
-        message = 'At least one partition overlaps another partition'
+        message = "At least one partition overlaps another partition"
         if warn:
             warnings.warn(message, BoundsWarning)
         else:
@@ -148,8 +148,8 @@ def check_bounds(
 
     if start < min_lba or end > max_lba:
         message = (
-            f'Partition with bounds (LBA {start}, LBA {end}) does not fall within '
-            f'the allowed range of (LBA {min_lba}, LBA {max_lba})'
+            f"Partition with bounds (LBA {start}, LBA {end}) does not fall within "
+            f"the allowed range of (LBA {min_lba}, LBA {max_lba})"
         )
         if warn:
             warnings.warn(message, BoundsWarning)
@@ -175,9 +175,9 @@ def check_alignment(
     if start_byte % pss != 0 or end_byte % pss != 0:
         if warn:
             warnings.warn(
-                f'Partition with bounds ({start_byte}, {end_byte}) is not aligned to '
-                f'physical sector size of {pss} bytes. This might lead to poor '
-                f'I/O performance.',
+                f"Partition with bounds ({start_byte}, {end_byte}) is not aligned to "
+                f"physical sector size of {pss} bytes. This might lead to poor "
+                f"I/O performance.",
                 AlignmentWarning,
             )
         return False

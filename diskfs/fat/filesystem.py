@@ -50,13 +50,13 @@ if TYPE_CHECKING:
     from ..typing import ReadableBuffer, StrPath
     from ..volume import Volume
 
-__all__ = ['FileSystem']
+__all__ = ["FileSystem"]
 
 
 log = logging.getLogger(__name__)
 
 
-DELETED_BYTE = Hint.DELETED.value.to_bytes(1, 'little')
+DELETED_BYTE = Hint.DELETED.value.to_bytes(1, "little")
 # FILLER_BYTE = b'\xF6'  TODO
 # FILLER_BYTE_FLASH = b'\xFF'
 
@@ -68,13 +68,12 @@ PERMISSIONS_FILE = 0o666
 
 
 # Typing
-P = ParamSpec('P')
-R = TypeVar('R')  # return type
+P = ParamSpec("P")
+R = TypeVar("R")  # return type
 
 
 @dataclass
 class Node:
-
     entry: Entry
     children: list[Node] | None = None  # None == not parsed yet
     in_use: bool = False
@@ -86,13 +85,12 @@ class Node:
     @property
     def children_parsed(self) -> list[Node]:
         if self.children is None:
-            raise RuntimeError('Node children not parsed yet')
+            raise RuntimeError("Node children not parsed yet")
         return self.children
 
 
 @dataclass
 class Root:
-
     entry: None = None
     children: list[Node] | None = None  # None == not parsed yet
 
@@ -103,12 +101,11 @@ class Root:
     @property
     def children_parsed(self) -> list[Node]:
         if self.children is None:
-            raise RuntimeError('Root children not parsed yet')
+            raise RuntimeError("Root children not parsed yet")
         return self.children
 
 
 class FdTableRow(NamedTuple):
-
     stream: DataIO
     status_flags: StatusFlags
     path: PurePath
@@ -176,10 +173,10 @@ def _check_file(node: Node | Root, *, hint: StrPath) -> None:
 
 
 def locked(
-    method: Callable[Concatenate['FileSystem', P], R]
-) -> Callable[Concatenate['FileSystem', P], R]:
+    method: Callable[Concatenate["FileSystem", P], R],
+) -> Callable[Concatenate["FileSystem", P], R]:
     @wraps(method)
-    def locked_wrapper(self: 'FileSystem', *args: P.args, **kwargs: P.kwargs) -> R:
+    def locked_wrapper(self: "FileSystem", *args: P.args, **kwargs: P.kwargs) -> R:
         with self._lock:
             self._volume.check_closed()
             return method(self, *args, **kwargs)
@@ -204,7 +201,7 @@ class FileSystem(FileSystemBase):
         self._vfat = vfat
         self._fat_32 = self._boot_sector.fat_type is FatType.FAT_32
 
-        self._cwd = PurePath('/')
+        self._cwd = PurePath("/")
         self._root = Root()  # cached directory structure
         self._lock = Lock()
 
@@ -218,7 +215,7 @@ class FileSystem(FileSystemBase):
         size_lba: int = None,
         *,
         cluster_size: int = CLUSTER_SIZE_DEFAULT,
-        label: str = '',
+        label: str = "",
         vfat: bool = True,
     ) -> FileSystem:
         """Create new file system on ``volume``.
@@ -231,8 +228,8 @@ class FileSystem(FileSystemBase):
             size_lba = volume.size_lba
         if not MIN_VOLUME_SIZE_CREATE <= size_lba <= volume.size_lba:
             raise ValidationError(
-                f'File system size must be in range ({MIN_VOLUME_SIZE_CREATE}, '
-                f'{volume.size_lba})'
+                f"File system size must be in range ({MIN_VOLUME_SIZE_CREATE}, "
+                f"{volume.size_lba})"
             )
         raise NotImplementedError
 
@@ -245,7 +242,7 @@ class FileSystem(FileSystemBase):
         """
         if volume.size_lba < MIN_VOLUME_SIZE_READ:
             raise ValidationError(
-                f'Volume must span at least {MIN_VOLUME_SIZE_READ} logical sectors'
+                f"Volume must span at least {MIN_VOLUME_SIZE_READ} logical sectors"
             )
 
         boot_sector_bytes = volume.read_at(0, 1)
@@ -291,7 +288,7 @@ class FileSystem(FileSystemBase):
     # Helper methods
 
     def _is_root(self, path: StrPath) -> bool:
-        return PurePath(self.realpath(path)) == PurePath('/')
+        return PurePath(self.realpath(path)) == PurePath("/")
 
     @overload
     def _scandir(
@@ -356,7 +353,7 @@ class FileSystem(FileSystemBase):
     ) -> Node:
         if set_in_use + unset_in_use + check_in_use > 1:
             raise ValueError(
-                'Can only either set, unset or check whether the in-use flag is set'
+                "Can only either set, unset or check whether the in-use flag is set"
             )
 
         p = PurePath(self.realpath(path))
@@ -377,7 +374,7 @@ class FileSystem(FileSystemBase):
                         if check_in_use and child.in_use:
                             raise OSError(
                                 EACCES,
-                                'File or directory is being used by another process',
+                                "File or directory is being used by another process",
                                 str(path),
                             )
                         return child
@@ -451,7 +448,7 @@ class FileSystem(FileSystemBase):
                         old_entries_start += 1  # single EightDotThreeEntry
 
                 if found_entry is None:
-                    raise ValueError('Could not find old entry in parent directory')
+                    raise ValueError("Could not find old entry in parent directory")
 
                 old_total_entries = found_entry.total_entries
                 if new_entry is not None:
@@ -488,7 +485,7 @@ class FileSystem(FileSystemBase):
             # update cluster number, size etc. of parent entry
             if not self._is_root(parent_path):
                 if not isinstance(raw, DataIO):
-                    raise ValueError('Expected DataIO object for non-root parent path')
+                    raise ValueError("Expected DataIO object for non-root parent path")
                 self._update_entry_by_stream(raw, parent_path)
 
     def _create_child(
@@ -543,7 +540,7 @@ class FileSystem(FileSystemBase):
 
     def _stat_for_entry(self, entry: Entry = None) -> stat_result:
         """Get ``stat_result`` for ``entry``."""
-        dev = getattr(self._boot_sector.bpb, 'volume_id', 0)
+        dev = getattr(self._boot_sector.bpb, "volume_id", 0)
         if entry is None:
             return stat_result((S_IFDIR | PERMISSIONS_DIR, 0, dev, 1, 0, 0, 0, 0, 0, 0))
 
@@ -638,7 +635,7 @@ class FileSystem(FileSystemBase):
     def readfd(self, fd: int, size: int) -> bytes:
         stream, flags, _ = self._find_in_fd_table(fd)
         if not flags.readable:
-            raise UnsupportedOperation('File not open for reading')
+            raise UnsupportedOperation("File not open for reading")
         return stream.read(size)
 
     @locked
@@ -646,7 +643,7 @@ class FileSystem(FileSystemBase):
         # TODO: use FsInfo
         stream, flags, _ = self._find_in_fd_table(fd)
         if not flags.writable:
-            raise UnsupportedOperation('File not open for writing')
+            raise UnsupportedOperation("File not open for writing")
         if flags.appending:
             stream.seek(0, SEEK_END)
         return stream.write(b)
@@ -655,7 +652,7 @@ class FileSystem(FileSystemBase):
     def truncatefd(self, fd: int, size: int) -> int:
         stream, flags, path = self._find_in_fd_table(fd)
         if not flags.writable:
-            raise UnsupportedOperation('File not open for writing')
+            raise UnsupportedOperation("File not open for writing")
         res = stream.truncate(size)
         self._update_entry_by_stream(stream, path)
         return res
@@ -680,7 +677,7 @@ class FileSystem(FileSystemBase):
     @locked
     def listdir(self, path: StrPath = None) -> list[str]:
         if path is None:
-            path = '.'
+            path = "."
         node = self._find_node_or_root(path)
         _check_directory(node, hint=path)
         return [
@@ -691,7 +688,7 @@ class FileSystem(FileSystemBase):
         with self._lock:
             self._volume.check_closed()
             if path is None:
-                path = '.'
+                path = "."
             node = self._find_node_or_root(path)
             _check_directory(node, hint=path)
             realpath = PurePath(self.realpath(path))
@@ -881,7 +878,7 @@ class FileSystem(FileSystemBase):
             raise OSError(EACCES, os.strerror(EACCES), str(path))
 
         if times is not None and ns is not None:
-            raise ValueError('Cannot specify both times and nanosecond timestamps')
+            raise ValueError("Cannot specify both times and nanosecond timestamps")
 
         if times is not None and ns is None:
             last_accessed, last_modified = map(datetime.fromtimestamp, times)
@@ -915,7 +912,7 @@ class FileSystem(FileSystemBase):
         node.entry = new_entry
 
     def chmod(self, mode: int, *, follow_symlinks: bool = True) -> None:
-        raise NotImplementedError('chmod() is unsupported for this file system')
+        raise NotImplementedError("chmod() is unsupported for this file system")
 
     def realpath(self, path: StrPath, *, strict: bool = False) -> str:
         self._volume.check_closed()
@@ -939,7 +936,7 @@ class FileSystem(FileSystemBase):
         """Change the current working directory."""
         self._volume.check_writable()
         if self._is_root(path):
-            self._cwd = PurePath('/')
+            self._cwd = PurePath("/")
         else:
             node = self._find_node(path)
             _check_directory(node, hint=path)
@@ -948,12 +945,12 @@ class FileSystem(FileSystemBase):
     # Linking
 
     def link(self, src: StrPath, dst: StrPath, *, follow_symlinks: bool = True) -> None:
-        raise NotImplementedError('link() is unsupported for this file system')
+        raise NotImplementedError("link() is unsupported for this file system")
 
     def symlink(
         self, src: StrPath, dst: StrPath, target_is_directory: bool = False
     ) -> None:
-        raise NotImplementedError('symlink() is unsupported for this file system')
+        raise NotImplementedError("symlink() is unsupported for this file system")
 
     def readlink(self, path: StrPath) -> str:
-        raise NotImplementedError('readlink() is unsupported for this file system')
+        raise NotImplementedError("readlink() is unsupported for this file system")

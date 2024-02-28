@@ -24,20 +24,20 @@ if TYPE_CHECKING:
 
 
 __all__ = [
-    'NoneType',
-    'StrPath',
-    'BufferedAny',
-    'ReadOnlyBuffer',
-    'WriteableBuffer',
-    'ReadableBuffer',
-    'OpenTextModeUpdating',
-    'OpenTextModeWriting',
-    'OpenTextModeReading',
-    'OpenTextMode',
-    'OpenBinaryModeUpdating',
-    'OpenBinaryModeWriting',
-    'OpenBinaryModeReading',
-    'OpenBinaryMode',
+    "NoneType",
+    "StrPath",
+    "BufferedAny",
+    "ReadOnlyBuffer",
+    "WriteableBuffer",
+    "ReadableBuffer",
+    "OpenTextModeUpdating",
+    "OpenTextModeWriting",
+    "OpenTextModeReading",
+    "OpenTextMode",
+    "OpenBinaryModeUpdating",
+    "OpenBinaryModeWriting",
+    "OpenBinaryModeReading",
+    "OpenBinaryMode",
 ]
 
 

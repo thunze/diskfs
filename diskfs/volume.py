@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from .disk import Disk
     from .typing import ReadableBuffer
 
-__all__ = ['Volume']
+__all__ = ["Volume"]
 
 
 class Volume:
@@ -38,13 +38,13 @@ class Volume:
 
         if not 0 <= start_lba <= disk_end_lba:
             raise ValueError(
-                f'Volume start sector must be in range (0, {disk_end_lba}), got '
-                f'{start_lba}'
+                f"Volume start sector must be in range (0, {disk_end_lba}), got "
+                f"{start_lba}"
             )
         if not start_lba <= end_lba <= disk_end_lba:
             raise ValueError(
-                f'Volume end sector must be in range ({start_lba}, {disk_end_lba}), '
-                f'got {end_lba}'
+                f"Volume end sector must be in range ({start_lba}, {disk_end_lba}), "
+                f"got {end_lba}"
             )
 
         disk.check_closed()
@@ -54,9 +54,9 @@ class Volume:
 
     def read_at(self, pos: int, size: int) -> bytes:
         if not 0 <= pos < self.size_lba:
-            raise ValueError('Position to read from out of volume bounds')
+            raise ValueError("Position to read from out of volume bounds")
         if not 0 <= size <= self.size_lba - pos:
-            raise ValueError('Sector range out of volume bounds')
+            raise ValueError("Sector range out of volume bounds")
 
         disk_pos = self._start_lba + pos
         return self._disk.read_at(disk_pos, size)
@@ -65,14 +65,14 @@ class Volume:
         self, pos: int, b: ReadableBuffer, *, fill_zeroes: bool = False
     ) -> None:
         if not 0 <= pos < self.size_lba:
-            raise ValueError('Position to write at out of volume bounds')
+            raise ValueError("Position to write at out of volume bounds")
         with memoryview(b) as view:
             size = view.nbytes
 
         # Disk only accepts writing in multiples of lss anyway, so we can round up.
         sectors_to_write = (size - 1) // self._disk.sector_size.logical + 1
         if not 0 <= sectors_to_write <= self.size_lba - pos:
-            raise ValueError('Sector range out of volume bounds')
+            raise ValueError("Sector range out of volume bounds")
 
         disk_pos = self._start_lba + pos
         return self._disk.write_at(disk_pos, b, fill_zeroes=fill_zeroes)
@@ -96,7 +96,7 @@ class Volume:
         fs: FsType,
         size_lba: int = None,
         cluster_size: int = CLUSTER_SIZE_DEFAULT,
-        label: str = '',
+        label: str = "",
     ) -> FileSystem:
         """Create a new file system of type ``fs`` and size ``size`` on the volume.
 
@@ -183,6 +183,6 @@ class Volume:
 
     def __repr__(self) -> str:
         return (
-            f'{self.__class__.__name__}({self._disk}, start_lba={self._start_lba}, '
-            f'size_lba={self.size_lba})'
+            f"{self.__class__.__name__}({self._disk}, start_lba={self._start_lba}, "
+            f"size_lba={self.size_lba})"
         )

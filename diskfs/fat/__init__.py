@@ -6,4 +6,4 @@ See https://www.cs.fsu.edu/~cop4610t/assignments/project3/spec/fatspec.pdf.
 
 from .filesystem import FileSystem
 
-__all__ = ['FileSystem']
+__all__ = ["FileSystem"]

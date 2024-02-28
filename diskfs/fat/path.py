@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from ..typing import StrPath
     from .filesystem import FileSystem
 
-__all__ = ['Path', 'PurePath']
+__all__ = ["Path", "PurePath"]
 
 
 # noinspection PyMethodMayBeStatic
@@ -35,16 +35,14 @@ class _Flavour(_PosixFlavour):
         return re.compile(fnmatch.translate(pattern), re.IGNORECASE).fullmatch
 
     def make_uri(self, path: PurePath) -> str:
-        raise NotImplementedError('URIs are unsupported for this file system')
+        raise NotImplementedError("URIs are unsupported for this file system")
 
 
 class PurePath(pathlib.PurePosixPath):
-
     _flavour = _Flavour()
 
 
 class Path(pathlib.Path, PurePath):
-
     _accessor: FileSystem
 
     def __new__(cls, *args: StrPath, fs: FileSystem) -> Path:
@@ -56,21 +54,21 @@ class Path(pathlib.Path, PurePath):
     @classmethod
     def cwd(cls) -> Path:
         raise NotImplementedError(
-            'Need file system context to get cwd; use FileSystem.getcwd() instead'
+            "Need file system context to get cwd; use FileSystem.getcwd() instead"
         )
 
     @classmethod
     def home(cls) -> Path:
         raise NotImplementedError(
-            'home() is unsupported for file systems accessed from userspace'
+            "home() is unsupported for file systems accessed from userspace"
         )
 
     def owner(self) -> str:
         raise NotImplementedError(
-            'owner() is unsupported for file systems accessed from userspace'
+            "owner() is unsupported for file systems accessed from userspace"
         )
 
     def group(self) -> str:
         raise NotImplementedError(
-            'group() is unsupported for file systems accessed from userspace'
+            "group() is unsupported for file systems accessed from userspace"
         )

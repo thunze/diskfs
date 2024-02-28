@@ -18,33 +18,33 @@ if TYPE_CHECKING:
     from ..volume import Volume
 
 __all__ = [
-    'Bpb',
-    'BpbDos200',
-    'BpbDos331',
-    'ShortEbpbFat',
-    'ShortEbpbFat32',
-    'EbpbFat',
-    'EbpbFat32',
-    'BootSectorStart',
-    'BootSector',
-    'FsInfoSector',
-    'EXTENDED_BOOT_SIGNATURE_EXISTS',
-    'FILE_SYSTEM_TYPE_FAT32',
-    'FAT32_VERSION',
-    'FS_INFO_SECTOR',
-    'SIGNATURE',
-    'FS_INFO_SIGNATURE_1',
-    'FS_INFO_SIGNATURE_2',
-    'FS_INFO_SIGNATURE_3',
-    'FS_INFO_UNKNOWN',
-    'CLUSTER_SIZE_DEFAULT',
-    'ROOTDIR_ENTRIES_DEFAULT',
-    'MEDIA_TYPE_DEFAULT',
-    'SECTORS_PER_TRACK_DEFAULT',
-    'HEADS_DEFAULT',
-    'PHYSICAL_DRIVE_NUMBER_DEFAULT',
-    'VOLUME_LABEL_DEFAULT',
-    'BOOT_CODE_DUMMY',
+    "Bpb",
+    "BpbDos200",
+    "BpbDos331",
+    "ShortEbpbFat",
+    "ShortEbpbFat32",
+    "EbpbFat",
+    "EbpbFat32",
+    "BootSectorStart",
+    "BootSector",
+    "FsInfoSector",
+    "EXTENDED_BOOT_SIGNATURE_EXISTS",
+    "FILE_SYSTEM_TYPE_FAT32",
+    "FAT32_VERSION",
+    "FS_INFO_SECTOR",
+    "SIGNATURE",
+    "FS_INFO_SIGNATURE_1",
+    "FS_INFO_SIGNATURE_2",
+    "FS_INFO_SIGNATURE_3",
+    "FS_INFO_UNKNOWN",
+    "CLUSTER_SIZE_DEFAULT",
+    "ROOTDIR_ENTRIES_DEFAULT",
+    "MEDIA_TYPE_DEFAULT",
+    "SECTORS_PER_TRACK_DEFAULT",
+    "HEADS_DEFAULT",
+    "PHYSICAL_DRIVE_NUMBER_DEFAULT",
+    "VOLUME_LABEL_DEFAULT",
+    "BOOT_CODE_DUMMY",
 ]
 
 
@@ -53,29 +53,29 @@ MIN_LSS_FAT32 = 512
 SECTORS_PER_TRACK_MAX = 63
 HEADS_MAX = 255
 PHYSICAL_DRIVE_NUMBERS_RESERVED = (0x7F, 0xFF)
-EXTENDED_BOOT_SIGNATURES = (b'\x28', b'\x29')
-EXTENDED_BOOT_SIGNATURE_EXISTS = b'\x29'  # EBPB extension exists
-FILE_SYSTEM_TYPES_FAT = (b'FAT12   ', b'FAT16   ', b'FAT     ')
-FILE_SYSTEM_TYPE_FAT32 = b'FAT32   '
+EXTENDED_BOOT_SIGNATURES = (b"\x28", b"\x29")
+EXTENDED_BOOT_SIGNATURE_EXISTS = b"\x29"  # EBPB extension exists
+FILE_SYSTEM_TYPES_FAT = (b"FAT12   ", b"FAT16   ", b"FAT     ")
+FILE_SYSTEM_TYPE_FAT32 = b"FAT32   "
 FAT32_VERSION = 0
 SECTOR_NUMBERS_UNUSED = (0, 0xFFFF)
 FS_INFO_SECTOR = 1
 
-JUMP_INSTRUCTIONS_START = (b'\xEB', b'\xE9', b'\x90\xEB')
+JUMP_INSTRUCTIONS_START = (b"\xEB", b"\xE9", b"\x90\xEB")
 OEM_NAMES_COMMON = (
-    b'MSDOS5.0',
-    b'MSWIN4.1',
-    b'IBM  3.3',
-    b'IBM  7.1',
-    b'mkdosfs ',
-    b'FreeDOS ',
+    b"MSDOS5.0",
+    b"MSWIN4.1",
+    b"IBM  3.3",
+    b"IBM  7.1",
+    b"mkdosfs ",
+    b"FreeDOS ",
 )
-SIGNATURE = b'\x55\xaa'
+SIGNATURE = b"\x55\xaa"
 
 # FS information sector
-FS_INFO_SIGNATURE_1 = b'RRaA'
-FS_INFO_SIGNATURE_2 = b'rrAa'
-FS_INFO_SIGNATURE_3 = b'\x00\x00' + SIGNATURE
+FS_INFO_SIGNATURE_1 = b"RRaA"
+FS_INFO_SIGNATURE_2 = b"rrAa"
+FS_INFO_SIGNATURE_3 = b"\x00\x00" + SIGNATURE
 FS_INFO_UNKNOWN = 0xFFFFFFFF
 
 # Defaults
@@ -85,8 +85,8 @@ MEDIA_TYPE_DEFAULT = 0xF8
 SECTORS_PER_TRACK_DEFAULT = 63
 HEADS_DEFAULT = 255
 PHYSICAL_DRIVE_NUMBER_DEFAULT = 0x80
-VOLUME_LABEL_DEFAULT = b'NO NAME    '
-BOOT_CODE_DUMMY = b'\xF4\xEB\xFD'  # endless loop
+VOLUME_LABEL_DEFAULT = b"NO NAME    "
+BOOT_CODE_DUMMY = b"\xF4\xEB\xFD"  # endless loop
 
 # Other constants
 DIRECTORY_ENTRY_SIZE = 32
@@ -157,34 +157,34 @@ class BpbDos200(ByteStruct):
     def validate(self) -> None:
         if self.lss < DIRECTORY_ENTRY_SIZE:
             raise ValidationError(
-                f'Logical sector size must be greater than or equal to '
-                f'{DIRECTORY_ENTRY_SIZE}'
+                f"Logical sector size must be greater than or equal to "
+                f"{DIRECTORY_ENTRY_SIZE}"
             )
         if not is_power_of_two(self.lss):
-            raise ValidationError('Logical sector size must be a power of 2')
+            raise ValidationError("Logical sector size must be a power of 2")
         if self.cluster_size <= 0:
-            raise ValidationError('Cluster size must be greater than 0')
+            raise ValidationError("Cluster size must be greater than 0")
         if not is_power_of_two(self.cluster_size):
-            raise ValidationError('Cluster size must be a power of 2')
+            raise ValidationError("Cluster size must be a power of 2")
         if self.reserved_size < 1:
-            raise ValidationError('Reserved sector count must be greater than 0')
+            raise ValidationError("Reserved sector count must be greater than 0")
         if self.fat_count < 1:
-            raise ValidationError('FAT count must be greater than 0')
+            raise ValidationError("FAT count must be greater than 0")
         if (self.rootdir_entries * DIRECTORY_ENTRY_SIZE) % self.lss != 0:
             raise ValidationError(
-                'Root directory entries must align with logical sector size'
+                "Root directory entries must align with logical sector size"
             )
         if self.media_type <= 0xEF or (0xF1 <= self.media_type <= 0xF7):
-            raise ValidationError(f'Unsupported media type 0x{self.media_type:x}')
+            raise ValidationError(f"Unsupported media type 0x{self.media_type:x}")
 
     def validate_for_volume(self, volume: Volume) -> None:
         if self.lss != volume.sector_size.logical:
             raise ValidationError(
-                'Logical sector size defined in DOS 2.0 BPB does not match logical '
-                'sector size of disk'
+                "Logical sector size defined in DOS 2.0 BPB does not match logical "
+                "sector size of disk"
             )
         if self.total_size_200 > volume.size_lba:
-            raise ValidationError('Total size must not be greater than volume size')
+            raise ValidationError("Total size must not be greater than volume size")
 
     @property
     def bpb_dos_200(self) -> BpbDos200:
@@ -212,12 +212,12 @@ class BpbDos331(ByteStruct):
     def validate(self) -> None:
         if self.sectors_per_track > SECTORS_PER_TRACK_MAX:
             raise ValidationError(
-                f'Sector count per track must be less than or equal to '
-                f'{SECTORS_PER_TRACK_MAX}'
+                f"Sector count per track must be less than or equal to "
+                f"{SECTORS_PER_TRACK_MAX}"
             )
         if self.heads > HEADS_MAX:
             raise ValidationError(
-                f'Head count must be a less than or equal to {HEADS_MAX}'
+                f"Head count must be a less than or equal to {HEADS_MAX}"
             )
 
         # Total sizes must match if none of them is 0
@@ -225,17 +225,17 @@ class BpbDos331(ByteStruct):
         total_size_331 = self.total_size_331
         if total_size_200 and total_size_331 and total_size_200 != total_size_331:
             raise ValidationError(
-                'Total size does not match total size defined in DOS 2.0 BPB'
+                "Total size does not match total size defined in DOS 2.0 BPB"
             )
 
     def validate_for_volume(self, volume: Volume) -> None:
         self.bpb_dos_200_.validate_for_volume(volume)
         if self.hidden_before_partition != volume.start_lba:
             raise ValidationError(
-                'Hidden sector count does not match volume start sector'
+                "Hidden sector count does not match volume start sector"
             )
         if self.total_size_331 > volume.size_lba:
-            raise ValidationError('Total size must not be greater than volume size')
+            raise ValidationError("Total size must not be greater than volume size")
 
     @property
     def bpb_dos_200(self) -> BpbDos200:
@@ -256,7 +256,7 @@ def _check_physical_drive_number(physical_drive_number: int) -> None:
     """
     if physical_drive_number in PHYSICAL_DRIVE_NUMBERS_RESERVED:
         warnings.warn(
-            f'Reserved physical drive number {physical_drive_number}', ValidationWarning
+            f"Reserved physical drive number {physical_drive_number}", ValidationWarning
         )
 
 
@@ -266,7 +266,7 @@ def _check_extended_boot_signature(extended_boot_signature: bytes) -> None:
     """
     if extended_boot_signature not in EXTENDED_BOOT_SIGNATURES:
         raise ValidationError(
-            f'Invalid extended boot signature {extended_boot_signature!r}'
+            f"Invalid extended boot signature {extended_boot_signature!r}"
         )
 
 
@@ -283,13 +283,13 @@ class ShortEbpbFat(ByteStruct):
         # Previous BPBs
         if self.bpb_dos_331.bpb_dos_200.lss < MIN_LSS_FAT:
             raise ValidationError(
-                f'FAT requires a logical sector size of at least {MIN_LSS_FAT} bytes'
+                f"FAT requires a logical sector size of at least {MIN_LSS_FAT} bytes"
             )
         if self.bpb_dos_331.bpb_dos_200.rootdir_entries <= 0:
-            raise ValidationError('Root directory entry count must be greater than 0')
+            raise ValidationError("Root directory entry count must be greater than 0")
         if self.bpb_dos_331.bpb_dos_200.fat_size <= 0:
             raise ValidationError(
-                'FAT size defined in DOS 2.0 BPB must be greater than 0'
+                "FAT size defined in DOS 2.0 BPB must be greater than 0"
             )
 
         # This EBPB
@@ -332,28 +332,28 @@ class ShortEbpbFat32(ByteStruct):
         # Previous BPBs
         if self.bpb_dos_331.bpb_dos_200.lss < MIN_LSS_FAT32:
             raise ValidationError(
-                f'FAT32 requires a logical sector size of at least {MIN_LSS_FAT32} '
-                f'bytes'
+                f"FAT32 requires a logical sector size of at least {MIN_LSS_FAT32} "
+                f"bytes"
             )
         if self.bpb_dos_331.bpb_dos_200.rootdir_entries != 0:
-            raise ValidationError('Root directory entry count must be 0')
+            raise ValidationError("Root directory entry count must be 0")
         if self.bpb_dos_331.bpb_dos_200.total_size_200 != 0:
-            raise ValidationError('Total size defined in DOS 2.0 BPB must be 0')
+            raise ValidationError("Total size defined in DOS 2.0 BPB must be 0")
         if self.bpb_dos_331.bpb_dos_200.fat_size != 0:
-            raise ValidationError('FAT size defined in DOS 2.0 BPB must be 0')
+            raise ValidationError("FAT size defined in DOS 2.0 BPB must be 0")
 
         # This EBPB
         if self.fat_size_32 <= 0:
-            raise ValidationError('FAT size must be greater than 0')
+            raise ValidationError("FAT size must be greater than 0")
         if self.version != FAT32_VERSION:
-            raise ValidationError(f'Invalid FAT32 version {self.version}')
+            raise ValidationError(f"Invalid FAT32 version {self.version}")
         if self.rootdir_start_cluster < 2:
             raise ValidationError(
-                'Root directory start cluster must be greater than or equal to 2'
+                "Root directory start cluster must be greater than or equal to 2"
             )
         if self.fsinfo_available and self.fsinfo_sector != FS_INFO_SECTOR:
             raise ValidationError(
-                f'FS information sector number must be {FS_INFO_SECTOR}'
+                f"FS information sector number must be {FS_INFO_SECTOR}"
             )
 
         # In this context, the term "boot sectors" refers to LBA 0, the FS information
@@ -365,8 +365,8 @@ class ShortEbpbFat32(ByteStruct):
         if self.backup_available:
             if self.boot_sector_backup_start < min_boot_sectors:
                 raise ValidationError(
-                    f'Boot sector backup start sector number must be greater than or '
-                    f'equal to minimum boot sector count of {min_boot_sectors}'
+                    f"Boot sector backup start sector number must be greater than or "
+                    f"equal to minimum boot sector count of {min_boot_sectors}"
                 )
             boot_sectors = self.boot_sector_backup_start
             min_reserved = 2 * boot_sectors
@@ -375,7 +375,7 @@ class ShortEbpbFat32(ByteStruct):
 
         if self.bpb_dos_331.bpb_dos_200.reserved_size < min_reserved:
             raise ValidationError(
-                f'Reserved sector count must be at least {min_reserved}'
+                f"Reserved sector count must be at least {min_reserved}"
             )
         _check_physical_drive_number(self.physical_drive_number)
         _check_extended_boot_signature(self.extended_boot_signature)
@@ -423,13 +423,13 @@ class EbpbFat(ByteStruct):
     def validate(self) -> None:
         if self.short.extended_boot_signature != EXTENDED_BOOT_SIGNATURE_EXISTS:
             raise ValidationError(
-                f'Extended boot signature must be {EXTENDED_BOOT_SIGNATURE_EXISTS!r} '
-                f'to parse an extended FAT EBPB'
+                f"Extended boot signature must be {EXTENDED_BOOT_SIGNATURE_EXISTS!r} "
+                f"to parse an extended FAT EBPB"
             )
         if self.file_system_type not in FILE_SYSTEM_TYPES_FAT:
             warnings.warn(
-                f'Unknown file system type {self.file_system_type!r}; this might lead '
-                f'some systems to refuse to recognize the file system',
+                f"Unknown file system type {self.file_system_type!r}; this might lead "
+                f"some systems to refuse to recognize the file system",
                 ValidationWarning,
             )
 
@@ -461,20 +461,20 @@ class EbpbFat32(ByteStruct):
     def validate(self) -> None:
         if self.short.extended_boot_signature != EXTENDED_BOOT_SIGNATURE_EXISTS:
             raise ValidationError(
-                f'Extended boot signature must be {EXTENDED_BOOT_SIGNATURE_EXISTS!r} '
-                f'to parse an extended FAT32 EBPB'
+                f"Extended boot signature must be {EXTENDED_BOOT_SIGNATURE_EXISTS!r} "
+                f"to parse an extended FAT32 EBPB"
             )
         if self.file_system_type != FILE_SYSTEM_TYPE_FAT32:
             warnings.warn(
-                f'Unknown file system type {self.file_system_type!r}; this might lead '
-                f'some systems to refuse to recognize the file system',
+                f"Unknown file system type {self.file_system_type!r}; this might lead "
+                f"some systems to refuse to recognize the file system",
                 ValidationWarning,
             )
 
     def validate_for_volume(self, volume: Volume) -> None:
         self.short.validate_for_volume(volume)
         if self.total_size is not None and self.total_size > volume.size_lba:
-            raise ValidationError('Total size must not be greater than volume size')
+            raise ValidationError("Total size must not be greater than volume size")
 
     @property
     def bpb_dos_200(self) -> BpbDos200:
@@ -486,7 +486,7 @@ class EbpbFat32(ByteStruct):
         if total_size_short is None:
             # If both total logical sectors entries at offset 0x20 and 0x13 are 0,
             # volumes can use file_system_type as a 64-bit total logical sectors entry.
-            total_size = int.from_bytes(self.file_system_type, 'little')
+            total_size = int.from_bytes(self.file_system_type, "little")
             return total_size or None
         return total_size_short
 
@@ -523,14 +523,14 @@ class BootSectorStart(ByteStruct):
             for jump_start in JUMP_INSTRUCTIONS_START
         ):
             warnings.warn(
-                'Unknown jump instruction pattern; this might lead some systems to '
-                'refuse to recognize the file system',
+                "Unknown jump instruction pattern; this might lead some systems to "
+                "refuse to recognize the file system",
                 ValidationWarning,
             )
         if self.oem_name not in OEM_NAMES_COMMON:
             warnings.warn(
-                'Unknown OEM name in boot sector; this might lead some systems to '
-                'refuse to recognize the file system',
+                "Unknown OEM name in boot sector; this might lead some systems to "
+                "refuse to recognize the file system",
                 ValidationWarning,
             )
 
@@ -570,13 +570,13 @@ class BootSector:
         """
         if len(b) != cls.SIZE:
             raise ValueError(
-                f'Boot sector must be {cls.SIZE} bytes long, got {len(b)} bytes'
+                f"Boot sector must be {cls.SIZE} bytes long, got {len(b)} bytes"
             )
 
         signature_size = len(SIGNATURE)
         signature = b[-signature_size:]
         if signature != SIGNATURE:
-            raise ValidationError(f'Invalid VBR signature {signature!r}')
+            raise ValidationError(f"Invalid VBR signature {signature!r}")
 
         start_size = len(BootSectorStart)
         start = BootSectorStart.from_bytes(b[:start_size])
@@ -601,7 +601,7 @@ class BootSector:
                     pass
 
         if bpb is None:
-            raise ValidationError('No known FAT BPB could be parsed')
+            raise ValidationError("No known FAT BPB could be parsed")
 
         boot_code_start = start_size + len(bpb)
         boot_code = b[boot_code_start:-signature_size]
@@ -620,21 +620,21 @@ class BootSector:
         len_all = len(self.start) + len(self.bpb) + len(self.boot_code) + len(SIGNATURE)
         if len_all != self.SIZE:
             raise ValidationError(
-                f'Invalid size of boot sector (expected {self.SIZE} bytes, got '
-                f'{len_all} bytes'
+                f"Invalid size of boot sector (expected {self.SIZE} bytes, got "
+                f"{len_all} bytes"
             )
         if self.total_clusters < 1:  # Also triggers validation of total_size
-            raise ValidationError('Total cluster count must be greater than 0')
+            raise ValidationError("Total cluster count must be greater than 0")
 
         fat_32_bpb = isinstance(self.bpb, (EbpbFat32, ShortEbpbFat32))
         fat_32_detected = self.fat_type is FatType.FAT_32
         if fat_32_bpb != fat_32_detected:
-            raise ValidationError('Detected FAT type does not match BPB')
+            raise ValidationError("Detected FAT type does not match BPB")
 
-        if not self.boot_code.strip(b'\x00'):
+        if not self.boot_code.strip(b"\x00"):
             warnings.warn(
-                f'Boot code should not be empty, use at least a dummy boot loader, '
-                f'such as {BOOT_CODE_DUMMY!r}',
+                f"Boot code should not be empty, use at least a dummy boot loader, "
+                f"such as {BOOT_CODE_DUMMY!r}",
                 ValidationWarning,
             )
 
@@ -650,7 +650,7 @@ class BootSector:
     def total_size(self) -> int:
         """Total size of the file system in sectors."""
         if self.bpb.total_size is None:
-            raise ValidationError('No total size was defined')
+            raise ValidationError("No total size was defined")
         return self.bpb.total_size
 
     @property
@@ -729,13 +729,13 @@ class FsInfoSector(ByteStruct):
     def validate(self) -> None:
         if self.signature_1 != FS_INFO_SIGNATURE_1:
             raise ValidationError(
-                f'Invalid first FS information sector signature {self.signature_1!r}'
+                f"Invalid first FS information sector signature {self.signature_1!r}"
             )
         if self.signature_2 != FS_INFO_SIGNATURE_2:
             raise ValidationError(
-                f'Invalid second FS information sector signature {self.signature_2!r}'
+                f"Invalid second FS information sector signature {self.signature_2!r}"
             )
         if self.signature_3 != FS_INFO_SIGNATURE_3:
             raise ValidationError(
-                f'Invalid third FS information sector signature {self.signature_3!r}'
+                f"Invalid third FS information sector signature {self.signature_3!r}"
             )

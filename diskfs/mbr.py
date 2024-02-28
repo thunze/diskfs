@@ -17,7 +17,7 @@ from .table import TableType, check_alignment, check_bounds, check_overlapping
 if TYPE_CHECKING:
     from .disk import Disk
 
-__all__ = ['Table', 'PartitionEntry', 'PartitionType']
+__all__ = ["Table", "PartitionEntry", "PartitionType"]
 
 
 log = logging.getLogger(__name__)
@@ -28,7 +28,7 @@ MIN_LSS = 512  # minimum logical sector size required for MBR partitioning
 BOOT_CODE_SIZE = 446
 PARTITION_ENTRIES_COUNT = 4
 
-SIGNATURE = b'\x55\xaa'
+SIGNATURE = b"\x55\xaa"
 STATUS_ACTIVE = 0x80
 STATUS_INACTIVE = 0x00
 
@@ -58,11 +58,11 @@ def _lba_to_chs(lba: int, heads: int, sectors_per_track: int) -> tuple[int, int,
     Returns a ``tuple`` of (cylinder, head, sector).
     """
     if lba < 0:
-        raise ValueError('LBA must be zero or positive')
+        raise ValueError("LBA must be zero or positive")
     if heads < 1:
-        raise ValueError('Only positive values allowed for head')
+        raise ValueError("Only positive values allowed for head")
     if sectors_per_track < 1:
-        raise ValueError('Only positive values allowed for sectors_per_track')
+        raise ValueError("Only positive values allowed for sectors_per_track")
 
     # heads == tracks per cylinder
     cylinder, rem = divmod(lba, sectors_per_track * heads)
@@ -99,24 +99,24 @@ def _pack_chs_address(
     See https://en.wikipedia.org/wiki/Master_boot_record#Partition_table_entries.
     """
     if cylinder < 0 or head < 0 or sector < 0:
-        raise OverflowError('Only positive values and zero allowed')
+        raise OverflowError("Only positive values and zero allowed")
     if cylinder >= 1 << 10:
         raise OverflowError(
-            f'Invalid cylinder value {cylinder}, must be a 10-bit value'
+            f"Invalid cylinder value {cylinder}, must be a 10-bit value"
         )
     if head >= 1 << 8:
-        raise OverflowError(f'Invalid head value {head}, must be an 8-bit value')
+        raise OverflowError(f"Invalid head value {head}, must be an 8-bit value")
     if sector >= 1 << 6:
-        raise OverflowError(f'Invalid sector value {sector}, must be a 6-bit value')
+        raise OverflowError(f"Invalid sector value {sector}, must be a 6-bit value")
 
     if check_validity:
         if head == HEAD_INVALID:
-            raise ValueError(f'Invalid head value, must not be {HEAD_INVALID}')
+            raise ValueError(f"Invalid head value, must not be {HEAD_INVALID}")
         if sector == SECTOR_INVALID:
-            raise ValueError(f'Invalid sector value, must not be {SECTOR_INVALID}')
+            raise ValueError(f"Invalid sector value, must not be {SECTOR_INVALID}")
         address = (cylinder, head, sector)
         if address == CHS_INVALID:
-            raise ValueError(f'Invalid address, must not be {CHS_INVALID}')
+            raise ValueError(f"Invalid address, must not be {CHS_INVALID}")
 
     byte_1 = head
     # cylinder mask: 0x300 == 0b1100000000
@@ -132,8 +132,8 @@ def _check_lss(lss: int) -> None:
     """Check if a logical sector size of ``lss`` works with MBR partitioning."""
     if lss < MIN_LSS:
         raise ValueError(
-            f'MBR partitioning requires a logical sector size of at least '
-            f'{MIN_LSS} bytes'
+            f"MBR partitioning requires a logical sector size of at least "
+            f"{MIN_LSS} bytes"
         )
 
 
@@ -175,7 +175,7 @@ class PartitionEntry:
     """
 
     SIZE = 16
-    FORMAT = '<BBBBBBBBII'
+    FORMAT = "<BBBBBBBBII"
 
     def __init__(self, start_lba: int, length_lba: int, type_: int, bootable: bool):
         self._start_lba = start_lba
@@ -204,7 +204,7 @@ class PartitionEntry:
 
         if type_int == PartitionType.EMPTY.value:
             raise ValueError(
-                'Use PartitionEntry.new_empty() to create an empty partition entry'
+                "Use PartitionEntry.new_empty() to create an empty partition entry"
             )
 
         byte_max = 1 << 8
@@ -212,19 +212,19 @@ class PartitionEntry:
 
         if not 0 <= type_int < byte_max:
             raise ValueError(
-                f'Invalid partition type {hex(type_int)}, must be a 1-byte value'
+                f"Invalid partition type {hex(type_int)}, must be a 1-byte value"
             )
 
         # LBA 0 is invalid because the partition table resides at LBA 0
         if not 0 < start_lba < four_byte_max:
             raise ValueError(
-                f'Invalid partition starting sector {start_lba}, must be a 4-byte '
-                f'value greater than 0'
+                f"Invalid partition starting sector {start_lba}, must be a 4-byte "
+                f"value greater than 0"
             )
         if not 0 < length_lba < four_byte_max:
             raise ValueError(
-                f'Invalid partition length {length_lba} sectors, must be a 4-byte '
-                f'value greater than 0'
+                f"Invalid partition length {length_lba} sectors, must be a 4-byte "
+                f"value greater than 0"
             )
         return cls(start_lba, length_lba, type_int, bootable)
 
@@ -241,7 +241,7 @@ class PartitionEntry:
         """
         if len(b) != cls.SIZE:
             raise ValueError(
-                f'MBR partition entry must be {cls.SIZE} bytes long, got {len(b)} bytes'
+                f"MBR partition entry must be {cls.SIZE} bytes long, got {len(b)} bytes"
             )
         status, _, _, _, type_, _, _, _, start_lba, length_lba = struct.unpack(
             cls.FORMAT, b
@@ -252,7 +252,7 @@ class PartitionEntry:
             return cls.new_empty()
 
         if start_lba == 0:
-            raise ValidationError('Starting sector of partition must not be 0')
+            raise ValidationError("Starting sector of partition must not be 0")
 
         bootable = bool(status & STATUS_ACTIVE)  # only check bit 7
         return cls(start_lba, length_lba, type_, bootable)
@@ -260,7 +260,7 @@ class PartitionEntry:
     def __bytes__(self) -> bytes:
         """Get ``bytes`` representation of partition entry."""
         if self.empty:
-            return b'\x00' * self.SIZE
+            return b"\x00" * self.SIZE
         status = STATUS_ACTIVE if self._bootable else STATUS_INACTIVE
 
         # only include each CHS address if it's unambiguous
@@ -327,9 +327,9 @@ class PartitionEntry:
 
     def __repr__(self) -> str:
         return (
-            f'mbr.{self.__class__.__name__}(start_lba={self._start_lba}, '
-            f'end_lba={self.end_lba}, type={hex(self._type)}, '
-            f'bootable={self._bootable})'
+            f"mbr.{self.__class__.__name__}(start_lba={self._start_lba}, "
+            f"end_lba={self.end_lba}, type={hex(self._type)}, "
+            f"bootable={self._bootable})"
         )
 
 
@@ -340,7 +340,7 @@ class Table:
     """
 
     SIZE = 512
-    FORMAT = '<446s16s16s16s16s2s'
+    FORMAT = "<446s16s16s16s16s2s"
 
     def __init__(self, partitions: Iterable[PartitionEntry], boot_code: bytes):
         partitions = tuple(partitions)
@@ -350,21 +350,21 @@ class Table:
 
     @classmethod
     def new(
-        cls, partitions: Iterable[PartitionEntry], *, boot_code: bytes = b''
+        cls, partitions: Iterable[PartitionEntry], *, boot_code: bytes = b""
     ) -> Table:
         """New partition table."""
         partitions = tuple(partitions)
-        boot_code = boot_code.rstrip(b'\x00')
+        boot_code = boot_code.rstrip(b"\x00")
 
         if len(partitions) > PARTITION_ENTRIES_COUNT:
             raise ValueError(
-                f'Can only create a maximum of {PARTITION_ENTRIES_COUNT} partitions, '
-                f'got {len(partitions)} partition entries'
+                f"Can only create a maximum of {PARTITION_ENTRIES_COUNT} partitions, "
+                f"got {len(partitions)} partition entries"
             )
         if len(boot_code) > BOOT_CODE_SIZE:
             raise ValueError(
-                f'MBR boot code can be at most {BOOT_CODE_SIZE} bytes long, got '
-                f'{len(boot_code)} bytes'
+                f"MBR boot code can be at most {BOOT_CODE_SIZE} bytes long, got "
+                f"{len(boot_code)} bytes"
             )
         # strip empty partition entries
         stripped_entries = filter(lambda p: not p.empty, partitions)
@@ -375,17 +375,17 @@ class Table:
         """Parse partition table from ``bytes``."""
         if len(b) != cls.SIZE:
             raise ValueError(
-                f'MBR partition table must be {cls.SIZE} bytes long, got {len(b)} bytes'
+                f"MBR partition table must be {cls.SIZE} bytes long, got {len(b)} bytes"
             )
         boot_code, p1, p2, p3, p4, signature = struct.unpack(cls.FORMAT, b)
 
         if signature != SIGNATURE:
-            raise ValidationError(f'Invalid MBR signature {signature!r}')
+            raise ValidationError(f"Invalid MBR signature {signature!r}")
 
         partitions = filter(
             lambda p: not p.empty, map(PartitionEntry.from_bytes, [p1, p2, p3, p4])
         )
-        boot_code = boot_code.rstrip(b'\x00')
+        boot_code = boot_code.rstrip(b"\x00")
 
         return cls(partitions, boot_code)
 
@@ -394,8 +394,8 @@ class Table:
         """Parse partition table from ``disk``."""
         if disk.sector_size.logical < MIN_LSS:
             raise ValueError(
-                f'MBR partitioning requires a logical sector size of at least '
-                f'{MIN_LSS} bytes'
+                f"MBR partitioning requires a logical sector size of at least "
+                f"{MIN_LSS} bytes"
             )
         first_sector = disk.read_at(0, 1)
         table_bytes = first_sector[: cls.SIZE]
@@ -403,7 +403,7 @@ class Table:
         try:
             table = cls.from_bytes(table_bytes)
         except ValidationError as e:
-            log.debug(f'Failed to parse MBR: {e}')
+            log.debug(f"Failed to parse MBR: {e}")
             raise
 
         # checks
@@ -472,4 +472,4 @@ class Table:
         return NotImplemented
 
     def __repr__(self) -> str:
-        return f'mbr.{self.__class__.__name__}({len(self._partitions)})'
+        return f"mbr.{self.__class__.__name__}({len(self._partitions)})"

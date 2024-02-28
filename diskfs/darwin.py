@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import sys
 
-assert sys.platform == 'darwin'  # skipcq: BAN-B101
+assert sys.platform == "darwin"  # skipcq: BAN-B101
 
 import os
 from contextlib import contextmanager
@@ -35,7 +35,7 @@ from .base import DeviceProperties, SectorSize
 if TYPE_CHECKING:
     from .typing import StrPath
 
-__all__ = ['device_size', 'device_sector_size', 'reread_partition_table']
+__all__ = ["device_size", "device_sector_size", "reread_partition_table"]
 
 
 DKIOCGETBLOCKSIZE = 0x40046418
@@ -43,7 +43,7 @@ DKIOCGETPHYSICALBLOCKSIZE = 0x4004644D
 DKIOCGETBLOCKCOUNT = 0x40086419
 
 
-_T = TypeVar('_T', bound=CFTypeRef)
+_T = TypeVar("_T", bound=CFTypeRef)
 
 
 @contextmanager
@@ -58,7 +58,7 @@ def _releasing(cf_object: _T | None) -> Iterator[_T]:
     as a last resort to avoid segmentation fault when calling ``CFRelease()``.
     """
     if cf_object is None:
-        raise ValueError('Cannot release null reference')
+        raise ValueError("Cannot release null reference")
     try:
         yield cf_object
     finally:
@@ -92,7 +92,7 @@ def _unpack_cf_string(string: CFString | None) -> str | None:
 
     if not CFStringGetCString(string, buffer, max_size, ENCODING_UTF_8):
         raise RuntimeError("Failed to convert CFString to C string")  # pragma: no cover
-    return buffer.value.decode('utf-8')
+    return buffer.value.decode("utf-8")
 
 
 # noinspection PyUnusedLocal

@@ -39,25 +39,25 @@ from diskfs.fat.directory import (
     unpack_dos_datetime,
 )
 
-E5 = b'\xE5'.decode(DOS_FILENAME_OEM_ENCODING)
+E5 = b"\xE5".decode(DOS_FILENAME_OEM_ENCODING)
 
 
 @pytest.mark.parametrize(
-    ['filename', 'name', 'ext'],
+    ["filename", "name", "ext"],
     [
-        ('thing.json', 'thing', 'json'),
-        ('thing.json.txt', 'thing.json', 'txt'),
-        ('thing', 'thing', ''),
-        ('.thing', '', 'thing'),
-        ('thing.', 'thing', ''),
-        ('. thing', '', ' thing'),
-        ('.  thing', '', '  thing'),
-        ('.thing.', '.thing', ''),
-        ('.thing  .', '.thing  ', ''),
-        ('thing.json.', 'thing.json', ''),
-        ('Thing.jsoN', 'Thing', 'jsoN'),
-        ('thinG.Json', 'thinG', 'Json'),
-        ('thin9.Json', 'thin9', 'Json'),
+        ("thing.json", "thing", "json"),
+        ("thing.json.txt", "thing.json", "txt"),
+        ("thing", "thing", ""),
+        (".thing", "", "thing"),
+        ("thing.", "thing", ""),
+        (". thing", "", " thing"),
+        (".  thing", "", "  thing"),
+        (".thing.", ".thing", ""),
+        (".thing  .", ".thing  ", ""),
+        ("thing.json.", "thing.json", ""),
+        ("Thing.jsoN", "Thing", "jsoN"),
+        ("thinG.Json", "thinG", "Json"),
+        ("thin9.Json", "thin9", "Json"),
     ],
 )
 def test__split_filename(filename, name, ext):
@@ -66,19 +66,19 @@ def test__split_filename(filename, name, ext):
 
 
 @pytest.mark.parametrize(
-    ['filename', 'name_packed', 'ext_packed'],
+    ["filename", "name_packed", "ext_packed"],
     [
-        ('COFFEE', b'COFFEE  ', b'   '),
-        ('COFFEE.C', b'COFFEE  ', b'C  '),
-        ('COFFEE.CA', b'COFFEE  ', b'CA '),
-        ('C0FFEE.CA', b'C0FFEE  ', b'CA '),
-        ('COFFEE.CAF', b'COFFEE  ', b'CAF'),
-        ('CAFFEINE.CAF', b'CAFFEINE', b'CAF'),
-        ('CAFFEINE.CA', b'CAFFEINE', b'CA '),
-        ('CAFFEINE', b'CAFFEINE', b'   '),
-        (f'{E5}OFFEE.C', b'\x05OFFEE  ', b'C  '),  # Note: \x05 is forbidden anyway
-        (f'C{E5}FFEE.C', b'C\xE5FFEE  ', b'C  '),
-        (f'COFFEE.C{E5}', b'COFFEE  ', b'C\xE5 '),
+        ("COFFEE", b"COFFEE  ", b"   "),
+        ("COFFEE.C", b"COFFEE  ", b"C  "),
+        ("COFFEE.CA", b"COFFEE  ", b"CA "),
+        ("C0FFEE.CA", b"C0FFEE  ", b"CA "),
+        ("COFFEE.CAF", b"COFFEE  ", b"CAF"),
+        ("CAFFEINE.CAF", b"CAFFEINE", b"CAF"),
+        ("CAFFEINE.CA", b"CAFFEINE", b"CA "),
+        ("CAFFEINE", b"CAFFEINE", b"   "),
+        (f"{E5}OFFEE.C", b"\x05OFFEE  ", b"C  "),  # Note: \x05 is forbidden anyway
+        (f"C{E5}FFEE.C", b"C\xE5FFEE  ", b"C  "),
+        (f"COFFEE.C{E5}", b"COFFEE  ", b"C\xE5 "),
     ],
 )
 def test__pack_unpack_dos_filename(filename, name_packed, ext_packed):
@@ -90,45 +90,45 @@ def test__pack_unpack_dos_filename(filename, name_packed, ext_packed):
 
 
 @pytest.mark.parametrize(
-    'filename',
+    "filename",
     [
-        'COFFEE',
-        'CO FEE',
-        'COFFEE.EXT',
-        'COFFEE.E T',
-        'COFFEE.CAF',
-        'COFFEE.CA',
-        'COFFEE.C',
-        'CAFFEINE.CAF',
-        'CAFFEINE.CA',
-        'CAFFEINE.C',
-        'C4FFEINE.C',
-        'C4FFEINE.C4F',
-        '123.456',
-        '1.2',
-        'A.A',
-        'A',
-        'THYCUP',
-        'THY CUP',
-        'THYCÜP',
-        ' .  A',
-        ' . A',
-        ' .ABC',
-        '        .  A',
-        '       A.  A',
-        '        .  Ä',
-        'CÖFFEE',
-        'CÖFFEE.ÄXT',
-        'COFFEE!.EXT',
-        '!COFFEE!.EX!',
-        '1#COFFEE.PL$',
-        '01234567.890',
-        '(1234)6.{((',
-        'A B',
-        'A B.C D',
-        *(f'{c}.AB' for c in ' !#$%&\'()-@^_`{}~'),
-        *(f'A{c}.B' for c in ' !#$%&\'()-@^_`{}~'),
-        *(f'AB.{c}' for c in '!#$%&\'()-@^_`{}~'),
+        "COFFEE",
+        "CO FEE",
+        "COFFEE.EXT",
+        "COFFEE.E T",
+        "COFFEE.CAF",
+        "COFFEE.CA",
+        "COFFEE.C",
+        "CAFFEINE.CAF",
+        "CAFFEINE.CA",
+        "CAFFEINE.C",
+        "C4FFEINE.C",
+        "C4FFEINE.C4F",
+        "123.456",
+        "1.2",
+        "A.A",
+        "A",
+        "THYCUP",
+        "THY CUP",
+        "THYCÜP",
+        " .  A",
+        " . A",
+        " .ABC",
+        "        .  A",
+        "       A.  A",
+        "        .  Ä",
+        "CÖFFEE",
+        "CÖFFEE.ÄXT",
+        "COFFEE!.EXT",
+        "!COFFEE!.EX!",
+        "1#COFFEE.PL$",
+        "01234567.890",
+        "(1234)6.{((",
+        "A B",
+        "A B.C D",
+        *(f"{c}.AB" for c in " !#$%&'()-@^_`{}~"),
+        *(f"A{c}.B" for c in " !#$%&'()-@^_`{}~"),
+        *(f"AB.{c}" for c in "!#$%&'()-@^_`{}~"),
     ],
 )
 def test_valid_dos_filename(filename):
@@ -139,52 +139,52 @@ def test_valid_dos_filename(filename):
 
 
 @pytest.mark.parametrize(
-    ['filename', 'saved_as_vfat'],
+    ["filename", "saved_as_vfat"],
     [
-        ('爱', True),
-        ('★', True),
-        ('coffee', False),
-        ('cöffee', False),
-        ('cöffee.äxt', False),
-        ('cöffee.ÄXT', False),
-        ('CÖFFEE.äxt', False),
-        ('CöFFEE', True),
-        ('coFFee', True),
-        ('CoFFeE', True),
-        ('CoFFeE.ExT', True),
-        ('cOffee.eXt', True),
-        ('COFFEE.ext', False),
-        ('coffee.EXT', False),
-        ('CAFFEINEE.EXT', True),
-        ('CAFFEINATED.EXT', True),
-        ('COFFEE.EXXT', True),
-        ('a' * 255, True),
-        ('A' * 255, True),
-        ('.A' * 127, True),
-        ('a', False),
-        ('.A', True),
-        ('A..B', True),
-        ('.A.B', True),
-        ('..B', True),
-        ('.AB', True),
-        ('.ABC', True),
-        ('. .A', True),
-        ('. .a', True),
-        ('A b', True),
-        ('a b', False),
-        ('a b.c d', False),
-        ('. A', True),
-        ('   a', False),
-        ('   a   B', True),
-        ('   A.   b', True),
-        ('   A   .b', False),
-        ('   A     .b', True),
-        (' .  .. A', True),
-        (' .   A', True),
-        ('.  Ä', True),
-        *((f'{c}.AB', True) for c in '+,;=[]'),
-        *((f'A{c}.B', True) for c in '+,;=[]'),
-        *((f'AB.{c}', True) for c in '+,;=[]'),
+        ("爱", True),
+        ("★", True),
+        ("coffee", False),
+        ("cöffee", False),
+        ("cöffee.äxt", False),
+        ("cöffee.ÄXT", False),
+        ("CÖFFEE.äxt", False),
+        ("CöFFEE", True),
+        ("coFFee", True),
+        ("CoFFeE", True),
+        ("CoFFeE.ExT", True),
+        ("cOffee.eXt", True),
+        ("COFFEE.ext", False),
+        ("coffee.EXT", False),
+        ("CAFFEINEE.EXT", True),
+        ("CAFFEINATED.EXT", True),
+        ("COFFEE.EXXT", True),
+        ("a" * 255, True),
+        ("A" * 255, True),
+        (".A" * 127, True),
+        ("a", False),
+        (".A", True),
+        ("A..B", True),
+        (".A.B", True),
+        ("..B", True),
+        (".AB", True),
+        (".ABC", True),
+        (". .A", True),
+        (". .a", True),
+        ("A b", True),
+        ("a b", False),
+        ("a b.c d", False),
+        (". A", True),
+        ("   a", False),
+        ("   a   B", True),
+        ("   A.   b", True),
+        ("   A   .b", False),
+        ("   A     .b", True),
+        (" .  .. A", True),
+        (" .   A", True),
+        (".  Ä", True),
+        *((f"{c}.AB", True) for c in "+,;=[]"),
+        *((f"A{c}.B", True) for c in "+,;=[]"),
+        *((f"AB.{c}", True) for c in "+,;=[]"),
     ],
 )
 def test_valid_vfat_but_invalid_dos_filename(filename, saved_as_vfat):
@@ -199,53 +199,53 @@ def test_valid_vfat_but_invalid_dos_filename(filename, saved_as_vfat):
 
 
 @pytest.mark.parametrize(
-    'filename',
+    "filename",
     [
-        'a' * 256,
-        'a.' * 127,
-        'a.',
-        'ab.',
-        'ab.ext.',
-        'a ',
-        'a b ',
-        '.',
-        '..',
-        '...',
-        ' ',
-        '  ',
-        '  ',
-        ' .',
-        '. ',
-        '',
-        *(f'{c}.ab' for c in '\x00\x05\x1F"*/:<>?\\|\x7F'),
-        *(f'a{c}.b' for c in '\x00\x05\x1F"*/:<>?\\|\x7F'),
-        *(f'ab.{c}' for c in '\x00\x05\x1F"*/:<>?\\|\x7F'),
+        "a" * 256,
+        "a." * 127,
+        "a.",
+        "ab.",
+        "ab.ext.",
+        "a ",
+        "a b ",
+        ".",
+        "..",
+        "...",
+        " ",
+        "  ",
+        "  ",
+        " .",
+        ". ",
+        "",
+        *(f"{c}.ab" for c in '\x00\x05\x1F"*/:<>?\\|\x7F'),
+        *(f"a{c}.b" for c in '\x00\x05\x1F"*/:<>?\\|\x7F'),
+        *(f"ab.{c}" for c in '\x00\x05\x1F"*/:<>?\\|\x7F'),
         *'"*/:<>?\\|\x7F',
-        '\uD800',
-        'are\uDEADserious',
+        "\uD800",
+        "are\uDEADserious",
     ],
 )
 def test_invalid_vfat_filename(filename):
     """Test that ``filename`` is not considered a valid VFAT filename."""
     assert not _is_valid_vfat_filename(filename)
     assert not _is_valid_dos_filename(filename)
-    with pytest.raises(ValidationError, match='Invalid filename.*'):
+    with pytest.raises(ValidationError, match="Invalid filename.*"):
         _check_vfat_filename(filename)
 
 
 @pytest.mark.parametrize(
-    ['filename', 'name_lower', 'ext_lower'],
+    ["filename", "name_lower", "ext_lower"],
     [
-        ('coffee', True, False),
-        ('cöffee', True, False),
-        ('coffee.ext', True, True),
-        ('cöffee.äxt', True, True),
-        ('coffee.EXT', True, False),
-        ('cöffee.ÄXT', True, False),
-        ('COFFEE.ext', False, True),
-        ('CÖFFEE.äxt', False, True),
-        ('COFFEE.EXT', False, False),
-        ('CÖFFEE.ÄXT', False, False),
+        ("coffee", True, False),
+        ("cöffee", True, False),
+        ("coffee.ext", True, True),
+        ("cöffee.äxt", True, True),
+        ("coffee.EXT", True, False),
+        ("cöffee.ÄXT", True, False),
+        ("COFFEE.ext", False, True),
+        ("CÖFFEE.äxt", False, True),
+        ("COFFEE.EXT", False, False),
+        ("CÖFFEE.ÄXT", False, False),
     ],
 )
 def test__get_case_info(filename, name_lower, ext_lower):
@@ -258,25 +258,25 @@ def test__get_case_info(filename, name_lower, ext_lower):
 
 
 @pytest.mark.parametrize(
-    ['filename', 'checksum'],
+    ["filename", "checksum"],
     [
-        ('filename_01', 0x6580),
-        ('filename_02', 0xBF8B),
-        ('filename_03', 0xB483),
-        ('filename_04', 0xDA15),
-        ('filename_05', 0x801A),
-        ('filename_06', 0x360F),
-        ('filename_07', 0x5C90),
-        ('filename_08', 0x0295),
-        ('FiLeNaMe_09', 0xDE8C),
-        ('FILENAME_10', 0xA80B),
-        ('caffeinated.caf.caf', 0xF883),
-        ('caffeinated.cäf.caf', 0xB976),
-        ('caffeinated.caffeinated', 0x7E22),
-        ('caffeinated_coffee.caf', 0x0153),
-        ('caffeinated_+,;=[].caf', 0x0CFA),
-        ('caffeinated_({}).caf', 0xAF27),
-        ('caffeinated_☺.caf', _vfat_filename_checksum('caffeinated_☻.caf')),  # dummy
+        ("filename_01", 0x6580),
+        ("filename_02", 0xBF8B),
+        ("filename_03", 0xB483),
+        ("filename_04", 0xDA15),
+        ("filename_05", 0x801A),
+        ("filename_06", 0x360F),
+        ("filename_07", 0x5C90),
+        ("filename_08", 0x0295),
+        ("FiLeNaMe_09", 0xDE8C),
+        ("FILENAME_10", 0xA80B),
+        ("caffeinated.caf.caf", 0xF883),
+        ("caffeinated.cäf.caf", 0xB976),
+        ("caffeinated.caffeinated", 0x7E22),
+        ("caffeinated_coffee.caf", 0x0153),
+        ("caffeinated_+,;=[].caf", 0x0CFA),
+        ("caffeinated_({}).caf", 0xAF27),
+        ("caffeinated_☺.caf", _vfat_filename_checksum("caffeinated_☻.caf")),  # dummy
     ],
 )
 def test__vfat_filename_checksum(filename, checksum):
@@ -287,69 +287,69 @@ def test__vfat_filename_checksum(filename, checksum):
 
 
 @pytest.mark.parametrize(
-    ['filename', 'dos_filename'],
+    ["filename", "dos_filename"],
     [
-        ('COFFEE.CAF', 'COFFEE.CAF'),
-        ('COFFEE.caf', 'COFFEE.CAF'),
-        ('coffee.CAF', 'COFFEE.CAF'),
-        ('coffee.caf', 'COFFEE.CAF'),
-        ('cof.fee.caf', 'COFFEE~1.CAF'),
-        ('.coffee.caf', 'COFFEE~1.CAF'),
-        ('.cof.fee.caf', 'COFFEE~1.CAF'),
-        (' . c.  o .ffee.caf', 'COFFEE~1.CAF'),
-        ('coffee.cafe', 'COFFEE~1.CAF'),
-        ('coffee.c a f e', 'COFFEE~1.CAF'),
-        ('coFFee.C a f e', 'COFFEE~1.CAF'),
-        ('caffeinated.C a f e', 'CAFFEI~1.CAF'),
-        ('caffeinated.caffeinated', 'CAFFEI~1.CAF'),
-        ('C☺FFEE.C☻F', 'C_FFEE~1.C_F'),
-        ('☺☻☺☻☺☻.☻☺☻', '______~1.___'),
-        ('☺☻☺☻☺☻☺☻☺☻☺☻.☻☺☻☺☻', '______~1.___'),
-        ('☺☻☺☻☺☻☺☻☺☻☺☻.A☻☺', '______~1.A__'),
-        ('______~1.___', '______~1.___'),
-        (',+,', '___~1'),
-        ('coffeecoffee', 'COFFEE~1'),
-        ('.coffeecoffee', 'COFFEE~1'),
-        ('.coffee', 'COFFEE~1'),
-        ('. coffee', 'COFFEE~1'),
-        ('AB', 'AB'),
-        ('aB', 'AB'),
-        ('A', 'A'),
-        ('b', 'B'),
-        ('_', '_'),
-        ('1-', '1-'),
-        ('A+', 'A_0D92~1'),
-        (',b', '_BF6E2~1'),
-        (',+', '__3050~1'),
-        (',', '_C5C5~1'),
-        ('+', '_7BBA~1'),
-        (' A', 'AEFA0~1'),
-        ('.A', 'ACD87~1'),
-        ('.  [', '_D34E~1'),
-        ('.[...A+', '_D9F5~1.A_'),
-        ('A.[', 'AB33A~1._'),
-        ('ABC.[', 'ABC~1._'),
-        ('COFFEE', 'COFFEE'),
-        (' COFFEE', 'COFFEE~1'),
-        ('.COFFEE', 'COFFEE~1'),
-        ('  COFFEE', 'COFFEE~1'),
-        (' .COFFEE', 'AE89~1.COF'),
-        ('. COFFEE', 'COFFEE~1'),
-        ('..COFFEE', 'COFFEE~1'),
-        ('   COFFEE', 'COFFEE~1'),
-        ('  .COFFEE', 'FADF~1.COF'),
-        (' . COFFEE', 'BA0E~1.COF'),
-        (' ..COFFEE', '40B4~1.COF'),
-        ('.  COFFEE', 'COFFEE~1'),
-        ('. .COFFEE', 'COFFEE~1'),
-        ('.. COFFEE', 'COFFEE~1'),
-        ('...COFFEE', 'COFFEE~1'),
-        ('[[[COFFEE', '___COF~1'),
-        ('.[.COFFEE', '_051A~1.COF'),
-        ('[.[COFFEE', '_C052~1._CO'),
-        ('#.!COFFEE', '#F0E3~1.!CO'),
-        ('. . CO', 'COB5A1~1'),
-        ('123[.456', '123_~1.456'),
+        ("COFFEE.CAF", "COFFEE.CAF"),
+        ("COFFEE.caf", "COFFEE.CAF"),
+        ("coffee.CAF", "COFFEE.CAF"),
+        ("coffee.caf", "COFFEE.CAF"),
+        ("cof.fee.caf", "COFFEE~1.CAF"),
+        (".coffee.caf", "COFFEE~1.CAF"),
+        (".cof.fee.caf", "COFFEE~1.CAF"),
+        (" . c.  o .ffee.caf", "COFFEE~1.CAF"),
+        ("coffee.cafe", "COFFEE~1.CAF"),
+        ("coffee.c a f e", "COFFEE~1.CAF"),
+        ("coFFee.C a f e", "COFFEE~1.CAF"),
+        ("caffeinated.C a f e", "CAFFEI~1.CAF"),
+        ("caffeinated.caffeinated", "CAFFEI~1.CAF"),
+        ("C☺FFEE.C☻F", "C_FFEE~1.C_F"),
+        ("☺☻☺☻☺☻.☻☺☻", "______~1.___"),
+        ("☺☻☺☻☺☻☺☻☺☻☺☻.☻☺☻☺☻", "______~1.___"),
+        ("☺☻☺☻☺☻☺☻☺☻☺☻.A☻☺", "______~1.A__"),
+        ("______~1.___", "______~1.___"),
+        (",+,", "___~1"),
+        ("coffeecoffee", "COFFEE~1"),
+        (".coffeecoffee", "COFFEE~1"),
+        (".coffee", "COFFEE~1"),
+        (". coffee", "COFFEE~1"),
+        ("AB", "AB"),
+        ("aB", "AB"),
+        ("A", "A"),
+        ("b", "B"),
+        ("_", "_"),
+        ("1-", "1-"),
+        ("A+", "A_0D92~1"),
+        (",b", "_BF6E2~1"),
+        (",+", "__3050~1"),
+        (",", "_C5C5~1"),
+        ("+", "_7BBA~1"),
+        (" A", "AEFA0~1"),
+        (".A", "ACD87~1"),
+        (".  [", "_D34E~1"),
+        (".[...A+", "_D9F5~1.A_"),
+        ("A.[", "AB33A~1._"),
+        ("ABC.[", "ABC~1._"),
+        ("COFFEE", "COFFEE"),
+        (" COFFEE", "COFFEE~1"),
+        (".COFFEE", "COFFEE~1"),
+        ("  COFFEE", "COFFEE~1"),
+        (" .COFFEE", "AE89~1.COF"),
+        (". COFFEE", "COFFEE~1"),
+        ("..COFFEE", "COFFEE~1"),
+        ("   COFFEE", "COFFEE~1"),
+        ("  .COFFEE", "FADF~1.COF"),
+        (" . COFFEE", "BA0E~1.COF"),
+        (" ..COFFEE", "40B4~1.COF"),
+        (".  COFFEE", "COFFEE~1"),
+        (". .COFFEE", "COFFEE~1"),
+        (".. COFFEE", "COFFEE~1"),
+        ("...COFFEE", "COFFEE~1"),
+        ("[[[COFFEE", "___COF~1"),
+        (".[.COFFEE", "_051A~1.COF"),
+        ("[.[COFFEE", "_C052~1._CO"),
+        ("#.!COFFEE", "#F0E3~1.!CO"),
+        (". . CO", "COB5A1~1"),
+        ("123[.456", "123_~1.456"),
     ],
 )
 def test__vfat_to_dos_filename_single(filename, dos_filename):
@@ -358,48 +358,48 @@ def test__vfat_to_dos_filename_single(filename, dos_filename):
 
 
 @pytest.mark.parametrize(
-    'pairs',
+    "pairs",
     [
         [
-            ('caffeine_01', 'CAFFEI~1'),
-            ('caffeine_02', 'CAFFEI~2'),
-            ('caffeine_03', 'CAFFEI~3'),
-            ('caffeine_04', 'CAFFEI~4'),
-            ('caffeine_05', 'CA517E~1'),
-            ('caffeine_06', 'CA7700~1'),
-            ('caffeine_07', 'CA2DF4~1'),
-            ('caffeine_08', 'CAD2F9~1'),
-            ('caffeine_09', 'CAF88B~1'),
-            ('caffeine_10', 'CA3866~1'),
-            ('caffeine_11', 'CAED5B~1'),
-            ('caffeine_12', 'CA7CAF~1'),
-            ('caffeine_13', 'CAC6BA~1'),
-            ('caffeine_14', 'CA11C5~1'),
-            ('caffeine_15', 'CAFA24~1'),
-            ('caffeine_16', 'CA453F~1'),
-            ('caffeine_17', 'CA9F3A~1'),
-            ('caffeine_18', 'CAE945~1'),
-            ('caffeine_19', 'CA8AC9~1'),
-            ('caffeine_20', 'CA3A41~1'),
-            ('caffeine', 'CAFFEINE'),
+            ("caffeine_01", "CAFFEI~1"),
+            ("caffeine_02", "CAFFEI~2"),
+            ("caffeine_03", "CAFFEI~3"),
+            ("caffeine_04", "CAFFEI~4"),
+            ("caffeine_05", "CA517E~1"),
+            ("caffeine_06", "CA7700~1"),
+            ("caffeine_07", "CA2DF4~1"),
+            ("caffeine_08", "CAD2F9~1"),
+            ("caffeine_09", "CAF88B~1"),
+            ("caffeine_10", "CA3866~1"),
+            ("caffeine_11", "CAED5B~1"),
+            ("caffeine_12", "CA7CAF~1"),
+            ("caffeine_13", "CAC6BA~1"),
+            ("caffeine_14", "CA11C5~1"),
+            ("caffeine_15", "CAFA24~1"),
+            ("caffeine_16", "CA453F~1"),
+            ("caffeine_17", "CA9F3A~1"),
+            ("caffeine_18", "CAE945~1"),
+            ("caffeine_19", "CA8AC9~1"),
+            ("caffeine_20", "CA3A41~1"),
+            ("caffeine", "CAFFEINE"),
         ],
         [
-            ('caffeine_01', 'CAFFEI~1'),
-            ('caffeine_02', 'CAFFEI~2'),
-            ('caffeine_03', 'CAFFEI~3'),
-            ('caffeine_04', 'CAFFEI~4'),
-            ('CA517E~1', 'CA517E~1'),
-            ('caffeine_05', 'CA517E~2'),
-            ('CA7700~1', 'CA7700~1'),
-            ('CA7700~2', 'CA7700~2'),
-            ('CA7700~3', 'CA7700~3'),
-            ('CA7700~4', 'CA7700~4'),
-            ('CA7700~5', 'CA7700~5'),
-            ('CA7700~6', 'CA7700~6'),
-            ('CA7700~7', 'CA7700~7'),
-            ('CA7700~8', 'CA7700~8'),
-            ('CA7700~9', 'CA7700~9'),
-            ('caffeine_06', 'CA770~10'),
+            ("caffeine_01", "CAFFEI~1"),
+            ("caffeine_02", "CAFFEI~2"),
+            ("caffeine_03", "CAFFEI~3"),
+            ("caffeine_04", "CAFFEI~4"),
+            ("CA517E~1", "CA517E~1"),
+            ("caffeine_05", "CA517E~2"),
+            ("CA7700~1", "CA7700~1"),
+            ("CA7700~2", "CA7700~2"),
+            ("CA7700~3", "CA7700~3"),
+            ("CA7700~4", "CA7700~4"),
+            ("CA7700~5", "CA7700~5"),
+            ("CA7700~6", "CA7700~6"),
+            ("CA7700~7", "CA7700~7"),
+            ("CA7700~8", "CA7700~8"),
+            ("CA7700~9", "CA7700~9"),
+            ("caffeine_06", "CA770~10"),
         ],
     ],
 )
@@ -419,17 +419,17 @@ def test__vfat_to_dos_filename_multiple(pairs):
 
 
 @pytest.mark.parametrize(
-    ['name_bytes', 'ext_bytes', 'expected'],
+    ["name_bytes", "ext_bytes", "expected"],
     [
-        (b'_       ', b'   ', 0xFE),
-        (b'C       ', b'   ', 0xFF),
-        (b'C       ', b'C  ', 0xC8),
-        (b'COFFEE  ', b'   ', 0xC4),
-        (b'COFFEE  ', b'CAF', 0x43),
-        (b'COFFEI~1', b'   ', 0xEC),
-        (b'COFFEI~1', b'CAF', 0x2B),
-        (b'#F0E3~1 ', b'!CO', 0x76),
-        (b'_____~1 ', b'___', 0x53),
+        (b"_       ", b"   ", 0xFE),
+        (b"C       ", b"   ", 0xFF),
+        (b"C       ", b"C  ", 0xC8),
+        (b"COFFEE  ", b"   ", 0xC4),
+        (b"COFFEE  ", b"CAF", 0x43),
+        (b"COFFEI~1", b"   ", 0xEC),
+        (b"COFFEI~1", b"CAF", 0x2B),
+        (b"#F0E3~1 ", b"!CO", 0x76),
+        (b"_____~1 ", b"___", 0x53),
     ],
 )
 def test__dos_filename_checksum(name_bytes, ext_bytes, expected):
@@ -438,7 +438,7 @@ def test__dos_filename_checksum(name_bytes, ext_bytes, expected):
 
 
 @pytest.mark.parametrize(
-    ['dt', 'packed'],
+    ["dt", "packed"],
     [
         (datetime(1980, 1, 1, 0, 0, 0), (33, 0, 0)),
         (datetime(1980, 1, 1, 0, 0, 1), (33, 0, 100)),
@@ -473,7 +473,7 @@ def test_pack_unpack_dos_datetime(dt, packed):
 
 
 @pytest.mark.parametrize(
-    ['dt', 'packed', 'unpacked'],
+    ["dt", "packed", "unpacked"],
     [
         (datetime(1980, 1, 1, 0, 0, 0, 0), (33, 0, 0), datetime(1980, 1, 1, 0, 0, 0)),
         (datetime(1980, 1, 1, 0, 0, 0, 10), (33, 0, 0), datetime(1980, 1, 1, 0, 0, 0)),
@@ -511,7 +511,7 @@ def test_pack_dos_datetime_microseconds(dt, packed, unpacked):
 
 
 @pytest.mark.parametrize(
-    'dt',
+    "dt",
     [
         datetime(1979, 1, 1, 0, 0, 0),
         datetime(1979, 12, 31, 23, 59, 59),
@@ -521,12 +521,12 @@ def test_pack_dos_datetime_microseconds(dt, packed, unpacked):
 )
 def test_pack_dos_datetime_fail_invalid_date(dt):
     """Test DOS datetime packing for invalid dates."""
-    with pytest.raises(ValueError, match='Invalid DOS date.*'):
+    with pytest.raises(ValueError, match="Invalid DOS date.*"):
         pack_dos_datetime(dt)
 
 
 @pytest.mark.parametrize(
-    'packed',
+    "packed",
     [
         (0, 0, 0),
         (0, 0, 100),
@@ -555,8 +555,8 @@ def test_unpack_dos_datetime_none(packed):
 
 
 EIGHT_DOT_THREE_ENTRY_EXAMPLE = EightDotThreeEntry(
-    name=b'FILENAME',
-    extension=b'EXT',
+    name=b"FILENAME",
+    extension=b"EXT",
     _attributes=0,
     case_info_vfat=0,
     created_time_ten_ms=0,
@@ -575,27 +575,27 @@ class TestEightDotThreeEntry:
     """Tests for ``EightDotThreeEntry``."""
 
     @pytest.mark.parametrize(
-        ['name', 'extension', 'case_info_vfat', 'filename', 'dos_filename'],
+        ["name", "extension", "case_info_vfat", "filename", "dos_filename"],
         [
-            (b'A       ', b'B  ', 0, 'A.B', 'A.B'),
-            (b'A       ', b'B  ', 8, 'a.B', 'A.B'),
-            (b'A       ', b'B  ', 16, 'A.b', 'A.B'),
-            (b'A       ', b'B  ', 24, 'a.b', 'A.B'),
-            (b'FILENAME', b'   ', 0, 'FILENAME', 'FILENAME'),
-            (b'FILENAME', b'   ', 8, 'filename', 'FILENAME'),
-            (b'FILENAME', b'EXT', 0, 'FILENAME.EXT', 'FILENAME.EXT'),
-            (b'FILENAME', b'EXT', 8, 'filename.EXT', 'FILENAME.EXT'),
-            (b'FILENAME', b'EXT', 16, 'FILENAME.ext', 'FILENAME.EXT'),
-            (b'FILENAME', b'EXT', 24, 'filename.ext', 'FILENAME.EXT'),
-            (b'\x05ILENAME', b'EXT', 0, f'{E5}ILENAME.EXT', f'{E5}ILENAME.EXT'),
+            (b"A       ", b"B  ", 0, "A.B", "A.B"),
+            (b"A       ", b"B  ", 8, "a.B", "A.B"),
+            (b"A       ", b"B  ", 16, "A.b", "A.B"),
+            (b"A       ", b"B  ", 24, "a.b", "A.B"),
+            (b"FILENAME", b"   ", 0, "FILENAME", "FILENAME"),
+            (b"FILENAME", b"   ", 8, "filename", "FILENAME"),
+            (b"FILENAME", b"EXT", 0, "FILENAME.EXT", "FILENAME.EXT"),
+            (b"FILENAME", b"EXT", 8, "filename.EXT", "FILENAME.EXT"),
+            (b"FILENAME", b"EXT", 16, "FILENAME.ext", "FILENAME.EXT"),
+            (b"FILENAME", b"EXT", 24, "filename.ext", "FILENAME.EXT"),
+            (b"\x05ILENAME", b"EXT", 0, f"{E5}ILENAME.EXT", f"{E5}ILENAME.EXT"),
             (
-                b'\x05ILENAME',
-                b'EXT',
+                b"\x05ILENAME",
+                b"EXT",
                 24,
-                f'{E5.lower()}ilename.ext',
-                f'{E5}ILENAME.EXT',
+                f"{E5.lower()}ilename.ext",
+                f"{E5}ILENAME.EXT",
             ),
-            (b'(1234)6 ', b'{((', 24, '(1234)6.{((', '(1234)6.{(('),
+            (b"(1234)6 ", b"{((", 24, "(1234)6.{((", "(1234)6.{(("),
         ],
     )
     def test_filename_and_hint(
@@ -615,7 +615,7 @@ class TestEightDotThreeEntry:
         assert entry.dos_filename == dos_filename
 
     @pytest.mark.parametrize(
-        ['cluster_low', 'cluster_high', 'fat_32', 'cluster'],
+        ["cluster_low", "cluster_high", "fat_32", "cluster"],
         [
             (0, 0, False, 0),
             (0, 0, True, 0),
@@ -642,14 +642,14 @@ class TestEightDotThreeEntry:
         assert entry.cluster(fat_32=fat_32) == cluster
 
     @pytest.mark.parametrize(
-        ['name', 'hint'],
+        ["name", "hint"],
         [
-            (b'FILENAME', None),
-            (b'\x05ILENAME', None),
-            (b'\xE5ILENAME', Hint.DELETED),
-            (b'\x2E       ', Hint.DOT_ENTRY),
-            (b'\x2E\x2E      ', Hint.DOT_ENTRY),
-            (b'\x00' * 8, Hint.END_OF_ENTRIES),
+            (b"FILENAME", None),
+            (b"\x05ILENAME", None),
+            (b"\xE5ILENAME", Hint.DELETED),
+            (b"\x2E       ", Hint.DOT_ENTRY),
+            (b"\x2E\x2E      ", Hint.DOT_ENTRY),
+            (b"\x00" * 8, Hint.END_OF_ENTRIES),
         ],
     )
     def test_hint(self, name, hint):
@@ -660,7 +660,7 @@ class TestEightDotThreeEntry:
         assert entry.hint is hint
 
     @pytest.mark.parametrize(
-        ['attributes_int', 'attributes', 'volume_label'],
+        ["attributes_int", "attributes", "volume_label"],
         [
             (0, Attributes(0), False),
             (7, Attributes.READ_ONLY | Attributes.HIDDEN | Attributes.SYSTEM, False),
@@ -678,7 +678,7 @@ class TestEightDotThreeEntry:
         assert entry.volume_label is volume_label
 
     @pytest.mark.parametrize(
-        ['date', 'time', 'time_ten_ms', 'created', 'last_accessed', 'last_modified'],
+        ["date", "time", "time_ten_ms", "created", "last_accessed", "last_modified"],
         [
             (0, 0, 0, None, None, None),
             (
@@ -729,13 +729,13 @@ class TestEightDotThreeEntry:
 
 VFAT_ENTRY_EXAMPLE = VfatEntry(
     seq=1,
-    chars_1=b'ABCDEFGHIJ',
+    chars_1=b"ABCDEFGHIJ",
     attributes=15,
     type=0,
     checksum=0x12,  # not a real checksum
-    chars_2=b'KLMNOPQRSTUV',
+    chars_2=b"KLMNOPQRSTUV",
     cluster=0,
-    chars_3=b'WXYZ',
+    chars_3=b"WXYZ",
 )
 
 
@@ -743,16 +743,16 @@ class TestVfatEntry:
     """Tests for ``VfatEntry``."""
 
     @pytest.mark.parametrize(
-        'replace_kwargs',
+        "replace_kwargs",
         [
-            {'attributes': 15},
-            {'attributes': 31},
-            {'seq': 2},
-            {'seq': 10},
-            {'seq': 19},
-            {'seq': 20},
-            {'seq': 32 + 20},
-            {'seq': 128 + 20},
+            {"attributes": 15},
+            {"attributes": 31},
+            {"seq": 2},
+            {"seq": 10},
+            {"seq": 19},
+            {"seq": 20},
+            {"seq": 32 + 20},
+            {"seq": 128 + 20},
         ],
     )
     def test_validate_success(self, replace_kwargs):
@@ -760,31 +760,31 @@ class TestVfatEntry:
         replace(VFAT_ENTRY_EXAMPLE, **replace_kwargs)
 
     @pytest.mark.parametrize(
-        ['replace_kwargs', 'msg_contains'],
+        ["replace_kwargs", "msg_contains"],
         [
-            ({'attributes': 0}, 'Invalid attributes'),
-            ({'attributes': 1}, 'Invalid attributes'),
-            ({'attributes': 3}, 'Invalid attributes'),
-            ({'attributes': 7}, 'Invalid attributes'),
-            ({'attributes': 14}, 'Invalid attributes'),
-            ({'attributes': 16}, 'Invalid attributes'),
-            ({'seq': 0}, 'Sequence number'),
-            ({'seq': 21}, 'Sequence number'),
-            ({'seq': 22}, 'Sequence number'),
-            ({'seq': 32}, 'Sequence number'),
-            ({'seq': 64}, 'Sequence number'),
-            ({'seq': 128 + 22}, 'Sequence number'),
-            ({'cluster': 1}, 'Cluster number'),
-            ({'cluster': 2}, 'Cluster number'),
+            ({"attributes": 0}, "Invalid attributes"),
+            ({"attributes": 1}, "Invalid attributes"),
+            ({"attributes": 3}, "Invalid attributes"),
+            ({"attributes": 7}, "Invalid attributes"),
+            ({"attributes": 14}, "Invalid attributes"),
+            ({"attributes": 16}, "Invalid attributes"),
+            ({"seq": 0}, "Sequence number"),
+            ({"seq": 21}, "Sequence number"),
+            ({"seq": 22}, "Sequence number"),
+            ({"seq": 32}, "Sequence number"),
+            ({"seq": 64}, "Sequence number"),
+            ({"seq": 128 + 22}, "Sequence number"),
+            ({"cluster": 1}, "Cluster number"),
+            ({"cluster": 2}, "Cluster number"),
         ],
     )
     def test_validate_fail(self, replace_kwargs, msg_contains):
         """Test custom validation logic for failing cases."""
-        with pytest.raises(ValidationError, match=f'.*{msg_contains}.*'):
+        with pytest.raises(ValidationError, match=f".*{msg_contains}.*"):
             replace(VFAT_ENTRY_EXAMPLE, **replace_kwargs)
 
     @pytest.mark.parametrize(
-        ['seq', 'first_lfn_entry', 'number'],
+        ["seq", "first_lfn_entry", "number"],
         [
             (1, False, 1),
             (20, False, 20),
@@ -802,24 +802,24 @@ class TestVfatEntry:
 
 
 ENTRY_KWARGS_EXAMPLE_ONLY_EDT: dict[str, Any] = {
-    'eight_dot_three': EIGHT_DOT_THREE_ENTRY_EXAMPLE
+    "eight_dot_three": EIGHT_DOT_THREE_ENTRY_EXAMPLE
 }
 ENTRY_KWARGS_EXAMPLE_SINGLE_VFAT: dict[str, Any] = {
-    'vfat_entries': [
+    "vfat_entries": [
         VfatEntry(
             seq=0x41,
-            chars_1=b'c\x00,\x00f\x00f\x00e\x00',
+            chars_1=b"c\x00,\x00f\x00f\x00e\x00",
             attributes=15,
             type=0,
             checksum=0xBF,
-            chars_2=b'e\x00.\x00c\x00a\x00f\x00\x00\x00',
+            chars_2=b"e\x00.\x00c\x00a\x00f\x00\x00\x00",
             cluster=0,
-            chars_3=b'\xFF\xFF\xFF\xFF',
+            chars_3=b"\xFF\xFF\xFF\xFF",
         )
     ],
-    'eight_dot_three': EightDotThreeEntry(
-        name=b'C_FFEE~1',
-        extension=b'CAF',
+    "eight_dot_three": EightDotThreeEntry(
+        name=b"C_FFEE~1",
+        extension=b"CAF",
         _attributes=0,
         case_info_vfat=0,
         created_time_ten_ms=0,
@@ -834,41 +834,41 @@ ENTRY_KWARGS_EXAMPLE_SINGLE_VFAT: dict[str, Any] = {
     ),
 }
 ENTRY_KWARGS_EXAMPLE_MULTIPLE_VFAT: dict[str, Any] = {
-    'vfat_entries': [
+    "vfat_entries": [
         VfatEntry(
             seq=0x43,
-            chars_1=b'o\x00.\x00d\x00a\x00t\x00',
+            chars_1=b"o\x00.\x00d\x00a\x00t\x00",
             attributes=15,
             type=0,
             checksum=0xB3,
-            chars_2=b'\x00\x00\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF',
+            chars_2=b"\x00\x00\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF",
             cluster=0,
-            chars_3=b'\xFF\xFF\xFF\xFF',
+            chars_3=b"\xFF\xFF\xFF\xFF",
         ),
         VfatEntry(
             seq=0x02,
-            chars_1=b'n\x00 \x00n\x00o\x00m\x00',
+            chars_1=b"n\x00 \x00n\x00o\x00m\x00",
             attributes=15,
             type=0,
             checksum=0xB3,
-            chars_2=b'b\x00r\x00e\x00 \x00l\x00a\x00',
+            chars_2=b"b\x00r\x00e\x00 \x00l\x00a\x00",
             cluster=0,
-            chars_3=b'r\x00g\x00',
+            chars_3=b"r\x00g\x00",
         ),
         VfatEntry(
             seq=0x01,
-            chars_1=b'U\x00n\x00 \x00a\x00r\x00',
+            chars_1=b"U\x00n\x00 \x00a\x00r\x00",
             attributes=15,
             type=0,
             checksum=0xB3,
-            chars_2=b'c\x00h\x00i\x00v\x00o\x00 \x00',
+            chars_2=b"c\x00h\x00i\x00v\x00o\x00 \x00",
             cluster=0,
-            chars_3=b'c\x00o\x00',
+            chars_3=b"c\x00o\x00",
         ),
     ],
-    'eight_dot_three': EightDotThreeEntry(
-        name=b'UNARCH~1',
-        extension=b'DAT',
+    "eight_dot_three": EightDotThreeEntry(
+        name=b"UNARCH~1",
+        extension=b"DAT",
         _attributes=0x20,
         case_info_vfat=0,
         created_time_ten_ms=0,
@@ -892,7 +892,7 @@ class TestEntry:
     """Tests for ``Entry``."""
 
     @pytest.mark.parametrize(
-        ['init_kwargs', 'vfat'],
+        ["init_kwargs", "vfat"],
         [
             (ENTRY_KWARGS_EXAMPLE_ONLY_EDT, False),
             (ENTRY_KWARGS_EXAMPLE_ONLY_EDT, True),
@@ -905,33 +905,33 @@ class TestEntry:
         Entry(**init_kwargs, vfat=vfat)
 
     @pytest.mark.parametrize(
-        'init_kwargs',
+        "init_kwargs",
         [ENTRY_KWARGS_EXAMPLE_SINGLE_VFAT, ENTRY_KWARGS_EXAMPLE_MULTIPLE_VFAT],
     )
     def test_init_fail_vfat_support(self, init_kwargs):
         """Test that ``Entry`` fails to initialize with VFAT entries if ``vfat`` is
         ``False``.
         """
-        with pytest.raises(ValueError, match='.*VFAT support.*'):
+        with pytest.raises(ValueError, match=".*VFAT support.*"):
             Entry(**init_kwargs, vfat=False)
 
     @pytest.mark.parametrize(
-        ['replace_kwargs', 'msg_contains'],
+        ["replace_kwargs", "msg_contains"],
         [
-            ({'name': b'\x00ILENAME'}, 'special 8.3 entry'),
-            ({'name': b'\x2EILENAME'}, 'special 8.3 entry'),
-            ({'name': b'\xE5ILENAME'}, 'special 8.3 entry'),
-            ({'_attributes': 0x8}, '8.3 entry.*volume label'),
-            ({'_attributes': 0xF}, '8.3 entry.*VFAT'),
+            ({"name": b"\x00ILENAME"}, "special 8.3 entry"),
+            ({"name": b"\x2EILENAME"}, "special 8.3 entry"),
+            ({"name": b"\xE5ILENAME"}, "special 8.3 entry"),
+            ({"_attributes": 0x8}, "8.3 entry.*volume label"),
+            ({"_attributes": 0xF}, "8.3 entry.*VFAT"),
         ],
     )
-    @pytest.mark.parametrize('vfat', [False, True])
+    @pytest.mark.parametrize("vfat", [False, True])
     def test_init_fail_edt_entry(self, replace_kwargs, msg_contains, vfat):
         """Test that ``Entry`` fails to initialize with 8.3 entries with specific
         filename hints or specific attributes.
         """
         edt_entry = replace(EIGHT_DOT_THREE_ENTRY_EXAMPLE, **replace_kwargs)
-        with pytest.raises(ValueError, match=f'.*{msg_contains}.*'):
+        with pytest.raises(ValueError, match=f".*{msg_contains}.*"):
             Entry(edt_entry, vfat=vfat)
 
     def test_init_fail_too_many_vfat_entries(self):
@@ -942,21 +942,21 @@ class TestEntry:
             + [ENTRY_EXAMPLE_MULTIPLE_VFAT.vfat_entries[1] for _ in range(19)]
             + [ENTRY_EXAMPLE_MULTIPLE_VFAT.vfat_entries[-1]]
         )
-        with pytest.raises(ValidationError, match='.*more than 20 entries.*'):
+        with pytest.raises(ValidationError, match=".*more than 20 entries.*"):
             Entry(edt_entry, vfat_entries, vfat=True)
 
     @pytest.mark.parametrize(
-        ['edt_entry', 'vfat_entries', 'msg_contains'],
+        ["edt_entry", "vfat_entries", "msg_contains"],
         [
             (
                 ENTRY_EXAMPLE_SINGLE_VFAT.eight_dot_three,
                 [replace(ENTRY_EXAMPLE_SINGLE_VFAT.vfat_entries[0], seq=0x1)],
-                'sequence number',
+                "sequence number",
             ),
             (
                 ENTRY_EXAMPLE_SINGLE_VFAT.eight_dot_three,
                 [replace(ENTRY_EXAMPLE_SINGLE_VFAT.vfat_entries[0], checksum=0x1)],
-                'checksum of DOS filename',
+                "checksum of DOS filename",
             ),
             (
                 ENTRY_EXAMPLE_MULTIPLE_VFAT.eight_dot_three,
@@ -964,7 +964,7 @@ class TestEntry:
                     replace(ENTRY_EXAMPLE_MULTIPLE_VFAT.vfat_entries[0], seq=0x1),
                     *ENTRY_EXAMPLE_MULTIPLE_VFAT.vfat_entries[1:],
                 ],
-                'sequence number',
+                "sequence number",
             ),
             (
                 ENTRY_EXAMPLE_MULTIPLE_VFAT.eight_dot_three,
@@ -973,45 +973,45 @@ class TestEntry:
                     replace(ENTRY_EXAMPLE_MULTIPLE_VFAT.vfat_entries[1], checksum=0x2),
                     ENTRY_EXAMPLE_MULTIPLE_VFAT.vfat_entries[2],
                 ],
-                'checksum of DOS filename',
+                "checksum of DOS filename",
             ),
         ],
     )
     def test_init_fail_vfat_entries(self, edt_entry, vfat_entries, msg_contains):
         """Test that ``Entry`` fails to initialize with invalid VFAT entries."""
-        with pytest.raises(ValidationError, match=f'.*{msg_contains}.*'):
+        with pytest.raises(ValidationError, match=f".*{msg_contains}.*"):
             Entry(edt_entry, vfat_entries, vfat=True)
 
     @pytest.mark.parametrize(
-        ['entry', 'expected_bytes'],
+        ["entry", "expected_bytes"],
         [
             (
                 ENTRY_EXAMPLE_ONLY_EDT,
                 (
-                    b'FILENAMEEXT\x00\x00\x00\x00\x00'
-                    b'!\x00!\x00\x00\x00\x00\x00!\x00\x00\x00\x00\x00\x00\x00'
+                    b"FILENAMEEXT\x00\x00\x00\x00\x00"
+                    b"!\x00!\x00\x00\x00\x00\x00!\x00\x00\x00\x00\x00\x00\x00"
                 ),
             ),
             (
                 ENTRY_EXAMPLE_SINGLE_VFAT,
                 (
-                    b'Ac\x00,\x00f\x00f\x00e\x00\x0f\x00\xbfe\x00'
-                    b'.\x00c\x00a\x00f\x00\x00\x00\x00\x00\xff\xff\xff\xff'
-                    b'C_FFEE~1CAF\x00\x00\x00\x00\x00'
-                    b'!\x00!\x00\x00\x00\x00\x00!\x00\x00\x00\x00\x00\x00\x00'
+                    b"Ac\x00,\x00f\x00f\x00e\x00\x0f\x00\xbfe\x00"
+                    b".\x00c\x00a\x00f\x00\x00\x00\x00\x00\xff\xff\xff\xff"
+                    b"C_FFEE~1CAF\x00\x00\x00\x00\x00"
+                    b"!\x00!\x00\x00\x00\x00\x00!\x00\x00\x00\x00\x00\x00\x00"
                 ),
             ),
             (
                 ENTRY_EXAMPLE_MULTIPLE_VFAT,
                 (
-                    b'\x43\x6f\x00\x2e\x00\x64\x00\x61\x00\x74\x00\x0f\x00\xb3\x00\x00'
-                    b'\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\x00\x00\xff\xff\xff\xff'
-                    b'\x02\x6e\x00\x20\x00\x6e\x00\x6f\x00\x6d\x00\x0f\x00\xb3\x62\x00'
-                    b'\x72\x00\x65\x00\x20\x00\x6c\x00\x61\x00\x00\x00\x72\x00\x67\x00'
-                    b'\x01\x55\x00\x6e\x00\x20\x00\x61\x00\x72\x00\x0f\x00\xb3\x63\x00'
-                    b'\x68\x00\x69\x00\x76\x00\x6f\x00\x20\x00\x00\x00\x63\x00\x6f\x00'
-                    b'\x55\x4e\x41\x52\x43\x48\x7e\x31\x44\x41\x54\x20\x00\x00\x59\xb6'
-                    b'\x81\x44\x81\x44\x00\x00\x59\xb6\x81\x44\x14\x00\x00\x20\x00\x00'
+                    b"\x43\x6f\x00\x2e\x00\x64\x00\x61\x00\x74\x00\x0f\x00\xb3\x00\x00"
+                    b"\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\x00\x00\xff\xff\xff\xff"
+                    b"\x02\x6e\x00\x20\x00\x6e\x00\x6f\x00\x6d\x00\x0f\x00\xb3\x62\x00"
+                    b"\x72\x00\x65\x00\x20\x00\x6c\x00\x61\x00\x00\x00\x72\x00\x67\x00"
+                    b"\x01\x55\x00\x6e\x00\x20\x00\x61\x00\x72\x00\x0f\x00\xb3\x63\x00"
+                    b"\x68\x00\x69\x00\x76\x00\x6f\x00\x20\x00\x00\x00\x63\x00\x6f\x00"
+                    b"\x55\x4e\x41\x52\x43\x48\x7e\x31\x44\x41\x54\x20\x00\x00\x59\xb6"
+                    b"\x81\x44\x81\x44\x00\x00\x59\xb6\x81\x44\x14\x00\x00\x20\x00\x00"
                 ),
             ),
         ],
@@ -1022,24 +1022,24 @@ class TestEntry:
 
     @pytest.mark.parametrize(
         [
-            'entry',
-            'filename',
-            'dos_filename',
-            'cluster',
-            'attributes',
-            'created',
-            'last_accessed',
-            'last_modified',
-            'size',
-            'total_entries',
-            'eight_dot_three',
-            'vfat_entries',
+            "entry",
+            "filename",
+            "dos_filename",
+            "cluster",
+            "attributes",
+            "created",
+            "last_accessed",
+            "last_modified",
+            "size",
+            "total_entries",
+            "eight_dot_three",
+            "vfat_entries",
         ],
         [
             (
                 ENTRY_EXAMPLE_ONLY_EDT,
-                'FILENAME.EXT',
-                'FILENAME.EXT',
+                "FILENAME.EXT",
+                "FILENAME.EXT",
                 0,
                 Attributes(0),
                 datetime(1980, 1, 1),
@@ -1052,8 +1052,8 @@ class TestEntry:
             ),
             (
                 ENTRY_EXAMPLE_SINGLE_VFAT,
-                'c,ffee.caf',
-                'C_FFEE~1.CAF',
+                "c,ffee.caf",
+                "C_FFEE~1.CAF",
                 0,
                 Attributes(0),
                 datetime(1980, 1, 1),
@@ -1061,13 +1061,13 @@ class TestEntry:
                 datetime(1980, 1, 1),
                 0,
                 2,
-                ENTRY_KWARGS_EXAMPLE_SINGLE_VFAT['eight_dot_three'],
-                ENTRY_KWARGS_EXAMPLE_SINGLE_VFAT['vfat_entries'],
+                ENTRY_KWARGS_EXAMPLE_SINGLE_VFAT["eight_dot_three"],
+                ENTRY_KWARGS_EXAMPLE_SINGLE_VFAT["vfat_entries"],
             ),
             (
                 ENTRY_EXAMPLE_MULTIPLE_VFAT,
-                'Un archivo con nombre largo.dat',
-                'UNARCH~1.DAT',
+                "Un archivo con nombre largo.dat",
+                "UNARCH~1.DAT",
                 20,
                 Attributes(0x20),
                 datetime(2014, 4, 1, 22, 50, 50),
@@ -1075,8 +1075,8 @@ class TestEntry:
                 datetime(2014, 4, 1, 22, 50, 50),
                 8192,
                 4,
-                ENTRY_KWARGS_EXAMPLE_MULTIPLE_VFAT['eight_dot_three'],
-                ENTRY_KWARGS_EXAMPLE_MULTIPLE_VFAT['vfat_entries'],
+                ENTRY_KWARGS_EXAMPLE_MULTIPLE_VFAT["eight_dot_three"],
+                ENTRY_KWARGS_EXAMPLE_MULTIPLE_VFAT["vfat_entries"],
             ),
         ],
     )
@@ -1113,7 +1113,7 @@ class TestEntry:
         )
 
     @pytest.mark.parametrize(
-        ['entry', 'other_entry', 'equal'],
+        ["entry", "other_entry", "equal"],
         [
             (
                 ENTRY_EXAMPLE_ONLY_EDT,
@@ -1140,7 +1140,7 @@ class TestEntry:
         assert (entry == other_entry) is equal
 
     @pytest.mark.parametrize(
-        'entry',
+        "entry",
         [
             ENTRY_EXAMPLE_ONLY_EDT,
             ENTRY_EXAMPLE_SINGLE_VFAT,
@@ -1150,7 +1150,7 @@ class TestEntry:
     def test_repr(self, entry):
         """Test that the ``repr()`` of an ``Entry`` contains useful information."""
         repr_ = repr(entry)
-        assert 'Entry' in repr_
+        assert "Entry" in repr_
         assert entry.filename(vfat=True) in repr_
         assert entry.dos_filename in repr_
         assert str(entry.attributes) in repr_
@@ -1158,19 +1158,19 @@ class TestEntry:
 
 
 @pytest.mark.parametrize(
-    ['entry', 'filename', 'vfat', 'result'],
+    ["entry", "filename", "vfat", "result"],
     [
         # It doesn't matter if the entry was created with VFAT support enabled or not.
-        (ENTRY_EXAMPLE_ONLY_EDT, 'FILENAME.EXT', True, True),
-        (ENTRY_EXAMPLE_ONLY_EDT, 'FILENAME.EXT', False, True),
-        (ENTRY_EXAMPLE_SINGLE_VFAT, 'c,ffee.caf', True, True),
-        (ENTRY_EXAMPLE_SINGLE_VFAT, 'C_FFEE~1.CAF', True, True),
-        (ENTRY_EXAMPLE_SINGLE_VFAT, 'c,ffee.caf', False, False),
-        (ENTRY_EXAMPLE_SINGLE_VFAT, 'C_FFEE~1.CAF', False, True),
-        (ENTRY_EXAMPLE_MULTIPLE_VFAT, 'Un archivo con nombre largo.dat', True, True),
-        (ENTRY_EXAMPLE_MULTIPLE_VFAT, 'UNARCH~1.DAT', True, True),
-        (ENTRY_EXAMPLE_MULTIPLE_VFAT, 'Un archivo con nombre largo.dat', False, False),
-        (ENTRY_EXAMPLE_MULTIPLE_VFAT, 'UNARCH~1.DAT', False, True),
+        (ENTRY_EXAMPLE_ONLY_EDT, "FILENAME.EXT", True, True),
+        (ENTRY_EXAMPLE_ONLY_EDT, "FILENAME.EXT", False, True),
+        (ENTRY_EXAMPLE_SINGLE_VFAT, "c,ffee.caf", True, True),
+        (ENTRY_EXAMPLE_SINGLE_VFAT, "C_FFEE~1.CAF", True, True),
+        (ENTRY_EXAMPLE_SINGLE_VFAT, "c,ffee.caf", False, False),
+        (ENTRY_EXAMPLE_SINGLE_VFAT, "C_FFEE~1.CAF", False, True),
+        (ENTRY_EXAMPLE_MULTIPLE_VFAT, "Un archivo con nombre largo.dat", True, True),
+        (ENTRY_EXAMPLE_MULTIPLE_VFAT, "UNARCH~1.DAT", True, True),
+        (ENTRY_EXAMPLE_MULTIPLE_VFAT, "Un archivo con nombre largo.dat", False, False),
+        (ENTRY_EXAMPLE_MULTIPLE_VFAT, "UNARCH~1.DAT", False, True),
     ],
 )
 def test_entry_match(entry, filename, vfat, result):
@@ -1178,13 +1178,13 @@ def test_entry_match(entry, filename, vfat, result):
     assert entry_match(filename, entry, vfat=vfat) is result
 
 
-END_OF_ENTRIES_EXAMPLE = EightDotThreeEntry.from_bytes(b'\x00' * 32)
-DELETED_ENTRY_EXAMPLE = replace(EIGHT_DOT_THREE_ENTRY_EXAMPLE, name=b'\xE5ILENAME')
+END_OF_ENTRIES_EXAMPLE = EightDotThreeEntry.from_bytes(b"\x00" * 32)
+DELETED_ENTRY_EXAMPLE = replace(EIGHT_DOT_THREE_ENTRY_EXAMPLE, name=b"\xE5ILENAME")
 DOT_ENTRY_EXAMPLE = replace(
-    EIGHT_DOT_THREE_ENTRY_EXAMPLE, name=b'.       ', extension=b'   '
+    EIGHT_DOT_THREE_ENTRY_EXAMPLE, name=b".       ", extension=b"   "
 )
 DOT_ENTRY_EXAMPLE_2 = replace(
-    EIGHT_DOT_THREE_ENTRY_EXAMPLE, name=b'..      ', extension=b'   '
+    EIGHT_DOT_THREE_ENTRY_EXAMPLE, name=b"..      ", extension=b"   "
 )
 
 VFAT_ENTRY_EXAMPLE_AS_EDT = EightDotThreeEntry.from_bytes(bytes(VFAT_ENTRY_EXAMPLE))
@@ -1193,7 +1193,7 @@ VFAT_ENTRY_EXAMPLE_AS_EDT = EightDotThreeEntry.from_bytes(bytes(VFAT_ENTRY_EXAMP
 ENTRY_PARTS_EXAMPLE_MULTIPLE_VFAT_INVALID_VFAT = (
     ENTRY_EXAMPLE_MULTIPLE_VFAT.vfat_entries[0],
     EightDotThreeEntry.from_bytes(
-        b'\x20' + bytes(ENTRY_EXAMPLE_MULTIPLE_VFAT.vfat_entries[1])[1:]
+        b"\x20" + bytes(ENTRY_EXAMPLE_MULTIPLE_VFAT.vfat_entries[1])[1:]
     ),
     ENTRY_EXAMPLE_MULTIPLE_VFAT.vfat_entries[2],
     ENTRY_EXAMPLE_MULTIPLE_VFAT.eight_dot_three,
@@ -1218,7 +1218,7 @@ ENTRY_PARTS_EXAMPLE_MULTIPLE_VFAT_INIT_FAIL_AS_EDT = tuple(
 
 # noinspection DuplicatedCode
 @pytest.mark.parametrize(
-    ['input_edt_entries', 'output_entries'],
+    ["input_edt_entries", "output_entries"],
     [
         # First collection: Input entries
         # Second collection: 4 tuples of output entries, one for each combination of
@@ -1365,7 +1365,7 @@ ENTRY_PARTS_EXAMPLE_MULTIPLE_VFAT_INIT_FAIL_AS_EDT = tuple(
         ),
     ],
 )
-@pytest.mark.parametrize('add_end_of_entries', [False, True])
+@pytest.mark.parametrize("add_end_of_entries", [False, True])
 def test_iter_entries(
     input_edt_entries: tuple[Entry | EightDotThreeEntry | VfatEntry, ...],
     output_entries: list[tuple[Entry | EightDotThreeEntry, ...]],
@@ -1380,7 +1380,5 @@ def test_iter_entries(
     assert len(output_entries) == 4
 
     for output, (only_useful, vfat) in zip(output_entries, only_useful_vfat_product):
-        generator = iter_entries(
-            iter_bytes, only_useful=only_useful, vfat=vfat
-        )  # type: ignore[call-overload]
+        generator = iter_entries(iter_bytes, only_useful=only_useful, vfat=vfat)  # type: ignore[call-overload]
         assert tuple(generator) == output

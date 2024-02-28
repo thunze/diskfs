@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from ..volume import Volume
     from .filesystem import FileSystem
 
-__all__ = ['DataIO', 'RootdirIO']
+__all__ = ["DataIO", "RootdirIO"]
 
 
 class _InternalIO(RawIOBase):
@@ -28,7 +28,7 @@ class _InternalIO(RawIOBase):
     def _check_closed(self) -> None:
         self._volume.check_closed()
         if self.closed:
-            raise ValueError('I/O operation on closed file')
+            raise ValueError("I/O operation on closed file")
 
     def _check_writable(self) -> None:
         self._volume.check_writable()
@@ -50,21 +50,21 @@ class _InternalIO(RawIOBase):
 
         if whence == SEEK_SET:
             if offset < 0:
-                raise ValueError(f'Negative seek position {offset}')
+                raise ValueError(f"Negative seek position {offset}")
             self._pos = offset
         elif whence == SEEK_CUR:
             self._pos = max(0, self._pos + offset)
         elif whence == SEEK_END:
             self._pos = max(0, self._size + offset)
         else:
-            raise ValueError('Unsupported whence value, must be one of (0, 1, 2)')
+            raise ValueError("Unsupported whence value, must be one of (0, 1, 2)")
         return self._pos
 
     def read(self, size: int = -1) -> bytes:
         self._check_closed()
 
         if size == 0 or self._pos >= self._size:
-            return b''
+            return b""
         if size < 0 or self._pos + size > self._size:
             size = self._size - self._pos
 
@@ -80,7 +80,7 @@ class _InternalIO(RawIOBase):
         return b[b_start : b_start + size]
 
     def readinto(self, b: WriteableBuffer) -> int:
-        m = memoryview(b).cast('B')
+        m = memoryview(b).cast("B")
         data = self.read(len(m))
         n = len(data)
         m[:n] = data
@@ -95,7 +95,7 @@ class _InternalIO(RawIOBase):
         size = b.nbytes
         if size == 0:
             return 0
-        b = b.cast('B')
+        b = b.cast("B")
 
         stop = self._pos + size
         self._allocate(stop)
@@ -130,7 +130,7 @@ class _InternalIO(RawIOBase):
         if size is None:
             size = self._pos
         if size < 0:
-            raise ValueError(f'Invalid size {size}')
+            raise ValueError(f"Invalid size {size}")
 
         if size > self._size:
             self._allocate(size)
@@ -228,7 +228,7 @@ class DataIO(_InternalIO):
 
         old_chain_len = len(self._chain)
         self._chain.extend(new_clusters)
-        zero_cluster = b'\x00' * self._cluster_size_bytes
+        zero_cluster = b"\x00" * self._cluster_size_bytes
 
         for cluster_index in range(old_chain_len, clusters_required):
             self._write_units(cluster_index, zero_cluster)
@@ -246,7 +246,7 @@ class DataIO(_InternalIO):
         self._check_writable()
 
         if max_size < 0:
-            raise ValueError(f'Invalid maximum file size {max_size}')
+            raise ValueError(f"Invalid maximum file size {max_size}")
         if max_size >= self._size:
             return 0
 
@@ -273,18 +273,18 @@ class DataIO(_InternalIO):
 
     def _check_cluster(self, cluster: int) -> None:
         if not 0 <= (cluster - 2) < self._total_clusters:
-            raise ValueError(f'Invalid cluster number {cluster} in chain')
+            raise ValueError(f"Invalid cluster number {cluster} in chain")
 
     def _read_units(self, pos: int, count: int) -> bytes:
         """Read ``count`` clusters starting at cluster with chain index ``pos``."""
         if pos < 0:
-            raise ValueError('Start cluster index must be greater than or equal to 0')
+            raise ValueError("Start cluster index must be greater than or equal to 0")
         if count <= 0:
-            raise ValueError('Cluster count must be greater than 0')
+            raise ValueError("Cluster count must be greater than 0")
         if pos + count > len(self._chain):
-            raise ValueError('Not enough clusters in chain to read from')
+            raise ValueError("Not enough clusters in chain to read from")
 
-        b = b''
+        b = b""
         for cluster in self._chain[pos : pos + count]:
             self._check_cluster(cluster)
             start_sector = self._region_start + (cluster - 2) * self._cluster_size
@@ -297,17 +297,17 @@ class DataIO(_InternalIO):
     def _write_units(self, pos: int, b: bytes | memoryview) -> None:
         """Write ``b`` to file starting at cluster ``pos``."""
         if pos < 0:
-            raise ValueError('Start cluster index must be greater than or equal to 0')
+            raise ValueError("Start cluster index must be greater than or equal to 0")
         if len(b) % self._cluster_size_bytes != 0:
             raise ValueError(
-                f'Bytes object to write must be a multiple of '
-                f'{self._cluster_size_bytes} long, got {len(b)} bytes'
+                f"Bytes object to write must be a multiple of "
+                f"{self._cluster_size_bytes} long, got {len(b)} bytes"
             )
         count = len(b) // self._cluster_size_bytes
         if count <= 0:
             return
         if pos + count > len(self._chain):
-            raise ValueError('Not enough clusters in chain to write to')
+            raise ValueError("Not enough clusters in chain to write to")
 
         clusters = self._chain[pos : pos + count]
         b_offsets = range(0, len(b), self._cluster_size_bytes)
@@ -325,7 +325,7 @@ class DataIO(_InternalIO):
 
     def decrement_fd_count(self) -> None:
         if self._fd_count <= 0:
-            raise ValueError('Count of file descriptors cannot be less than 0')
+            raise ValueError("Count of file descriptors cannot be less than 0")
         self._fd_count -= 1
 
     @property
@@ -347,7 +347,7 @@ class DataIO(_InternalIO):
         return 0
 
     def __repr__(self) -> str:
-        return f'{self.__class__.__name__}(chain={self._chain}, size={self._size})'
+        return f"{self.__class__.__name__}(chain={self._chain}, size={self._size})"
 
 
 class RootdirIO(_InternalIO):
@@ -367,11 +367,11 @@ class RootdirIO(_InternalIO):
         self._check_closed()
         self._check_writable()
         if min_size > self._size:
-            raise FileSystemLimit('Maximum capacity of root directory reached')
+            raise FileSystemLimit("Maximum capacity of root directory reached")
         return 0
 
     def _free(self, max_size: int) -> int:
-        raise ValueError('Root directory region cannot be truncated')
+        raise ValueError("Root directory region cannot be truncated")
 
     def _read_units(self, pos: int, count: int) -> bytes:
         return self._volume.read_at(self._start + pos, count)
@@ -380,4 +380,4 @@ class RootdirIO(_InternalIO):
         return self._volume.write_at(self._start + pos, b)
 
     def __repr__(self) -> str:
-        return f'{self.__class__.__name__}(size={self._size})'
+        return f"{self.__class__.__name__}(size={self._size})"

@@ -7,7 +7,7 @@ from diskfs.filesystem import FsType
 
 
 @pytest.mark.parametrize(
-    ['fs_type', 'fat_type'],
+    ["fs_type", "fat_type"],
     [
         (FsType.FAT_12, FatType.FAT_12),
         (FsType.FAT_16, FatType.FAT_16),

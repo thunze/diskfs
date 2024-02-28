@@ -48,7 +48,7 @@ if sys.version_info >= (3, 10):
     import io
 
     # make mypy happy
-    text_encoding: Callable[[str | None], str] = getattr(io, 'text_encoding')
+    text_encoding: Callable[[str | None], str] = getattr(io, "text_encoding")
 else:
     # noinspection PyUnusedLocal
     def text_encoding(encoding: str | None, stacklevel: int = 2) -> str | None:
@@ -60,13 +60,13 @@ else:
 
 
 __all__ = [
-    'FileSystem',
-    'FileIO',
-    'FsType',
-    'FileSystemLimit',
-    'parse_flags',
-    'StatusFlags',
-    'CLUSTER_SIZE_DEFAULT',
+    "FileSystem",
+    "FileIO",
+    "FsType",
+    "FileSystemLimit",
+    "parse_flags",
+    "StatusFlags",
+    "CLUSTER_SIZE_DEFAULT",
 ]
 
 
@@ -89,7 +89,6 @@ class FsType(Enum):
 
 
 class StatusFlags(NamedTuple):
-
     readable: bool
     writable: bool
     appending: bool
@@ -109,11 +108,11 @@ def parse_flags(flags: int) -> tuple[StatusFlags, bool, bool, bool]:
     truncating = bool(flags & os.O_TRUNC)
 
     if exclusive and not creating:
-        raise ValueError('O_EXCL can only be used in combination with O_CREAT')
+        raise ValueError("O_EXCL can only be used in combination with O_CREAT")
     if creating and not writable:
-        raise ValueError('Must be writable for creation')
+        raise ValueError("Must be writable for creation")
     if truncating and not writable:
-        raise ValueError('Must be writable for truncation')
+        raise ValueError("Must be writable for truncation")
 
     return StatusFlags(readable, writable, appending), creating, exclusive, truncating
 
@@ -129,32 +128,32 @@ class FileIO(RawIOBase):
     _writable = False
     _appending = False
 
-    def __init__(self, fs: 'FileSystem', path: StrPath, mode: str = 'r'):
-        if not set(mode) <= set('xrwab+'):
-            raise ValueError(f'Invalid mode {mode!r}')
-        if sum(c in 'rwax' for c in mode) != 1 or mode.count('+') > 1:
+    def __init__(self, fs: "FileSystem", path: StrPath, mode: str = "r"):
+        if not set(mode) <= set("xrwab+"):
+            raise ValueError(f"Invalid mode {mode!r}")
+        if sum(c in "rwax" for c in mode) != 1 or mode.count("+") > 1:
             raise ValueError(
-                'Must have exactly one of create/read/write/append mode and at most '
-                'one plus'
+                "Must have exactly one of create/read/write/append mode and at most "
+                "one plus"
             )
         flags = 0
 
-        if 'x' in mode:
+        if "x" in mode:
             self._created = True
             self._writable = True
             flags = os.O_EXCL | os.O_CREAT
-        elif 'r' in mode:
+        elif "r" in mode:
             self._readable = True
             flags = 0
-        elif 'w' in mode:
+        elif "w" in mode:
             self._writable = True
             flags = os.O_CREAT | os.O_TRUNC
-        elif 'a' in mode:
+        elif "a" in mode:
             self._writable = True
             self._appending = True
             flags = os.O_APPEND | os.O_CREAT
 
-        if '+' in mode:
+        if "+" in mode:
             self._readable = True
             self._writable = True
 
@@ -168,7 +167,7 @@ class FileIO(RawIOBase):
         fd = fs.openfd(path, flags, 0o666)
         try:
             if fd < 0:
-                raise OSError('Negative file descriptor')
+                raise OSError("Negative file descriptor")
 
             stat = fs.statfd(fd)
             if S_ISDIR(stat.st_mode):
@@ -193,21 +192,21 @@ class FileIO(RawIOBase):
     def __repr__(self) -> str:
         cls = self.__class__
         return (
-            f'{cls.__module__}.{cls.__qualname__}(fs={self._fs!r}, '
-            f'path={self._path!r}, fd={self._fd}, closed={self.closed})'
+            f"{cls.__module__}.{cls.__qualname__}(fs={self._fs!r}, "
+            f"path={self._path!r}, fd={self._fd}, closed={self.closed})"
         )
 
     def _check_closed(self) -> None:
         if self.closed:
-            raise ValueError('I/O operation on closed file')
+            raise ValueError("I/O operation on closed file")
 
     def _check_readable(self) -> None:
         if not self._readable:
-            raise UnsupportedOperation('File not open for reading')
+            raise UnsupportedOperation("File not open for reading")
 
     def _check_writable(self) -> None:
         if not self._writable:
-            raise UnsupportedOperation('File not open for writing')
+            raise UnsupportedOperation("File not open for writing")
 
     def read(self, size: int = -1) -> bytes:
         self._check_closed()
@@ -244,7 +243,7 @@ class FileIO(RawIOBase):
         return bytes(result)
 
     def readinto(self, b: WriteableBuffer) -> int:
-        mem = memoryview(b).cast('B')
+        mem = memoryview(b).cast("B")
         data = self.read(len(mem))
         actual = len(data)
         mem[:actual] = data
@@ -353,7 +352,7 @@ class FileSystem(Protocol):
         ...
 
     def __repr__(self) -> str:
-        return f'{self.__class__.__name__}(type={self.type}, volume={self.volume})'
+        return f"{self.__class__.__name__}(type={self.type}, volume={self.volume})"
 
     def at(self, *args: StrPath) -> Path:
         ...
@@ -454,7 +453,7 @@ class FileSystem(Protocol):
 
     def expanduser(self, path: StrPath) -> str:
         raise NotImplementedError(
-            'expanduser() is unsupported for file systems accessed from userspace'
+            "expanduser() is unsupported for file systems accessed from userspace"
         )
 
     def touch(self, path: StrPath, mode: int = 0o666, exist_ok: bool = True) -> None:
@@ -562,7 +561,7 @@ class FileSystem(Protocol):
     def open(
         self,
         path: StrPath,
-        mode: str = 'r',
+        mode: str = "r",
         buffering: int = -1,
         encoding: str = None,
         errors: str = None,
@@ -575,18 +574,18 @@ class FileSystem(Protocol):
         Based on CPython's ``_pyio.open()``.
         """
         modes = set(mode)
-        if modes - set('axrwb+tU') or len(mode) > len(modes):
-            raise ValueError(f'Invalid mode {mode!r}')
+        if modes - set("axrwb+tU") or len(mode) > len(modes):
+            raise ValueError(f"Invalid mode {mode!r}")
 
-        creating = 'x' in modes
-        reading = 'r' in modes
-        writing = 'w' in modes
-        appending = 'a' in modes
-        updating = '+' in modes
-        text = 't' in modes
-        binary = 'b' in modes
+        creating = "x" in modes
+        reading = "r" in modes
+        writing = "w" in modes
+        appending = "a" in modes
+        updating = "+" in modes
+        text = "t" in modes
+        binary = "b" in modes
 
-        if 'U' in modes:
+        if "U" in modes:
             if creating or writing or appending or updating:
                 raise ValueError(
                     "Mode 'U' cannot be combined with 'x', 'w', 'a', or '+'"
@@ -595,21 +594,21 @@ class FileSystem(Protocol):
             reading = True
 
         if text and binary:
-            raise ValueError('Cannot have text and binary mode at once')
+            raise ValueError("Cannot have text and binary mode at once")
         if creating + reading + writing + appending > 1:
-            raise ValueError('Cannot have read/write/append mode at once')
+            raise ValueError("Cannot have read/write/append mode at once")
         if not (creating or reading or writing or appending):
-            raise ValueError('Must have exactly one of read/write/append mode')
+            raise ValueError("Must have exactly one of read/write/append mode")
         if binary and encoding is not None:
-            raise ValueError('Binary mode does not take an encoding argument')
+            raise ValueError("Binary mode does not take an encoding argument")
         if binary and errors is not None:
-            raise ValueError('Binary mode does not take an errors argument')
+            raise ValueError("Binary mode does not take an errors argument")
         if binary and newline is not None:
-            raise ValueError('Binary mode does not take a newline argument')
+            raise ValueError("Binary mode does not take a newline argument")
         if binary and buffering == 1:
             warnings.warn(
-                'Line buffering (buffering=1) is not supported in binary mode, the '
-                'default buffer size will be used',
+                "Line buffering (buffering=1) is not supported in binary mode, the "
+                "default buffer size will be used",
                 RuntimeWarning,
             )
 
@@ -631,12 +630,12 @@ class FileSystem(Protocol):
             if buffering < 0:
                 buffering = DEFAULT_BUFFER_SIZE
                 if buffering < 0:
-                    raise ValueError('Invalid buffering size')
+                    raise ValueError("Invalid buffering size")
 
             if buffering == 0:
                 if binary:
                     return result
-                raise ValueError('Cannot have unbuffered text I/O')
+                raise ValueError("Cannot have unbuffered text I/O")
 
             buffer: BufferedAny
             if updating:
@@ -646,7 +645,7 @@ class FileSystem(Protocol):
             elif reading:
                 buffer = BufferedReader(raw, buffering)
             else:
-                raise ValueError(f'Unknown mode {mode!r}')
+                raise ValueError(f"Unknown mode {mode!r}")
 
             result = buffer
             if binary:
