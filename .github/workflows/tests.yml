@@ -73,15 +73,15 @@ jobs:
   tests:
     strategy:
       matrix:
-        os: ['Windows', 'macOS', 'Ubuntu']
-        python-version: ['3.8', '3.9', '3.10']
+        os: ['macOS', 'Ubuntu', 'Windows']
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
         include:
-          - os: Windows
-            image: windows-latest
           - os: macOS
             image: macos-latest
           - os: Ubuntu
             image: ubuntu-latest
+          - os: Windows
+            image: windows-latest
     name: ${{ matrix.os }} / ${{ matrix.python-version }}
     runs-on: ${{ matrix.image }}
     defaults:
@@ -116,11 +116,11 @@ jobs:
 
       - name: Run tests with coverage
         if: ${{ matrix.os != 'Ubuntu' }}
-        run: poetry run pytest --cov=diskfs tests/
+        run: poetry run pytest --cov
 
       - name: Run tests with coverage (Ubuntu)
         if: ${{ matrix.os == 'Ubuntu' }}
-        run: sudo -E env "PATH=$PATH" poetry run pytest --cov=diskfs tests/
+        run: sudo -E env "PATH=$PATH" poetry run pytest --cov
 
       - name: Upload coverage data to Coveralls
         run: poetry run coveralls --service=github
