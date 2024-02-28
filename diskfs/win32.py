@@ -175,8 +175,8 @@ _DeviceIoControl.restype = BOOL
 def device_io_control(
     fd: int,
     control_code: int,
-    in_buffer: Array[c_char] = None,
-    out_buffer: Array[c_char] = None,
+    in_buffer: Array[c_char] | None = None,
+    out_buffer: Array[c_char] | None = None,
 ) -> None:
     """Send a control code directly to a specified device driver, causing the
     corresponding device to perform the corresponding operation.
