@@ -173,10 +173,10 @@ def _check_file(node: Node | Root, *, hint: StrPath) -> None:
 
 
 def locked(
-    method: Callable[Concatenate["FileSystem", P], R],
-) -> Callable[Concatenate["FileSystem", P], R]:
+    method: Callable[Concatenate[FileSystem, P], R],
+) -> Callable[Concatenate[FileSystem, P], R]:
     @wraps(method)
-    def locked_wrapper(self: "FileSystem", /, *args: P.args, **kwargs: P.kwargs) -> R:
+    def locked_wrapper(self: FileSystem, /, *args: P.args, **kwargs: P.kwargs) -> R:
         with self._lock:
             self._volume.check_closed()
             return method(self, *args, **kwargs)

@@ -211,7 +211,7 @@ class ByteStruct(metaclass=_ByteStructMeta):
     """
 
     # Populated per class
-    __bytestruct_fields__: "dict[str, _FieldDescriptor]"
+    __bytestruct_fields__: "dict[str, _FieldDescriptor]"  # noqa: UP037
     __bytestruct_format__: str
     __bytestruct_size__: int
 

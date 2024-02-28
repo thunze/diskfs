@@ -128,7 +128,7 @@ class FileIO(RawIOBase):
     _writable = False
     _appending = False
 
-    def __init__(self, fs: "FileSystem", path: StrPath, mode: str = "r"):
+    def __init__(self, fs: FileSystem, path: StrPath, mode: str = "r"):
         if not set(mode) <= set("xrwab+"):
             raise ValueError(f"Invalid mode {mode!r}")
         if sum(c in "rwax" for c in mode) != 1 or mode.count("+") > 1:
