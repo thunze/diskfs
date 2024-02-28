@@ -560,7 +560,9 @@ class BootSector:
     SIZE: ClassVar[int] = 512
 
     @classmethod
-    def from_bytes(cls, b: bytes, custom_bpb_type: type[Bpb] = None) -> BootSector:
+    def from_bytes(
+        cls, b: bytes, custom_bpb_type: type[Bpb] | None = None
+    ) -> BootSector:
         """Parse boot sector from `bytes`.
 
         If `custom_bpb_type` is set, it is tried to parse the BIOS parameter block

@@ -94,7 +94,7 @@ class Volume:
     def format(
         self,
         fs: FsType,
-        size_lba: int = None,
+        size_lba: int | None = None,
         cluster_size: int = CLUSTER_SIZE_DEFAULT,
         label: str = "",
     ) -> FileSystem:

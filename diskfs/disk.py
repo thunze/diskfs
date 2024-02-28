@@ -102,7 +102,7 @@ class Disk:
 
     @classmethod
     def open(
-        cls, path: StrPath, *, sector_size: int = None, readonly: bool = True
+        cls, path: StrPath, *, sector_size: int | None = None, readonly: bool = True
     ) -> Disk:
         """Open block device or disk image at `path`."""
         read_write_flag = os.O_RDONLY if readonly else os.O_RDWR
@@ -286,7 +286,7 @@ class Disk:
         if self._device:
             reread_partition_table(self._fd)
 
-    def volume(self, partition: int = None) -> Volume:
+    def volume(self, partition: int | None = None) -> Volume:
         """Get the volume corresponding to partition `partition` on the disk.
 
         If `partition` is not specified and the disk is unpartitioned, a volume

@@ -168,7 +168,7 @@ class PartitionEntry:
         type_: PartitionType | UUID,
         *,
         attributes: PartitionAttributes | int = 0,
-        guid: UUID = None,
+        guid: UUID | None = None,
         name: str = "",
     ) -> PartitionEntry:
         """New non-empty partition entry.
@@ -373,8 +373,8 @@ class Table:
         cls,
         partitions: Iterable[PartitionEntry],
         *,
-        disk_guid: UUID = None,
-        custom_mbr: mbr.Table = None,
+        disk_guid: UUID | None = None,
+        custom_mbr: mbr.Table | None = None,
     ) -> Table:
         """New partition table."""
         # strip empty partition entries

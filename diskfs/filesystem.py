@@ -261,7 +261,7 @@ class FileIO(RawIOBase):
     def tell(self) -> int:
         return self._fs.seekfd(self._fd, 0, SEEK_CUR)
 
-    def truncate(self, size: int = None) -> int:
+    def truncate(self, size: int | None = None) -> int:
         self._check_closed()
         self._check_writable()
         if size is None:
@@ -391,10 +391,10 @@ class FileSystem(Protocol):
     def stat(self, path: StrPath, *, follow_symlinks: bool = True) -> stat_result:
         ...
 
-    def listdir(self, path: StrPath = None) -> list[str]:
+    def listdir(self, path: StrPath | None = None) -> list[str]:
         ...
 
-    def scandir(self, path: StrPath = None) -> Iterator[DirEntry]:
+    def scandir(self, path: StrPath | None = None) -> Iterator[DirEntry]:
         ...
 
     def mkdir(self, path: StrPath, mode: int = 0o777) -> None:
@@ -417,7 +417,7 @@ class FileSystem(Protocol):
         path: StrPath,
         times: tuple[int, int] | tuple[float, float] | None = None,
         *,
-        ns: tuple[int, int] = None,
+        ns: tuple[int, int] | None = None,
         follow_symlinks: bool = True,
     ) -> None:
         ...
@@ -563,9 +563,9 @@ class FileSystem(Protocol):
         path: StrPath,
         mode: str = "r",
         buffering: int = -1,
-        encoding: str = None,
-        errors: str = None,
-        newline: str = None,
+        encoding: str | None = None,
+        errors: str | None = None,
+        newline: str | None = None,
     ) -> TextIOWrapper | BufferedAny | FileIO:
         """Open file at `path` and return a stream.
 

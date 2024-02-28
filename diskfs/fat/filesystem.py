@@ -292,18 +292,18 @@ class FileSystem(FileSystemBase):
 
     @overload
     def _scandir(
-        self, entry: Entry = None, *, only_useful: Literal[True] = ...
+        self, entry: Entry | None = None, *, only_useful: Literal[True] = ...
     ) -> Iterator[Entry]:
         ...
 
     @overload
     def _scandir(
-        self, entry: Entry = None, *, only_useful: Literal[False] = ...
+        self, entry: Entry | None = None, *, only_useful: Literal[False] = ...
     ) -> Iterator[Entry | EightDotThreeEntry]:
         ...
 
     def _scandir(
-        self, entry: Entry = None, *, only_useful: Literal[False, True] = True
+        self, entry: Entry | None = None, *, only_useful: Literal[False, True] = True
     ) -> Iterator[Entry | EightDotThreeEntry]:
         """Yield directory entries found for directory with entry `entry`.
 
@@ -394,7 +394,7 @@ class FileSystem(FileSystemBase):
             return self._root
         return self._find_node(path)
 
-    def _get_internal_io(self, entry: Entry = None) -> DataIO | RootdirIO:
+    def _get_internal_io(self, entry: Entry | None = None) -> DataIO | RootdirIO:
         """Get a low-level file-like object for a file or a directory."""
         if not self._fat_32 and entry is None:
             return RootdirIO(self)
@@ -538,7 +538,7 @@ class FileSystem(FileSystemBase):
                 return row
         raise OSError(EBADF, os.strerror(EBADF), fd)
 
-    def _stat_for_entry(self, entry: Entry = None) -> stat_result:
+    def _stat_for_entry(self, entry: Entry | None = None) -> stat_result:
         """Get `stat_result` for `entry`."""
         dev = getattr(self._boot_sector.bpb, "volume_id", 0)
         if entry is None:
@@ -675,7 +675,7 @@ class FileSystem(FileSystemBase):
         return self._stat_for_entry(node.entry)
 
     @locked
-    def listdir(self, path: StrPath = None) -> list[str]:
+    def listdir(self, path: StrPath | None = None) -> list[str]:
         if path is None:
             path = "."
         node = self._find_node_or_root(path)
@@ -684,7 +684,7 @@ class FileSystem(FileSystemBase):
             child.entry.filename(vfat=self._vfat) for child in self._get_children(node)
         ]
 
-    def scandir(self, path: StrPath = None) -> Generator[DirEntry, None, None]:
+    def scandir(self, path: StrPath | None = None) -> Generator[DirEntry, None, None]:
         with self._lock:
             self._volume.check_closed()
             if path is None:
@@ -869,7 +869,7 @@ class FileSystem(FileSystemBase):
         path: StrPath,
         times: tuple[int, int] | tuple[float, float] | None = None,
         *,
-        ns: tuple[int, int] = None,
+        ns: tuple[int, int] | None = None,
         follow_symlinks: bool = True,
     ) -> None:
         self._volume.check_writable()

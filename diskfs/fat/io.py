@@ -124,7 +124,7 @@ class _InternalIO(RawIOBase):
         self._pos += size
         return size
 
-    def truncate(self, size: int = None) -> int:
+    def truncate(self, size: int | None = None) -> int:
         self._check_closed()
         self._check_writable()
         if size is None:
@@ -163,7 +163,7 @@ class _InternalIO(RawIOBase):
 class DataIO(_InternalIO):
     """Data region IO."""
 
-    def __init__(self, fs: FileSystem, entry: Entry = None):
+    def __init__(self, fs: FileSystem, entry: Entry | None = None):
         self._volume = fs.volume
         self._lss = fs.volume.sector_size.logical
         self._cluster_size = fs.boot_sector.cluster_size

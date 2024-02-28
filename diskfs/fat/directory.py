@@ -889,10 +889,10 @@ def create_entry(
 
 def updated_entry(
     entry: Entry,
-    new_cluster: int = None,
-    new_size: int = None,
-    last_accessed: datetime = None,
-    last_modified: datetime = None,
+    new_cluster: int | None = None,
+    new_size: int | None = None,
+    last_accessed: datetime | None = None,
+    last_modified: datetime | None = None,
     *,
     vfat: bool,
     fat_32: bool,
