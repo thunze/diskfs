@@ -31,9 +31,6 @@ pytest = "^7.1.2"
 pytest-cov = "^4.1.0"
 coveralls = "^3.3.1"
 pre-commit = "^3.5.0"
-isort = "^5.10.1"
-black = "^22.6.0"
-flake8 = "^5.0.3"
 mypy = ">=0.971"
 
 [tool.pytest.ini_options]
@@ -51,26 +48,6 @@ exclude_lines = [
     "return NotImplemented",
     "assert False",
 ]
-
-[tool.black]
-target-version = ["py38", "py39", "py310"]
-skip-string-normalization = true
-include = '\.pyi?$'
-exclude = '''
-/(
-  \.eggs
-| \.git
-| \.mypy_cache
-| \.pytest_cache
-| \.tox
-| \.venv
-| build
-| dist
-)/
-'''
-
-[tool.isort]
-profile = "black"
 
 [tool.mypy]
 disallow_any_generics = true
