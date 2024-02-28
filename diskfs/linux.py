@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import sys
 
-assert sys.platform == "linux"
+assert sys.platform == "linux"  # noqa: S101
 
 import os
 from contextlib import suppress

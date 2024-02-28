@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import sys
 
-assert sys.platform == "darwin"
+assert sys.platform == "darwin"  # noqa: S101
 
 import os
 from contextlib import contextmanager

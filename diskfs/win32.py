@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import sys
 
-assert sys.platform == "win32"
+assert sys.platform == "win32"  # noqa: S101
 
 # noinspection PyCompatibility
 import msvcrt

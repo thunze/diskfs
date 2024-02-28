@@ -103,7 +103,6 @@ def _split_filename(filename: str) -> tuple[str, str]:
         - 'thing' -> ('thing', '')
     """
     split_ = filename.rsplit(".", maxsplit=1)
-    assert len(split_) <= 2
     if len(split_) == 1:
         return split_[0], ""
     return split_[0], split_[1]
