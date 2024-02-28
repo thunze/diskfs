@@ -13,7 +13,7 @@ from .filesystem import CLUSTER_SIZE_DEFAULT, FileSystem, FsType
 
 if TYPE_CHECKING:
     from .disk import Disk
-    from .typing import ReadableBuffer
+    from .typing_ import ReadableBuffer
 
 __all__ = ["Volume"]
 

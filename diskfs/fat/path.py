@@ -11,7 +11,7 @@ from pathlib import _PosixFlavour  # type: ignore[attr-defined]
 from typing import TYPE_CHECKING, Callable, Match
 
 if TYPE_CHECKING:
-    from ..typing import StrPath
+    from ..typing_ import StrPath
     from .filesystem import FileSystem
 
 __all__ = ["Path", "PurePath"]

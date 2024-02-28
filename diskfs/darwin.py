@@ -33,7 +33,7 @@ from ._darwin import (
 from .base import DeviceProperties, SectorSize
 
 if TYPE_CHECKING:
-    from .typing import StrPath
+    from .typing_ import StrPath
 
 __all__ = ["device_size", "device_sector_size", "reread_partition_table"]
 

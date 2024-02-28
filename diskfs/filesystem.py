@@ -31,7 +31,7 @@ from typing import (
     overload,
 )
 
-from .typing import (
+from .typing_ import (
     BufferedAny,
     OpenBinaryMode,
     OpenBinaryModeReading,
@@ -41,7 +41,7 @@ from .typing import (
 )
 
 if TYPE_CHECKING:
-    from .typing import ReadableBuffer, StrPath, WriteableBuffer
+    from .typing_ import ReadableBuffer, StrPath, WriteableBuffer
     from .volume import Volume
 
 if sys.version_info >= (3, 10):

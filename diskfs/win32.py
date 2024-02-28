@@ -36,7 +36,7 @@ from typing import TYPE_CHECKING, TypeVar
 from .base import DeviceProperties, SectorSize
 
 if TYPE_CHECKING:
-    from .typing import StrPath
+    from .typing_ import StrPath
 
 __all__ = [
     "device_io_control",

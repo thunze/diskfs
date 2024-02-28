@@ -47,7 +47,7 @@ from .path import Path, PurePath
 from .reserved import BootSector
 
 if TYPE_CHECKING:
-    from ..typing import ReadableBuffer, StrPath
+    from ..typing_ import ReadableBuffer, StrPath
     from ..volume import Volume
 
 __all__ = ["FileSystem"]

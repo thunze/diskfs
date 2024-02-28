@@ -10,7 +10,7 @@ from ..filesystem import FileSystemLimit, FsType
 from .directory import Attributes, Entry
 
 if TYPE_CHECKING:
-    from ..typing import ReadableBuffer, WriteableBuffer
+    from ..typing_ import ReadableBuffer, WriteableBuffer
     from ..volume import Volume
     from .filesystem import FileSystem
 

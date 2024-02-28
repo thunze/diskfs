@@ -9,7 +9,7 @@ from typing import Any, ClassVar, Literal, NamedTuple, TypeVar
 from typing_extensions import Annotated, get_args, get_origin, get_type_hints
 
 from .base import ValidationError
-from .typing import NoneType
+from .typing_ import NoneType
 
 __all__ = ["ByteStruct"]
 
