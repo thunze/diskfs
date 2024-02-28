@@ -34,11 +34,8 @@ pre-commit = "^3.5.0"
 mypy = "^1.8.0"
 ruff = "^0.2.2"
 
-[tool.pytest.ini_options]
-markers = [
-    "privileged: mark the test as requiring elevated privileges",
-    "serial"
-]
+[tool.coverage.run]
+source = ["diskfs"]
 
 [tool.coverage.report]
 exclude_lines = [
@@ -66,6 +63,12 @@ warn_unreachable = true
 module = "tests.*"
 disallow_untyped_defs = false
 check_untyped_defs = true
+
+[tool.pytest.ini_options]
+markers = [
+    "privileged: mark the test as requiring elevated privileges",
+    "serial"
+]
 
 [tool.ruff]
 target-version = "py38"  # minimum
