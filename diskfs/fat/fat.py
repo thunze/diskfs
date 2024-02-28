@@ -151,10 +151,7 @@ class Fat:
             self.flush()  # Write to volume if there were changes
 
         start_sector = self._fat_starts[self._main_fat]
-        if self._fat_type is FatType.FAT_12:
-            sectors = 2
-        else:
-            sectors = 1
+        sectors = 2 if self._fat_type is FatType.FAT_12 else 1
 
         b = self._volume.read_at(start_sector + sector_offset, sectors)
         self._buffer = (bytearray(b), sector_offset, False)

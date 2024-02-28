@@ -7,6 +7,7 @@ import sys
 assert sys.platform == "linux"
 
 import os
+from contextlib import suppress
 from ctypes import c_uint
 from fcntl import ioctl
 from pathlib import Path
@@ -51,10 +52,8 @@ def device_properties(fd: int, path: StrPath) -> DeviceProperties:
 
     removable = None
     if removable_str is not None:
-        try:
+        with suppress(ValueError):
             removable = bool(int(removable_str))
-        except ValueError:  # pragma: no cover
-            pass
 
     return DeviceProperties(removable, vendor, model)
 

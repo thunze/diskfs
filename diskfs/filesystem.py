@@ -47,8 +47,7 @@ if TYPE_CHECKING:
 if sys.version_info >= (3, 10):
     import io
 
-    # make mypy happy
-    text_encoding: Callable[[str | None], str] = getattr(io, "text_encoding")
+    text_encoding: Callable[[str | None], str] = io.text_encoding
 else:
     # noinspection PyUnusedLocal
     def text_encoding(encoding: str | None, stacklevel: int = 2) -> str | None:

@@ -126,7 +126,7 @@ class _ByteStructMeta(type):
                             f"one of {SIGNED_SPECIFIERS}"
                         )
                     signed = args[2] == "signed"
-                if size not in INT_CONVERSION.keys():
+                if size not in INT_CONVERSION:
                     raise ValueError(
                         f"Invalid int field size {size}, must be one of "
                         f"{tuple(INT_CONVERSION.keys())}"
@@ -137,7 +137,7 @@ class _ByteStructMeta(type):
                 format_ += format_specifier
 
             elif annotated_type is float:
-                if size not in FLOAT_CONVERSION.keys():
+                if size not in FLOAT_CONVERSION:
                     raise ValueError(
                         f"Invalid float field size {size}, must be one of "
                         f"{tuple(FLOAT_CONVERSION.keys())}"

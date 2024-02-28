@@ -798,9 +798,13 @@ class FileSystem(FileSystemBase):
 
         # Replace unparsable datetimes from src_entry with current datetime
         now = datetime.now()
-        created, last_accessed, last_modified = map(
-            lambda dt: now if dt is None else dt,
-            (src_entry.created, src_entry.last_accessed, src_entry.last_modified),
+        created, last_accessed, last_modified = (
+            now if dt is None else dt
+            for dt in (
+                src_entry.created,
+                src_entry.last_accessed,
+                src_entry.last_modified,
+            )
         )
 
         new_entry = create_entry(
