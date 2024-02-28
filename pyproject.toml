@@ -70,6 +70,13 @@ target-version = "py38"  # minimum
 [tool.ruff.lint]
 select = ["E", "F", "W", "I"]
 
+[tool.ruff.lint.per-file-ignores]
+"diskfs/darwin.py" = ["E402"]
+"diskfs/linux.py" = ["E402"]
+"diskfs/win32.py" = ["E402"]
+"tests/test_darwin.py" = ["E402"]
+"tests/test_win32.py" = ["E402"]
+
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"

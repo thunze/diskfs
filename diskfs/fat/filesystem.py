@@ -27,9 +27,8 @@ from typing import (
 from typing_extensions import Concatenate, ParamSpec
 
 from ..base import ValidationError
-from ..filesystem import CLUSTER_SIZE_DEFAULT
+from ..filesystem import CLUSTER_SIZE_DEFAULT, FsType, StatusFlags, parse_flags
 from ..filesystem import FileSystem as FileSystemBase
-from ..filesystem import FsType, StatusFlags, parse_flags
 from .base import FatType
 from .directory import (
     ENTRY_SIZE,
