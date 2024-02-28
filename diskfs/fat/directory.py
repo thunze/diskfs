@@ -214,8 +214,8 @@ def _requires_vfat(filename: str) -> bool:
     """Return whether storing `filename` requires the VFAT extension to be enabled.
 
     This function is separate from `_to_be_saved_as_vfat()` because setting case
-    info for a filename – which in theory would not require any VFAT LFN entries – is
-    only supported when VFAT is enabled.
+    info for a filename -- which in theory would not require any VFAT LFN entries --
+    is only supported when VFAT is enabled.
     """
     return not _is_valid_dos_filename(filename)
 
