@@ -4,24 +4,9 @@ from __future__ import annotations
 
 from io import BufferedRandom, BufferedReader, BufferedWriter
 from os import PathLike
-from typing import TYPE_CHECKING, Any, Literal, Union
+from typing import TYPE_CHECKING, Literal, Union
 
-if TYPE_CHECKING:
-    from array import array
-
-    # noinspection PyUnresolvedReferences, PyProtectedMember
-    from ctypes import _CData
-    from mmap import mmap
-    from pickle import PickleBuffer
-
-    ReadOnlyBuffer = bytes
-    WriteableBuffer = Union[
-        bytearray, memoryview, array[Any], mmap, _CData, PickleBuffer
-    ]
-    ReadableBuffer = Union[ReadOnlyBuffer, WriteableBuffer]
-
-    StrPath = Union[str, PathLike[str]]
-
+from typing_extensions import Buffer, TypeAlias
 
 __all__ = [
     "NoneType",
@@ -41,11 +26,20 @@ __all__ = [
 ]
 
 
-NoneType = type(None)
+NoneType: TypeAlias = type(None)
 
-BufferedAny = Union[BufferedRandom, BufferedWriter, BufferedReader]
+# `PathLike` cannot be subscripted at runtime.
+if TYPE_CHECKING:
+    StrPath: TypeAlias = Union[str, PathLike[str]]
 
-OpenTextModeUpdating = Literal[
+BufferedAny: TypeAlias = Union[BufferedRandom, BufferedWriter, BufferedReader]
+
+# Unfortunately PEP 688 does not allow us to distinguish read-only and writable buffers.
+ReadOnlyBuffer: TypeAlias = Buffer
+WriteableBuffer: TypeAlias = Buffer
+ReadableBuffer: TypeAlias = Union[ReadOnlyBuffer, WriteableBuffer]
+
+OpenTextModeUpdating: TypeAlias = Literal[
     "r+",
     "+r",
     "rt+",
@@ -79,13 +73,17 @@ OpenTextModeUpdating = Literal[
     "t+x",
     "+tx",
 ]
-OpenTextModeWriting = Literal["w", "wt", "tw", "a", "at", "ta", "x", "xt", "tx"]
-OpenTextModeReading = Literal[
+OpenTextModeWriting: TypeAlias = Literal[
+    "w", "wt", "tw", "a", "at", "ta", "x", "xt", "tx"
+]
+OpenTextModeReading: TypeAlias = Literal[
     "r", "rt", "tr", "U", "rU", "Ur", "rtU", "rUt", "Urt", "trU", "tUr", "Utr"
 ]
-OpenTextMode = Union[OpenTextModeUpdating, OpenTextModeWriting, OpenTextModeReading]
+OpenTextMode: TypeAlias = Union[
+    OpenTextModeUpdating, OpenTextModeWriting, OpenTextModeReading
+]
 
-OpenBinaryModeUpdating = Literal[
+OpenBinaryModeUpdating: TypeAlias = Literal[
     "rb+",
     "r+b",
     "+rb",
@@ -111,8 +109,10 @@ OpenBinaryModeUpdating = Literal[
     "b+x",
     "+bx",
 ]
-OpenBinaryModeWriting = Literal["wb", "bw", "ab", "ba", "xb", "bx"]
-OpenBinaryModeReading = Literal["rb", "br", "rbU", "rUb", "Urb", "brU", "bUr", "Ubr"]
-OpenBinaryMode = Union[
+OpenBinaryModeWriting: TypeAlias = Literal["wb", "bw", "ab", "ba", "xb", "bx"]
+OpenBinaryModeReading: TypeAlias = Literal[
+    "rb", "br", "rbU", "rUb", "Urb", "brU", "bUr", "Ubr"
+]
+OpenBinaryMode: TypeAlias = Union[
     OpenBinaryModeUpdating, OpenBinaryModeReading, OpenBinaryModeWriting
 ]
