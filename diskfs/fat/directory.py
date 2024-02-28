@@ -44,8 +44,8 @@ on the file system driver. We cannot know in advance which encoding was used to
 encode filenames on the file system, so we go for code page 850 as the default. This
 constant is meant to be changed if needed but it should only be changed to names of
 8-bit 1-byte encodings.
-On Windows, you can find out the active code page by executing the command ``chcp``
-or by calling ``GetConsoleOutputCP()`` found in ``kernel32.dll``.
+On Windows, you can find out the active code page by executing the command `chcp`
+or by calling `GetConsoleOutputCP()` found in `kernel32.dll`.
 """
 
 # Applies to already unpacked DOS filenames.
@@ -95,7 +95,7 @@ class Attributes(Flag):
 
 
 def _split_filename(filename: str) -> tuple[str, str]:
-    """Split ``filename`` into name and (rightmost) extension.
+    """Split `filename` into name and (rightmost) extension.
 
     Examples:
         - 'thing.json' -> ('thing', 'json')
@@ -129,8 +129,8 @@ def _pack_dos_filename(filename: str) -> tuple[bytes, bytes]:
 def _unpack_dos_filename(name_bytes: bytes, ext_bytes: bytes) -> str:
     """Unpack a DOS filename from a name of 8 bytes and an extension of 3 bytes.
 
-    Characters which cannot be decoded using ``DOS_FILENAME_OEM_ENCODING`` are
-    replaced by the Unicode replacement character ``U+FFFD``.
+    Characters which cannot be decoded using `DOS_FILENAME_OEM_ENCODING` are
+    replaced by the Unicode replacement character `U+FFFD`.
     """
     unpacked_name = name_bytes.rstrip(b" ")
     unpacked_ext = ext_bytes.rstrip(b" ")
@@ -145,10 +145,10 @@ def _unpack_dos_filename(name_bytes: bytes, ext_bytes: bytes) -> str:
 
 
 def _is_invalid_dos_character(char: str) -> bool:
-    """Return whether ``char`` is a character not allowed in DOS filenames.
+    """Return whether `char` is a character not allowed in DOS filenames.
 
     Characters already prohibited by general FAT filename rules are not considered by
-    this check (see ``_is_valid_vfat_filename()``).
+    this check (see `_is_valid_vfat_filename()`).
     """
     try:
         char.encode(DOS_FILENAME_OEM_ENCODING)
@@ -161,11 +161,11 @@ def _is_invalid_dos_character(char: str) -> bool:
 
 
 def _has_invalid_dos_character(filename: str) -> bool:
-    """Return whether ``filename`` contains at least one character not allowed in DOS
+    """Return whether `filename` contains at least one character not allowed in DOS
     filenames.
 
     Characters already prohibited by general FAT filename rules are not considered by
-    this check (see ``_is_valid_vfat_filename()``).
+    this check (see `_is_valid_vfat_filename()`).
     """
     for part in _split_filename(filename):
         if any(_is_invalid_dos_character(char) for char in part):
@@ -174,7 +174,7 @@ def _has_invalid_dos_character(filename: str) -> bool:
 
 
 def _is_valid_dos_filename(filename: str) -> bool:
-    """Return whether ``filename`` is a valid DOS filename."""
+    """Return whether `filename` is a valid DOS filename."""
     name, ext = _split_filename(filename)
     return (
         _is_valid_vfat_filename(filename)
@@ -186,7 +186,7 @@ def _is_valid_dos_filename(filename: str) -> bool:
 
 
 def _is_valid_vfat_filename(filename: str) -> bool:
-    """Return whether ``filename`` is a valid VFAT filename."""
+    """Return whether `filename` is a valid VFAT filename."""
     try:
         filename.encode("utf-16le")
     except UnicodeEncodeError:
@@ -201,7 +201,7 @@ def _is_valid_vfat_filename(filename: str) -> bool:
 
 
 def _check_vfat_filename(filename: str) -> None:
-    """Check that ``filename`` is a valid VFAT filename.
+    """Check that `filename` is a valid VFAT filename.
 
     Because VFAT filenames are a superset of DOS filenames, this is a check every new
     filename must pass.
@@ -211,9 +211,9 @@ def _check_vfat_filename(filename: str) -> None:
 
 
 def _requires_vfat(filename: str) -> bool:
-    """Return whether storing ``filename`` requires the VFAT extension to be enabled.
+    """Return whether storing `filename` requires the VFAT extension to be enabled.
 
-    This function is separate from ``_to_be_saved_as_vfat()`` because setting case
+    This function is separate from `_to_be_saved_as_vfat()` because setting case
     info for a filename – which in theory would not require any VFAT LFN entries – is
     only supported when VFAT is enabled.
     """
@@ -221,7 +221,7 @@ def _requires_vfat(filename: str) -> bool:
 
 
 def _to_be_saved_as_vfat(filename: str) -> bool:
-    """Return whether a VFAT LFN must be used to correctly store ``filename``.
+    """Return whether a VFAT LFN must be used to correctly store `filename`.
 
     If not, a single 8.3 entry with case info can be used.
     """
@@ -235,9 +235,9 @@ def _to_be_saved_as_vfat(filename: str) -> bool:
 
 
 def _get_case_info(filename: str) -> int:
-    """Return case information flags for ``filename``.
+    """Return case information flags for `filename`.
 
-    Assumption: ``filename.upper()`` is a valid DOS filename.
+    Assumption: `filename.upper()` is a valid DOS filename.
     """
     name, ext = _split_filename(filename)
     case_info = 0
@@ -251,11 +251,11 @@ def _get_case_info(filename: str) -> int:
 
 
 def _vfat_filename_checksum(filename: str) -> int:
-    """Return the checksum of VFAT filename ``filename`` used in case of a DOS
+    """Return the checksum of VFAT filename `filename` used in case of a DOS
     filename collision in a directory.
 
     This function tries to mimic Windows NT behavior as closely as possible and uses
-    ``ctypes`` to force the wrap-around of integers.
+    `ctypes` to force the wrap-around of integers.
 
     Source: https://tomgalvin.uk/blog/gen/2015/06/09/filenames/.
     """
@@ -290,17 +290,17 @@ def _vfat_filename_checksum(filename: str) -> int:
 
 
 def _vfat_to_dos_filename(filename: str, existing_filenames: Iterable[str]) -> str:
-    """Return DOS filename for VFAT filename ``filename``.
+    """Return DOS filename for VFAT filename `filename`.
 
     :param existing_filenames: DOS filenames present in the target directory.
 
-    Assumption: ``filename`` is not already present in the target directory.
+    Assumption: `filename` is not already present in the target directory.
     """
     filename_upper = filename.upper()
     name, ext = _split_filename(filename_upper)
 
     def sanitize(part_: str) -> str:
-        """Remove all dots and spaces of ``part_`` and replace each character not
+        """Remove all dots and spaces of `part_` and replace each character not
         allowed in DOS filenames with an underscore.
         """
         sanitized_ = part_.replace(".", "").replace(" ", "")
@@ -371,7 +371,7 @@ def _dos_filename_checksum(name_bytes: bytes, ext_bytes: bytes) -> int:
 
 def pack_dos_datetime(dt: datetime) -> tuple[int, int, int]:
     """Return a packed DOS datetime as a tuple of (date, time, 10 ms count) from the
-    datetime object ``dt``.
+    datetime object `dt`.
     """
     if dt.year < DOS_YEAR_MIN or dt.year > DOS_YEAR_MAX:
         raise ValueError(f"Invalid DOS date {dt}")
@@ -384,8 +384,8 @@ def pack_dos_datetime(dt: datetime) -> tuple[int, int, int]:
 def unpack_dos_datetime(
     date: int, time: int = 0, time_ten_ms: int = 0
 ) -> datetime | None:
-    """Return a datetime object from a DOS datetime packed as ``date``, ``time`` and
-    ``time_ten_ms`` (10 ms count) values or ``None`` if the values passed do not
+    """Return a datetime object from a DOS datetime packed as `date`, `time` and
+    `time_ten_ms` (10 ms count) values or `None` if the values passed do not
     represent an valid DOS datetime.
     """
     # Restriction because of the two-second resolution of the seconds field
@@ -451,7 +451,7 @@ class EightDotThreeEntry(ByteStruct):
 
     @property
     def hint(self) -> Hint | None:
-        """Special meaning of the directory entry or ``None``."""
+        """Special meaning of the directory entry or `None`."""
         try:
             return Hint(self.name[0])
         except ValueError:
@@ -472,19 +472,19 @@ class EightDotThreeEntry(ByteStruct):
 
     @property
     def created(self) -> datetime | None:
-        """Creation datetime or ``None`` if invalid."""
+        """Creation datetime or `None` if invalid."""
         return unpack_dos_datetime(
             self.created_date, self.created_time, self.created_time_ten_ms
         )
 
     @property
     def last_accessed(self) -> datetime | None:
-        """Datetime of last access or ``None`` if invalid."""
+        """Datetime of last access or `None` if invalid."""
         return unpack_dos_datetime(self.last_accessed_date)
 
     @property
     def last_modified(self) -> datetime | None:
-        """Datetime of last modification or ``None`` if invalid."""
+        """Datetime of last modification or `None` if invalid."""
         return unpack_dos_datetime(self.last_modified_date, self.last_modified_time)
 
 
@@ -581,7 +581,7 @@ class Entry:
         self._vfat_entries = vfat_entries
 
     def __bytes__(self) -> bytes:
-        """``bytes`` form of all directory entries represented by this generalized
+        """`bytes` form of all directory entries represented by this generalized
         entry in physical order.
         """
         # noinspection PyTypeChecker
@@ -618,17 +618,17 @@ class Entry:
 
     @property
     def created(self) -> datetime | None:
-        """Creation datetime or ``None`` if invalid."""
+        """Creation datetime or `None` if invalid."""
         return self._eight_dot_three.created
 
     @property
     def last_accessed(self) -> datetime | None:
-        """Datetime of last access or ``None`` if invalid."""
+        """Datetime of last access or `None` if invalid."""
         return self._eight_dot_three.last_accessed
 
     @property
     def last_modified(self) -> datetime | None:
-        """Datetime of last modification or ``None`` if invalid."""
+        """Datetime of last modification or `None` if invalid."""
         return self._eight_dot_three.last_modified
 
     @property
@@ -668,7 +668,7 @@ class Entry:
 
 
 def entry_match(filename: str, entry: Entry, *, vfat: bool) -> bool:
-    """Check whether ``filename`` matches one of the filenames stored in ``entry``."""
+    """Check whether `filename` matches one of the filenames stored in `entry`."""
     entry_filename = entry.filename(vfat=vfat).upper()
     if vfat:
         return filename.upper() in (entry_filename, entry.dos_filename)
@@ -702,19 +702,19 @@ def iter_entries(
     only_useful: Literal[False, True] = True,
     vfat: bool,
 ) -> Iterator[Entry | EightDotThreeEntry]:
-    """Yield directory entries found in ``iter_bytes``.
+    """Yield directory entries found in `iter_bytes`.
 
-    Each element of ``iter_bytes`` is expected to represent the ``bytes`` form of one
+    Each element of `iter_bytes` is expected to represent the `bytes` form of one
     8.3 directory entry or one VFAT directory entry, i.e. 32 bytes.
 
-    A directory entry is yielded either as an ``Entry`` instance -- if a single entry
-    or a VFAT entry chain is considered useful -- or as an ``EightDotThreeEntry``
+    A directory entry is yielded either as an `Entry` instance -- if a single entry
+    or a VFAT entry chain is considered useful -- or as an `EightDotThreeEntry`
     instance -- if an entry is not considered useful.
 
     A directory entry is *not* considered useful if it is:
 
-    - A deleted entry (starting with byte ``0xE5``),
-    - A dot entry (starting with byte ``0x2E``),
+    - A deleted entry (starting with byte `0xE5`),
+    - A dot entry (starting with byte `0x2E`),
     - A VFAT entry when VFAT support is disabled,
     - A non-VFAT entry which has the volume label attribute set or
     - Part of a VFAT entry chain which does not match its assigned 8.3 entry or
@@ -722,11 +722,11 @@ def iter_entries(
         it is assumed that the associated 8.3 entry was edited in an incompatible
         manner by a system that does not support VFAT. Thus, all VFAT entries in the
         chain are considered useless and only the 8.3 entry succeeding the chain is
-        yielded as an ``Entry`` instance.
+        yielded as an `Entry` instance.
 
-    If ``only_useful`` is ``True``, only entries that are considered useful, i.e.
-    instances of ``Entry``, are yielded.
-    Entries starting with byte ``0x00`` mark the end of the directory table and are
+    If `only_useful` is `True`, only entries that are considered useful, i.e.
+    instances of `Entry`, are yielded.
+    Entries starting with byte `0x00` mark the end of the directory table and are
     never yielded.
     """
     # Entries collected from the current VFAT chain
@@ -797,7 +797,7 @@ def create_entry(
     vfat: bool,
     fat_32: bool,
 ) -> Entry:
-    """Create new entry for directory with ``existing_entries``.
+    """Create new entry for directory with `existing_entries`.
 
     Not to be used to create a volume label.
     """

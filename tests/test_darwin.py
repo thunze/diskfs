@@ -1,4 +1,4 @@
-"""Tests for the ``darwin`` module."""
+"""Tests for the `darwin` module."""
 
 import sys
 from typing import TYPE_CHECKING
@@ -23,8 +23,8 @@ from diskfs.darwin import (
 
 
 def test__releasing_fail():
-    """Test that the context manager ``_releasing()`` raises ``ValueError`` when
-    ``None`` is passed.
+    """Test that the context manager `_releasing()` raises `ValueError` when
+    `None` is passed.
     """
     with pytest.raises(ValueError):
         with _releasing(None):
@@ -32,19 +32,19 @@ def test__releasing_fail():
 
 
 def test__unpack_cf_boolean_none():
-    """Test that ``_unpack_cf_boolean()`` returns ``None`` when ``None`` is passed."""
+    """Test that `_unpack_cf_boolean()` returns `None` when `None` is passed."""
     assert _unpack_cf_boolean(None) is None
 
 
 def test__unpack_cf_string_none():
-    """Test that ``_unpack_cf_string()`` returns ``None`` when ``None`` is passed."""
+    """Test that `_unpack_cf_string()` returns `None` when `None` is passed."""
     assert _unpack_cf_string(None) is None
 
 
 def test_device_properties_all_none(tempfile):
-    """Test that ``device_properties()`` returns ``(None, None, None)`` when a Disk
-    Arbitration description of ``file`` cannot be obtained via
-    ``DADiskCopyDescription()``.
+    """Test that `device_properties()` returns `(None, None, None)` when a Disk
+    Arbitration description of `file` cannot be obtained via
+    `DADiskCopyDescription()`.
 
     This is for example the case when Disk Arbitration is contacted based on a file
     object for a regular file instead of a block device.

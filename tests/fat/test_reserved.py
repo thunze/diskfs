@@ -1,4 +1,4 @@
-"""Tests for the ``reserved`` module of the ``fat`` package."""
+"""Tests for the `reserved` module of the `fat` package."""
 
 from __future__ import annotations
 
@@ -43,11 +43,11 @@ from diskfs.volume import Volume
 
 @pytest.fixture
 def volume_meta(request, monkeypatch):
-    """Fixture providing a surface-level mocked instance of ``Volume`` with
-    customizable ``start_lba``, ``end_lba`` and ``sector_size`` values.
+    """Fixture providing a surface-level mocked instance of `Volume` with
+    customizable `start_lba`, `end_lba` and `sector_size` values.
 
-    Parametrized using a ``tuple`` of the desired values for ``start_lba``,
-    ``end_lba``, ``sector_size.logical`` and ``sector_size.physical``.
+    Parametrized using a `tuple` of the desired values for `start_lba`,
+    `end_lba`, `sector_size.logical` and `sector_size.physical`.
     """
     start, end, lss, pss = request.param
     size = end - start + 1
@@ -185,7 +185,7 @@ FS_INFO_SECTOR_EXAMPLE = FsInfoSector(
 
 
 class TestBpbDos200:
-    """Tests for ``BpbDos200``."""
+    """Tests for `BpbDos200`."""
 
     # noinspection PyTypeChecker
     @pytest.mark.parametrize(
@@ -335,7 +335,7 @@ class TestBpbDos200:
 
 
 class TestBpbDos331:
-    """Tests for ``BpbDos331``."""
+    """Tests for `BpbDos331`."""
 
     @pytest.mark.parametrize(
         "replace_kwargs",
@@ -469,7 +469,7 @@ class TestBpbDos331:
 
 
 class TestShortEbpbFat:
-    """Tests for ``ShortEbpbFat``."""
+    """Tests for `ShortEbpbFat`."""
 
     @pytest.mark.parametrize(
         "replace_kwargs",
@@ -571,7 +571,7 @@ class TestShortEbpbFat:
 
 
 class TestShortEbpbFat32:
-    """Tests for ``ShortEbpbFat32``."""
+    """Tests for `ShortEbpbFat32`."""
 
     @pytest.mark.parametrize(
         "replace_kwargs",
@@ -764,7 +764,7 @@ class TestShortEbpbFat32:
 
 
 class TestEbpbFat:
-    """Tests for ``EbpbFat``."""
+    """Tests for `EbpbFat`."""
 
     @pytest.mark.parametrize(
         "replace_kwargs",
@@ -819,7 +819,7 @@ class TestEbpbFat:
 
 
 class TestEbpbFat32:
-    """Tests for ``EbpbFat32``."""
+    """Tests for `EbpbFat32`."""
 
     @pytest.mark.parametrize(
         "replace_kwargs", [{"volume_id": 1}, {"volume_label": b"DISKFS     "}]
@@ -987,7 +987,7 @@ class TestEbpbFat32:
     )
     @pytest.mark.filterwarnings("ignore:Unknown file system type")
     def test_total_size(self, short, long, expected, warning_expected):
-        """Test that values for property ``total_size`` match the expected values."""
+        """Test that values for property `total_size` match the expected values."""
         bpb = replace(
             EBPB_FAT32_EXAMPLE,
             short=replace(
@@ -1105,7 +1105,7 @@ def test_ebpb_validate_for_volume_fail_bpb_dos_331(volume_meta, bpb):
 
 
 class TestBootSectorStart:
-    """Tests for ``BootSectorStart``."""
+    """Tests for `BootSectorStart`."""
 
     @pytest.mark.parametrize(
         ["jump_instruction", "warning_expected"],
@@ -1129,7 +1129,7 @@ class TestBootSectorStart:
         ],
     )
     def test_validate_jump_instruction(self, jump_instruction, warning_expected):
-        """Test custom validation logic for ``jump_instruction``."""
+        """Test custom validation logic for `jump_instruction`."""
         if warning_expected:
             with pytest.warns(ValidationWarning, match=".*jump instruction.*"):
                 BootSectorStart(jump_instruction, b"MSDOS5.0")
@@ -1152,7 +1152,7 @@ class TestBootSectorStart:
         ],
     )
     def test_validate_oem_name(self, oem_name, warning_expected):
-        """Test custom validation logic for ``oem_name``."""
+        """Test custom validation logic for `oem_name`."""
         if warning_expected:
             with pytest.warns(ValidationWarning, match=".*OEM name.*"):
                 BootSectorStart(b"\xEB\x34\x90", oem_name)
@@ -1164,7 +1164,7 @@ class TestBootSectorStart:
 
 @dataclass(frozen=True)
 class CustomBpb(ByteStruct):
-    """Custom BPB type defined for testing purposes, based on ``BpbDos200``."""
+    """Custom BPB type defined for testing purposes, based on `BpbDos200`."""
 
     bpb_dos_200_: BpbDos200
 
@@ -1203,8 +1203,8 @@ class CustomBpbValidateForVolumeFail(CustomBpb):
 def ebpb_fat32_with_file_system_type_as_total_size(
     file_system_type: bytes,
 ) -> EbpbFat32:
-    """Return an example ``EbpbFat32`` with ``file_system_type`` set to
-    ``file_system_type`` and ``total_size_331`` set to 0.
+    """Return an example `EbpbFat32` with `file_system_type` set to `file_system_type`
+    and `total_size_331` set to 0.
     """
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", ValidationWarning)
@@ -1219,11 +1219,11 @@ def ebpb_fat32_with_file_system_type_as_total_size(
 
 
 class TestBootSector:
-    """Tests for ``BootSector``."""
+    """Tests for `BootSector`."""
 
     @staticmethod
     def dummy_boot_code(bpb: Bpb, filler_byte: bytes = b"\xF8") -> bytes:
-        """Return dummy boot code of a length suitable when using ``bpb`` in a boot
+        """Return dummy boot code of a length suitable when using `bpb` in a boot
         sector.
         """
         boot_code_len = (
@@ -1235,7 +1235,7 @@ class TestBootSector:
         "b", [b"", b"\x34", b"\xF8" * 511, b"\xF6" * 256, b"\xF7" * 513]
     )
     def test_from_bytes_fail_size(self, b):
-        """Test that ``from_bytes()`` raises ``ValueError`` when supplied with bytes
+        """Test that `from_bytes()` raises `ValueError` when supplied with bytes
         not of length 512.
         """
         with pytest.raises(ValueError, match=".*bytes long.*"):
@@ -1245,7 +1245,7 @@ class TestBootSector:
         "b", [b"\x00" * 512, b"\xAA" * 512, b"\x55" * 512, b"\xAA\x55" * 256]
     )
     def test_from_bytes_fail_signature(self, b):
-        """Test that ``from_bytes()`` raises ``ValidationError`` when supplied with
+        """Test that `from_bytes()` raises `ValidationError` when supplied with
         bytes not ending with the expected VBR signature.
         """
         with pytest.raises(ValidationError, match=".*signature.*"):
@@ -1265,7 +1265,7 @@ class TestBootSector:
         "ignore:Unknown OEM name",
     )
     def test_from_bytes_fail_no_known_fat_bpb(self, b):
-        """Test that ``from_bytes()`` raises ``ValidationError`` when supplied with
+        """Test that `from_bytes()` raises `ValidationError` when supplied with
         bytes containing a valid VBR signature but not containing any known FAT BPB.
         """
         with pytest.raises(ValidationError, match=".*FAT BPB.*"):
@@ -1288,7 +1288,7 @@ class TestBootSector:
         ],
     )
     def test_from_bytes_fail_custom_bpb(self, bpb_bytes, custom_bpb_type, msg_contains):
-        """Test that ``from_bytes()`` raises ``ValidationError`` through the
+        """Test that `from_bytes()` raises `ValidationError` through the
         validation logic of a custom BPB when tried to create from bytes not passing
         the BPB's validation logic.
         """
@@ -1312,9 +1312,9 @@ class TestBootSector:
         ],
     )
     def test_from_bytes_success_standard_bpb(self, bpb, expected_bpb_type):
-        """Test ``from_bytes()`` for succeeding cases using the standard BPB types.
+        """Test `from_bytes()` for succeeding cases using the standard BPB types.
 
-        Also test the behavior of ``__bytes__()`` for these cases.
+        Also test the behavior of `__bytes__()` for these cases.
         """
         b = (bytes(BOOT_SECTOR_START_EXAMPLE) + bytes(bpb)).ljust(510) + SIGNATURE
         boot_sector = BootSector.from_bytes(b)
@@ -1346,9 +1346,9 @@ class TestBootSector:
         ],
     )
     def test_from_bytes_success_custom_bpb(self, bpb, custom_bpb_type):
-        """Test ``from_bytes()`` for succeeding cases using custom BPB types.
+        """Test `from_bytes()` for succeeding cases using custom BPB types.
 
-        Also test the behavior of ``__bytes__()`` for these cases.
+        Also test the behavior of `__bytes__()` for these cases.
         """
         b = (bytes(BOOT_SECTOR_START_EXAMPLE) + bytes(bpb)).ljust(510) + SIGNATURE
         # noinspection PyTypeChecker
@@ -1370,7 +1370,7 @@ class TestBootSector:
         ],
     )
     def test_validate_fail_size(self, bpb, boot_code):
-        """Test that ``validate()`` fails through instantiation for attribute
+        """Test that `validate()` fails through instantiation for attribute
         combinations of invalid total length.
         """
         with pytest.raises(ValidationError, match=".*size of boot sector.*"):
@@ -1401,10 +1401,10 @@ class TestBootSector:
     )
     @pytest.mark.filterwarnings("ignore:Unknown file system type")
     def test_validate_fail_total_size(self, bpb):
-        """Test that ``validate()`` fails for boot sectors with BPBs not defining the
+        """Test that `validate()` fails for boot sectors with BPBs not defining the
         total size of the file system.
 
-        Test the same condition on boot sectors instantiated using ``from_bytes()``.
+        Test the same condition on boot sectors instantiated using `from_bytes()`.
         """
         boot_code = self.dummy_boot_code(bpb)
         with pytest.raises(ValidationError, match=".*total size.*"):
@@ -1449,10 +1449,10 @@ class TestBootSector:
     )
     @pytest.mark.filterwarnings("ignore:Unknown file system type")
     def test_validate_fail_total_clusters(self, bpb):
-        """Test that ``validate()`` fails for boot sectors with BPBs implying a total
+        """Test that `validate()` fails for boot sectors with BPBs implying a total
         cluster size of zero.
 
-        Test the same condition on boot sectors instantiated using ``from_bytes()``.
+        Test the same condition on boot sectors instantiated using `from_bytes()`.
         """
         boot_code = self.dummy_boot_code(bpb)
         with pytest.raises(ValidationError, match=".*Total cluster.*"):
@@ -1512,9 +1512,9 @@ class TestBootSector:
         ],
     )
     def test_validate_fail_detected_fat_type(self, bpb):
-        """Test that ``validate()`` fails for boot sectors with BPBs whose
-        structurally implied FAT type (e.g. ``EbpbFat32``) contradicts the total file
-        system size they define.
+        """Test that `validate()` fails for boot sectors with BPBs whose structurally
+        implied FAT type (e.g. `EbpbFat32`) contradicts the total file system size
+        they define.
         """
         boot_code = self.dummy_boot_code(bpb)
         with pytest.raises(ValidationError, match=".*FAT type.*"):
@@ -1532,7 +1532,7 @@ class TestBootSector:
         ],
     )
     def test_validate_warn_empty_boot_code(self, bpb):
-        """Test that ``validate()`` issues a warning for empty boot code."""
+        """Test that `validate()` issues a warning for empty boot code."""
         boot_code = self.dummy_boot_code(bpb, b"\x00")
         with pytest.warns(ValidationWarning, match=".*Boot code.*"):
             BootSector(BOOT_SECTOR_START_EXAMPLE, bpb, boot_code)
@@ -1557,7 +1557,7 @@ class TestBootSector:
         indirect=["volume_meta"],
     )
     def test_validate_for_volume_fail(self, volume_meta, bpb):
-        """Test that ``validate_for_volume()`` fails if the validation of the
+        """Test that `validate_for_volume()` fails if the validation of the
         encapsulated BPB against the volume fails.
         """
         boot_code = self.dummy_boot_code(bpb)
@@ -1634,7 +1634,7 @@ class TestBootSector:
 
 
 class TestFsInfoSector:
-    """Tests for ``FsInfoSector``."""
+    """Tests for `FsInfoSector`."""
 
     @pytest.mark.parametrize(
         "replace_kwargs",

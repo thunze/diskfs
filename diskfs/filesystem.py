@@ -1,4 +1,4 @@
-"""``FileSystem`` protocol and related generalized classes."""
+"""`FileSystem` protocol and related generalized classes."""
 
 from __future__ import annotations
 
@@ -54,7 +54,7 @@ else:
     def text_encoding(encoding: str | None, stacklevel: int = 2) -> str | None:
         """A helper function to choose the text encoding.
 
-        Returns ``encoding`` for Python <3.10.
+        Returns `encoding` for Python <3.10.
         """
         return encoding
 
@@ -97,7 +97,7 @@ class StatusFlags(NamedTuple):
 def parse_flags(flags: int) -> tuple[StatusFlags, bool, bool, bool]:
     """Parse file status and file creation flags (3 each).
 
-    Returns a ``tuple`` of (``StatusFlags``, creating, exclusive, truncating).
+    Returns a `tuple` of (`StatusFlags`, creating, exclusive, truncating).
     """
     access = flags & O_ACCMODE
     readable = access in (os.O_RDONLY, os.O_RDWR)
@@ -118,9 +118,9 @@ def parse_flags(flags: int) -> tuple[StatusFlags, bool, bool, bool]:
 
 
 class FileIO(RawIOBase):
-    """Clone of ``io.FileIO`` for use with an abstract ``FileSystem``.
+    """Clone of `io.FileIO` for use with an abstract `FileSystem`.
 
-    Implementation based on ``_pyio.FileIO``.
+    Implementation based on `_pyio.FileIO`.
     """
 
     _created = False
@@ -567,11 +567,11 @@ class FileSystem(Protocol):
         errors: str = None,
         newline: str = None,
     ) -> TextIOWrapper | BufferedAny | FileIO:
-        """Open file at ``path`` and return a stream.
+        """Open file at `path` and return a stream.
 
-        Raises ``OSError`` upon failure.
+        Raises `OSError` upon failure.
 
-        Based on CPython's ``_pyio.open()``.
+        Based on CPython's `_pyio.open()`.
         """
         modes = set(mode)
         if modes - set("axrwb+tU") or len(mode) > len(modes):

@@ -37,7 +37,7 @@ PARTITION_NAME_MAX_LEN = 36  # 36 characters, 72 bytes with encoding UTF-16LE
 
 
 def _check_lss(lss: int) -> None:
-    """Check if a logical sector size of ``lss`` works with GPT partitioning."""
+    """Check if a logical sector size of `lss` works with GPT partitioning."""
     if lss < MIN_LSS:
         raise ValueError(
             f"GPT partitioning requires a logical sector size of at least "
@@ -50,9 +50,9 @@ def _check_lss(lss: int) -> None:
 
 
 def _partition_array_sectors(entries_count: int, entry_size: int, lss: int) -> int:
-    """Return how many sectors a GPT partition array with ``entries_count``
-    partitions and a partition entry size of ``entry_size`` would occupy, given a
-    logical sector size of ``lss``.
+    """Return how many sectors a GPT partition array with `entries_count`
+    partitions and a partition entry size of `entry_size` would occupy, given a
+    logical sector size of `lss`.
 
     This calculation is necessary because we always need to reserve whole sectors for
     partition entries.
@@ -65,9 +65,9 @@ def _partition_array_sectors(entries_count: int, entry_size: int, lss: int) -> i
 
 
 def _partition_entries_written(entries_count: int, entry_size: int, lss: int) -> int:
-    """Return the amount of total partition entries of size ``entry_size`` to be
-    written to the disk, given ``entries_count`` actually used partitions and a
-    logical sector size of ``lss``.
+    """Return the amount of total partition entries of size `entry_size` to be
+    written to the disk, given `entries_count` actually used partitions and a
+    logical sector size of `lss`.
 
     The total amount of partition entries written might be higher than the amount of
     partitions actually used because:
@@ -137,8 +137,8 @@ class PartitionAttributes(Flag):
 class PartitionEntry:
     """GPT partition entry.
 
-    Do not use ``__init__`` directly, use ``PartitionEntry.new()`` or
-    ``PartitionEntry.new_empty()`` instead.
+    Do not use `__init__` directly, use `PartitionEntry.new()` or
+    `PartitionEntry.new_empty()` instead.
     """
 
     SIZE = 128
@@ -173,8 +173,8 @@ class PartitionEntry:
     ) -> PartitionEntry:
         """New non-empty partition entry.
 
-        ``PartitionType.UNUSED`` must not be passed as ``type_``, use
-        ``PartitionEntry.new_empty()`` instead.
+        `PartitionType.UNUSED` must not be passed as `type_`, use
+        `PartitionEntry.new_empty()` instead.
         """
         if isinstance(type_, PartitionType):
             type_uuid = type_.value
@@ -232,7 +232,7 @@ class PartitionEntry:
 
     @classmethod
     def from_bytes(cls, b: bytes) -> PartitionEntry:
-        """Parse partition entry from ``bytes``."""
+        """Parse partition entry from `bytes`."""
         # Earlier specifications allowed a partition entry to be any multiple of
         # 8 bytes long. As per newer specifications, we only allow powers of two
         # >= 128 bytes as partition entry lengths.
@@ -275,7 +275,7 @@ class PartitionEntry:
         return cls(start_lba, end_lba, type_, attributes, guid, name)
 
     def __bytes__(self) -> bytes:
-        """Get ``bytes`` representation of partition entry."""
+        """Get `bytes` representation of partition entry."""
         if self.empty:
             return b"\x00" * self.SIZE
 
@@ -350,7 +350,7 @@ class PartitionEntry:
 class Table:
     """GUID partition table.
 
-    Do not use ``__init__`` directly, use ``Table.new()`` instead.
+    Do not use `__init__` directly, use `Table.new()` instead.
     """
 
     HEADER_SIZE = 92
@@ -532,12 +532,12 @@ class Table:
 
     @classmethod
     def from_disk(cls, disk: Disk) -> Table:
-        """Parse partition table from ``disk``."""
+        """Parse partition table from `disk`."""
         lss = disk.sector_size.logical
         _check_lss(lss)
 
         def get_partition_array(header_bytes: bytes) -> bytes:
-            """Get ``bytes`` of the partition entry array pointed to by a GPT header.
+            """Get `bytes` of the partition entry array pointed to by a GPT header.
 
             :param header_bytes: Bytes of an already validated GPT header.
             """
@@ -615,10 +615,10 @@ class Table:
         disk_size: int,
         sector_size: SectorSize,
     ) -> tuple[bytes, bytes, bytes]:
-        """Get ``bytes`` representation of partition table elements.
+        """Get `bytes` representation of partition table elements.
 
         Returns a tuple of (primary header, backup header, partition array), each in
-        the form of a ``bytes`` object.
+        the form of a `bytes` object.
         """
         # checks
         lss = sector_size.logical
@@ -684,7 +684,7 @@ class Table:
         return primary_header, backup_header, entry_array
 
     def _write_to_disk(self, disk: Disk) -> None:
-        """Write partition table to ``disk``."""
+        """Write partition table to `disk`."""
         lss = disk.sector_size.logical
         disk_size_lba = disk.size // lss
 
@@ -725,7 +725,7 @@ class Table:
         disk.write_at(last_sector_lba, backup_header, fill_zeroes=True)
 
     def usable_lba(self, disk_size: int, sector_size: SectorSize) -> tuple[int, int]:
-        """Return a ``tuple`` of the first and last logical sector which may be used
+        """Return a `tuple` of the first and last logical sector which may be used
         by a partition of this partition table.
         """
         lss = sector_size.logical
@@ -758,7 +758,7 @@ class Table:
     def custom_mbr(self) -> mbr.Table | None:
         """Custom MBR supplied along with the GPT.
 
-        ``None`` if a typical protective MBR was supplied.
+        `None` if a typical protective MBR was supplied.
         """
         return self._custom_mbr
 

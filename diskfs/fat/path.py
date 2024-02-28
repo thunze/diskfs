@@ -1,4 +1,4 @@
-"""``Path`` and ``PurePath`` implementations for FAT file systems."""
+"""`Path` and `PurePath` implementations for FAT file systems."""
 
 from __future__ import annotations
 

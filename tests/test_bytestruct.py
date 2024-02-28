@@ -1,4 +1,4 @@
-"""Tests for the ``bytestruct`` module."""
+"""Tests for the `bytestruct` module."""
 
 import sys
 from dataclasses import InitVar, dataclass
@@ -20,19 +20,19 @@ class ArbitraryClass:
 
 @dataclass(frozen=True)
 class EmptyByteStruct(ByteStruct):
-    """``ByteStruct`` without any fields."""
+    """`ByteStruct` without any fields."""
 
 
 @dataclass(frozen=True)
 class ArbitraryByteStruct(ByteStruct):
-    """A valid ``ByteStruct`` subclass."""
+    """A valid `ByteStruct` subclass."""
 
     field: Annotated[int, 4, "signed"]
 
 
 @dataclass(frozen=True)
 class CustomValidationByteStruct(ByteStruct):
-    """A valid ``ByteStruct`` subclass with custom validation logic."""
+    """A valid `ByteStruct` subclass with custom validation logic."""
 
     f_1: Annotated[int, 4]
     f_2: Annotated[bytes, 2]
@@ -49,9 +49,9 @@ BYTEORDER_IN_WORDS = {"<": "little", ">": "big", "!": "big", "=": sys.byteorder}
 
 @lru_cache
 def bytestruct_single_int(byteorder: str, size: int, signed: bool):
-    """Return a ``ByteStruct`` with byte order ``byteorder`` defining a single field
-    of type ``int`` annotated with ``size`` and ``'signed'`` or ``'unsigned'``
-    depending on the value of ``signed``.
+    """Return a `ByteStruct` with byte order `byteorder` defining a single field
+    of type `int` annotated with `size` and `'signed'` or `'unsigned'`
+    depending on the value of `signed`.
     """
     signed_specifier = "signed" if signed else "unsigned"
 
@@ -64,8 +64,8 @@ def bytestruct_single_int(byteorder: str, size: int, signed: bool):
 
 @lru_cache
 def bytestruct_single_float(byteorder: str, size: int):
-    """Return a ``ByteStruct`` with byte order ``byteorder`` defining a single field
-    of type ``float`` and size ``size``.
+    """Return a `ByteStruct` with byte order `byteorder` defining a single field
+    of type `float` and size `size`.
     """
 
     @dataclass(frozen=True)
@@ -77,8 +77,8 @@ def bytestruct_single_float(byteorder: str, size: int):
 
 @lru_cache
 def bytestruct_single_bytes(byteorder: str, size: int):
-    """Return a ``ByteStruct`` with byte order ``byteorder`` defining a single field
-    of type ``bytes`` and size ``size``.
+    """Return a `ByteStruct` with byte order `byteorder` defining a single field
+    of type `bytes` and size `size`.
     """
 
     @dataclass(frozen=True)
@@ -90,8 +90,8 @@ def bytestruct_single_bytes(byteorder: str, size: int):
 
 @lru_cache
 def bytestruct_single_none(byteorder: str, size: int):
-    """Return a ``ByteStruct`` with byte order ``byteorder`` defining a single field
-    of type ``None`` and size ``size``.
+    """Return a `ByteStruct` with byte order `byteorder` defining a single field
+    of type `None` and size `size`.
     """
 
     @dataclass(frozen=True)
@@ -103,7 +103,7 @@ def bytestruct_single_none(byteorder: str, size: int):
 
 @lru_cache
 def bytestruct_multi(byteorder: str):
-    """Return a typical ``ByteStruct`` with byte order ``byteorder`` defining multiple
+    """Return a typical `ByteStruct` with byte order `byteorder` defining multiple
     fields.
     """
 
@@ -126,14 +126,14 @@ def bytestruct_multi(byteorder: str):
 
 
 class TestByteStructMeta:
-    """Tests for ``_ByteStructMeta``."""
+    """Tests for `_ByteStructMeta`."""
 
     @pytest.mark.parametrize(
         "annotation", [dict, str, int, float, bytes, None, ArbitraryClass, ByteStruct]
     )
     def test_analysis_fail_unannotated(self, annotation):
         """Test that analysis fails when a field has an unannotated type which is not
-        a subclass of ``ByteStruct``.
+        a subclass of `ByteStruct`.
         """
         with pytest.raises(TypeError, match="Unannotated type.*"):
             # noinspection PyUnusedLocal
@@ -170,7 +170,7 @@ class TestByteStructMeta:
     @pytest.mark.parametrize("type_", [int, float])
     @pytest.mark.parametrize("size", [3, 5, 6, 7, 9, 16])
     def test_analysis_fail_annotated_size_int_float(self, type_, size):
-        """Test that analysis fails when a field has an ``int`` or ``float`` type
+        """Test that analysis fails when a field has an `int` or `float` type
         annotated with a field size specifically invalid for both of these types.
         """
         with pytest.raises(ValueError, match=".*(f|F)ield size.*"):
@@ -241,7 +241,8 @@ class TestByteStructMeta:
 
     def test_analysis_success_embedded(self):
         """Test the result of the analysis of a field representing an embedded
-        ``ByteStruct``."""
+        `ByteStruct`.
+        """
 
         @dataclass(frozen=True)
         class B(ByteStruct):
@@ -253,7 +254,7 @@ class TestByteStructMeta:
 
     @pytest.mark.parametrize("byteorder", BYTEORDER_IN_WORDS.keys())
     def test_analysis_success_multiple(self, byteorder):
-        """Test the result of the analysis of a typical ``ByteStruct`` with multiple
+        """Test the result of the analysis of a typical `ByteStruct` with multiple
         fields.
         """
         bs = bytestruct_multi(byteorder)
@@ -262,14 +263,14 @@ class TestByteStructMeta:
         assert bs.__bytestruct_size__ == len(ArbitraryByteStruct) + 28
 
     def test_analysis_success_empty(self):
-        """Test the result of the analysis of a ``ByteStruct`` without any fields."""
+        """Test the result of the analysis of a `ByteStruct` without any fields."""
         assert EmptyByteStruct.__bytestruct_fields__ == {}
         assert len(EmptyByteStruct.__bytestruct_format__) == 1  # only byte order
         assert EmptyByteStruct.__bytestruct_size__ == 0
         assert len(EmptyByteStruct) == 0
 
     def test_classvar(self):
-        """Test that the analysis excludes fields annotated as ``ClassVar`` and that
+        """Test that the analysis excludes fields annotated as `ClassVar` and that
         such fields are usable as usual in the context of the dataclass.
         """
 
@@ -285,7 +286,7 @@ class TestByteStructMeta:
         assert B.cv == "test"
 
     def test_initvar(self):
-        """Test that the analysis excludes fields annotated as ``InitVar`` and that
+        """Test that the analysis excludes fields annotated as `InitVar` and that
         such a field is usable as usual in the context of the dataclass.
         """
 
@@ -306,10 +307,10 @@ class TestByteStructMeta:
 
 
 class TestByteStruct:
-    """Tests for ``ByteStruct``."""
+    """Tests for `ByteStruct`."""
 
     def test_instantiation_fail_direct(self):
-        """Test that creating a direct instance of ``ByteStruct`` fails."""
+        """Test that creating a direct instance of `ByteStruct` fails."""
         with pytest.raises(TypeError, match=".*direct.*"):
             ByteStruct()
         with pytest.raises(TypeError, match=".*direct.*"):
@@ -318,8 +319,8 @@ class TestByteStruct:
             ByteStruct.from_bytes(b"")
 
     def test_instantiation_fail_not_a_dataclass(self):
-        """Test that the instantiation of a ``ByteStruct`` fails if the according
-        ``ByteStruct`` subclass is not a ``dataclass``.
+        """Test that the instantiation of a `ByteStruct` fails if the according
+        `ByteStruct` subclass is not a `dataclass`.
         """
 
         class B(ByteStruct):
@@ -331,8 +332,8 @@ class TestByteStruct:
             B.from_bytes(b"\x98\x76\x54\x32")
 
     def test_instantiation_fail_not_a_frozen_dataclass(self):
-        """Test that the instantiation of a ``ByteStruct`` fails if the according
-        ``ByteStruct`` subclass is not a frozen ``dataclass``.
+        """Test that the instantiation of a `ByteStruct` fails if the according
+        `ByteStruct` subclass is not a frozen `dataclass`.
         """
 
         @dataclass
@@ -346,14 +347,14 @@ class TestByteStruct:
 
     @pytest.mark.parametrize("bytes_", [b"", b"a", b"abcdef"])
     def test_from_bytes_fail_length(self, bytes_):
-        """Test that ``from_bytes()`` fails if it is supplied with a ``bytes``
+        """Test that `from_bytes()` fails if it is supplied with a `bytes`
         argument of wrong length.
         """
         with pytest.raises(ValueError, match=".*long.*"):
             ArbitraryByteStruct.from_bytes(bytes_)
 
     def test_empty(self):
-        """Test validation and conversion on a ``ByteStruct`` subclass without any
+        """Test validation and conversion on a `ByteStruct` subclass without any
         fields.
         """
         bs_from_values = EmptyByteStruct()
@@ -385,8 +386,8 @@ class TestByteStruct:
         ),
     )
     def test_single_int(self, byteorder, size, signed, value, accept):
-        """Test validation and conversion on a ``ByteStruct`` subclass with a single
-        ``int`` field.
+        """Test validation and conversion on a `ByteStruct` subclass with a single
+        `int` field.
         """
         bs = bytestruct_single_int(byteorder, size, signed)
         if accept:
@@ -411,8 +412,8 @@ class TestByteStruct:
         "value", [-10.6, 0, 2, 8.7, float("inf"), float("-inf"), float("nan")]
     )
     def test_single_float(self, byteorder, size, value):
-        """Test validation and conversion on a ``ByteStruct`` subclass with a single
-        ``float`` field.
+        """Test validation and conversion on a `ByteStruct` subclass with a single
+        `float` field.
         """
         bs = bytestruct_single_float(byteorder, size)
         bs_from_values = bs(value)
@@ -437,8 +438,8 @@ class TestByteStruct:
         ],
     )
     def test_single_bytes(self, byteorder, size, value, accept):
-        """Test validation and conversion on a ``ByteStruct`` subclass with a single
-        ``bytes`` field.
+        """Test validation and conversion on a `ByteStruct` subclass with a single
+        `bytes` field.
         """
         bs = bytestruct_single_bytes(byteorder, size)
         if accept:
@@ -456,8 +457,8 @@ class TestByteStruct:
     @pytest.mark.parametrize("byteorder", BYTEORDER_IN_WORDS.keys())
     @pytest.mark.parametrize("size", [3, 10])
     def test_single_none(self, byteorder, size):
-        """Test validation and conversion on a ``ByteStruct`` subclass with a single
-        ``None`` (pad bytes) field.
+        """Test validation and conversion on a `ByteStruct` subclass with a single
+        `None` (pad bytes) field.
         """
         bs = bytestruct_single_none(byteorder, size)
         expected_bytes = size * b"\x00"
@@ -472,8 +473,8 @@ class TestByteStruct:
 
     @pytest.mark.parametrize("byteorder", BYTEORDER_IN_WORDS.keys())
     def test_single_embedded(self, byteorder):
-        """Test validation and conversion on a ``ByteStruct`` subclass with a single
-        ``None`` (pad bytes) field.
+        """Test validation and conversion on a `ByteStruct` subclass with a single
+        `None` (pad bytes) field.
         """
 
         @dataclass(frozen=True)
@@ -528,7 +529,7 @@ class TestByteStruct:
         ],
     )
     def test_multiple_fail(self, byteorder, values):
-        """Test that validation fails on a typical ``ByteStruct`` with multiple fields
+        """Test that validation fails on a typical `ByteStruct` with multiple fields
         if the validation of at least one value fails.
         """
         bs = bytestruct_multi(byteorder)
@@ -552,7 +553,7 @@ class TestByteStruct:
         ],
     )
     def test_multiple_success(self, byteorder, expected_bytes):
-        """Test succeeding validation and conversion on a typical ``ByteStruct`` with
+        """Test succeeding validation and conversion on a typical `ByteStruct` with
         multiple fields.
         """
         bs = bytestruct_multi(byteorder)
@@ -591,7 +592,7 @@ class TestByteStruct:
     )
     def test_custom_validation(self, value_1, value_2, accept):
         """Test that custom validation logic is automatically triggered when
-        instantiating a ``ByteStruct``.
+        instantiating a `ByteStruct`.
         """
         if accept:
             CustomValidationByteStruct(value_1, value_2)

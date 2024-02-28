@@ -98,7 +98,7 @@ class Volume:
         cluster_size: int = CLUSTER_SIZE_DEFAULT,
         label: str = "",
     ) -> FileSystem:
-        """Create a new file system of type ``fs`` and size ``size`` on the volume.
+        """Create a new file system of type `fs` and size `size` on the volume.
 
         **Caution:** If any file system already resides on the volume, it will be
         overwritten and thus be rendered unusable. Always create a backup of your
@@ -122,10 +122,10 @@ class Volume:
         """Detect and parse a file system present on the volume.
 
         If a file system is detected which this library can handle, an object is
-        returned which coheres to the ``FileSystem`` protocol. This object can then
+        returned which coheres to the `FileSystem` protocol. This object can then
         be used to modify the file system.
 
-        If no file system is detected, ``None`` is returned. Note that this does not
+        If no file system is detected, `None` is returned. Note that this does not
         necessarily mean that there is no file system present on the volume.
         """
         self.check_closed()

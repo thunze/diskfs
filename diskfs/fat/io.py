@@ -195,7 +195,7 @@ class DataIO(_InternalIO):
 
     def _allocate(self, min_size: int) -> int:
         """Allocate as many clusters as needed to provide a minimum file size of
-        ``min_size`` bytes.
+        `min_size` bytes.
 
         Returns how many new clusters were allocated.
         """
@@ -238,7 +238,7 @@ class DataIO(_InternalIO):
 
     def _free(self, max_size: int) -> int:
         """Free as many clusters as needed to guarantee a maximum file size of
-        ``max_size`` bytes.
+        `max_size` bytes.
 
         Returns how many clusters were freed.
         """
@@ -276,7 +276,7 @@ class DataIO(_InternalIO):
             raise ValueError(f"Invalid cluster number {cluster} in chain")
 
     def _read_units(self, pos: int, count: int) -> bytes:
-        """Read ``count`` clusters starting at cluster with chain index ``pos``."""
+        """Read `count` clusters starting at cluster with chain index `pos`."""
         if pos < 0:
             raise ValueError("Start cluster index must be greater than or equal to 0")
         if count <= 0:
@@ -295,7 +295,7 @@ class DataIO(_InternalIO):
         return b
 
     def _write_units(self, pos: int, b: bytes | memoryview) -> None:
-        """Write ``b`` to file starting at cluster ``pos``."""
+        """Write `b` to file starting at cluster `pos`."""
         if pos < 0:
             raise ValueError("Start cluster index must be greater than or equal to 0")
         if len(b) % self._cluster_size_bytes != 0:

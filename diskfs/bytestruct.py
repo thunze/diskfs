@@ -28,15 +28,15 @@ _Bs = TypeVar("_Bs", bound="ByteStruct")
 
 
 class _FieldDescriptor(NamedTuple):
-    """Metadata about a field of a ``ByteStruct``.
+    """Metadata about a field of a `ByteStruct`.
 
-    - ``type_origin``: Origin of an ``Annotated`` type (e.g. ``bytes`` for
-        ``Annotated[bytes, 4]``) or the according ``ByteStruct`` subclass if the
-        field represents an embedded ``ByteStruct``.
-    - ``type_args``: Tuple of the metadata added to ``Annotated`` (e.g. ``(4,)`` for
-        ``Annotated[bytes, 4]``) if the field has an ``Annotated`` type, () otherwise.
-    - ``is_bytestruct``: True if the field represents an embedded ``ByteStruct``.
-        Saved separately to avoid more costly calls of ``instanceof(type_origin)``.
+    - `type_origin`: Origin of an `Annotated` type (e.g. `bytes` for
+        `Annotated[bytes, 4]`) or the according `ByteStruct` subclass if the
+        field represents an embedded `ByteStruct`.
+    - `type_args`: Tuple of the metadata added to `Annotated` (e.g. `(4,)` for
+        `Annotated[bytes, 4]`) if the field has an `Annotated` type, () otherwise.
+    - `is_bytestruct`: True if the field represents an embedded `ByteStruct`.
+        Saved separately to avoid more costly calls of `instanceof(type_origin)`.
     """
 
     type_origin: Any
@@ -45,19 +45,19 @@ class _FieldDescriptor(NamedTuple):
 
 
 class _ByteStructMeta(type):
-    """Metaclass of ``ByteStruct``.
+    """Metaclass of `ByteStruct`.
 
-    Analyzes the type annotations found in a ``ByteStruct`` subclass and sets
-    ``__bytestruct_fields__``, ``__bytestruct_format__`` and ``__bytestruct_size__``
+    Analyzes the type annotations found in a `ByteStruct` subclass and sets
+    `__bytestruct_fields__`, `__bytestruct_format__` and `__bytestruct_size__`
     accordingly.
 
-    - ``__bytestruct_fields__`` is a mapping of field names (``str``) to field
-        descriptors (``_FieldDescriptor``). A field descriptor contains metadata about
-        a field of the ``ByteStruct``. See ``_FieldDescriptor`` for more information.
-    - ``__bytestruct_format__`` is the format string which is passed to
-        ``struct.pack()`` and ``struct.unpack()`` to convert between the values of the
-        ``ByteStruct`` and its ``bytes`` form as read from or written to a disk.
-    - ``__bytestruct_size__`` is the size of the ``bytes`` form of the ``ByteStruct``
+    - `__bytestruct_fields__` is a mapping of field names (`str`) to field
+        descriptors (`_FieldDescriptor`). A field descriptor contains metadata about
+        a field of the `ByteStruct`. See `_FieldDescriptor` for more information.
+    - `__bytestruct_format__` is the format string which is passed to
+        `struct.pack()` and `struct.unpack()` to convert between the values of the
+        `ByteStruct` and its `bytes` form as read from or written to a disk.
+    - `__bytestruct_size__` is the size of the `bytes` form of the `ByteStruct`
         in bytes.
     """
 
@@ -68,8 +68,8 @@ class _ByteStructMeta(type):
         namespace: dict[str, Any],
         **kwargs: Any,
     ) -> _ByteStructMeta:
-        """Provide a signature of ``__new__()`` which allows specifying ``kwargs``
-        like ``byteorder`` when subclassing ``ByteStruct``.
+        """Provide a signature of `__new__()` which allows specifying `kwargs`
+        like `byteorder` when subclassing `ByteStruct`.
         """
         return super().__new__(mcs, name, bases, namespace)
 
@@ -161,23 +161,23 @@ class _ByteStructMeta(type):
         cls.__bytestruct_size__ = struct.calcsize(format_)
 
     def __len__(cls) -> int:
-        """Size of the ``bytes`` form of the ``ByteStruct`` in bytes."""
+        """Size of the `bytes` form of the `ByteStruct` in bytes."""
         return cls.__bytestruct_size__
 
 
 class ByteStruct(metaclass=_ByteStructMeta):
     """Packed binary data.
 
-    Basically a user-friendy wrapper of a struct according to the ``struct`` module
+    Basically a user-friendy wrapper of a struct according to the `struct` module
     with a few extra features which include:
 
     - Embedding of structs in other structs
-    - Access to values by field name through integration with the ``dataclass``
+    - Access to values by field name through integration with the `dataclass`
         decorator
     - User-friendly definition of field types
     - Validation of values including an easy way to add custom validation logic
 
-    Note that every ``ByteStruct`` subclass must be a frozen ``dataclass``.
+    Note that every `ByteStruct` subclass must be a frozen `dataclass`.
 
     Example::
 
@@ -194,20 +194,20 @@ class ByteStruct(metaclass=_ByteStructMeta):
 
             field_7: MySecondStruct               # embedded ByteStruct
 
-    The ``byteorder`` argument can be one of ``('<', '>', '!', '=')``.
-    Supported field types / formats in terms of the ``struct`` module are:
+    The `byteorder` argument can be one of `('<', '>', '!', '=')`.
+    Supported field types / formats in terms of the `struct` module are:
 
     - b, B, h, H, i, I, q, Q, e, f, d, s, x
 
-    See the documentation of the ``struct`` module for more information:
+    See the documentation of the `struct` module for more information:
 
         https://docs.python.org/3/library/struct.html
 
     Note that field values are not validated against their type annotations at
     runtime except for the metadata carried along with them through arguments of
-    ``typing.Annotated``.
+    `typing.Annotated`.
 
-    Custom validation logic can be added by overriding the ``validate()`` method.
+    Custom validation logic can be added by overriding the `validate()` method.
     """
 
     # Populated per class
@@ -220,16 +220,16 @@ class ByteStruct(metaclass=_ByteStructMeta):
 
     @classmethod
     def _check_direct_instantiation(cls) -> None:
-        """Raise ``TypeError`` if it is tried to directly instantiate ``ByteStruct``
-        and not a subclass of ``ByteStruct``.
+        """Raise `TypeError` if it is tried to directly instantiate `ByteStruct`
+        and not a subclass of `ByteStruct`.
         """
         if cls.__bases__ == (object,):
             raise TypeError(f"Cannot directly instantiate {cls.__name__}")
 
     @classmethod
     def _check_frozen_dataclass(cls) -> None:
-        """Raise ``TypeError`` if it is tried to instantiate a subclass of
-        ``ByteStruct`` which is not a frozen ``dataclass``.
+        """Raise `TypeError` if it is tried to instantiate a subclass of
+        `ByteStruct` which is not a frozen `dataclass`.
         """
         params: Any = getattr(cls, "__dataclass_params__", None)
         if params is None or not params.frozen:
@@ -242,7 +242,7 @@ class ByteStruct(metaclass=_ByteStructMeta):
 
     def __post_init__(self) -> None:
         """Executed after instance creation as we expect every instance to be a
-        ``dataclass``.
+        `dataclass`.
 
         Triggers the internal and the user-defined validation logic.
         """
@@ -254,8 +254,8 @@ class ByteStruct(metaclass=_ByteStructMeta):
     def _validate_and_cache(self) -> None:
         """Validate field values against the defined formats.
 
-        Because this involves creating a ``bytes`` version of the ``ByteStruct``
-        instance anyway, we cache the resulting ``bytes`` object.
+        Because this involves creating a `bytes` version of the `ByteStruct`
+        instance anyway, we cache the resulting `bytes` object.
         """
         values = []
 
@@ -306,7 +306,7 @@ class ByteStruct(metaclass=_ByteStructMeta):
 
     @classmethod
     def from_bytes(cls: type[_Bs], b: bytes) -> _Bs:
-        """Parse structure from ``bytes``."""
+        """Parse structure from `bytes`."""
         cls._check_direct_instantiation()
 
         fields = cls.__bytestruct_fields__
@@ -341,9 +341,9 @@ class ByteStruct(metaclass=_ByteStructMeta):
         return self
 
     def __bytes__(self) -> bytes:
-        """``bytes`` form of the ``ByteStruct`` instance."""
+        """`bytes` form of the `ByteStruct` instance."""
         return self.__bytestruct_cached__
 
     def __len__(self) -> int:
-        """Size of the ``bytes`` form of the ``ByteStruct`` in bytes."""
+        """Size of the `bytes` form of the `ByteStruct` in bytes."""
         return self.__bytestruct_size__

@@ -107,11 +107,11 @@ class Bpb(Protocol, metaclass=_BpbMeta):  # pragma: no cover
 
     @classmethod
     def from_bytes(cls, b: bytes) -> Bpb:
-        """Parse BPB from ``bytes``."""
+        """Parse BPB from `bytes`."""
         ...
 
     def __bytes__(self) -> bytes:
-        """``bytes`` form of the BPB."""
+        """`bytes` form of the BPB."""
         ...
 
     def __len__(self) -> int:
@@ -119,7 +119,7 @@ class Bpb(Protocol, metaclass=_BpbMeta):  # pragma: no cover
         ...
 
     def validate_for_volume(self, volume: Volume) -> None:
-        """Validate the BPB against the metadata of ``volume``."""
+        """Validate the BPB against the metadata of `volume`."""
         ...
 
     @property
@@ -131,7 +131,7 @@ class Bpb(Protocol, metaclass=_BpbMeta):  # pragma: no cover
     def total_size(self) -> int | None:
         """Total size of the file system described by the BPB in logical sectors.
 
-        ``None`` if the total size is not defined in this BPB.
+        `None` if the total size is not defined in this BPB.
         """
         ...
 
@@ -251,7 +251,7 @@ class BpbDos331(ByteStruct):
 
 
 def _check_physical_drive_number(physical_drive_number: int) -> None:
-    """Issue ``ValidationWarning`` if ``physical_drive_number`` is a reserved EBPB
+    """Issue `ValidationWarning` if `physical_drive_number` is a reserved EBPB
     physical drive number value.
     """
     if physical_drive_number in PHYSICAL_DRIVE_NUMBERS_RESERVED:
@@ -261,7 +261,7 @@ def _check_physical_drive_number(physical_drive_number: int) -> None:
 
 
 def _check_extended_boot_signature(extended_boot_signature: bytes) -> None:
-    """Raise ``ValidationError`` if ``extended_boot_signature`` is an invalid EBPB
+    """Raise `ValidationError` if `extended_boot_signature` is an invalid EBPB
     extended boot signature.
     """
     if extended_boot_signature not in EXTENDED_BOOT_SIGNATURES:
@@ -550,7 +550,7 @@ BPB_PARSE_ORDER: tuple[type[Bpb], ...] = (
 class BootSector:
     """FAT boot sector.
 
-    Not a ``ByteStruct`` because of its dynamic nature.
+    Not a `ByteStruct` because of its dynamic nature.
     """
 
     start: BootSectorStart
@@ -561,12 +561,12 @@ class BootSector:
 
     @classmethod
     def from_bytes(cls, b: bytes, custom_bpb_type: type[Bpb] = None) -> BootSector:
-        """Parse boot sector from ``bytes``.
+        """Parse boot sector from `bytes`.
 
-        If ``custom_bpb_type`` is set, it is tried to parse the BIOS parameter block
-        according to the given type. If ``custom_bpb_type`` is not set, it is tried
-        to parse the BPB in the order defined in ``BPB_PARSE_ORDER``. If this fails,
-        ``ValidationError`` is raised.
+        If `custom_bpb_type` is set, it is tried to parse the BIOS parameter block
+        according to the given type. If `custom_bpb_type` is not set, it is tried
+        to parse the BPB in the order defined in `BPB_PARSE_ORDER`. If this fails,
+        `ValidationError` is raised.
         """
         if len(b) != cls.SIZE:
             raise ValueError(
@@ -582,7 +582,7 @@ class BootSector:
         start = BootSectorStart.from_bytes(b[:start_size])
 
         def parse_bpb(bpb_type: type[Bpb]) -> Bpb:
-            """Parse BPB of type ``bpb_type`` from ``b``."""
+            """Parse BPB of type `bpb_type` from `b`."""
             bpb_size = len(bpb_type)
             bpb_end = start_size + bpb_size
             return bpb_type.from_bytes(b[start_size:bpb_end])
@@ -608,7 +608,7 @@ class BootSector:
         return cls(start, bpb, boot_code)
 
     def __bytes__(self) -> bytes:
-        """``bytes`` form of the boot sector."""
+        """`bytes` form of the boot sector."""
         return bytes(self.start) + bytes(self.bpb) + self.boot_code + SIGNATURE
 
     def __len__(self) -> int:
@@ -639,7 +639,7 @@ class BootSector:
             )
 
     def validate_for_volume(self, volume: Volume) -> None:
-        """Validate the boot sector against the metadata of ``volume``."""
+        """Validate the boot sector against the metadata of `volume`."""
         self.bpb.validate_for_volume(volume)
 
     def __post_init__(self) -> None:

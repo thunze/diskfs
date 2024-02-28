@@ -65,7 +65,7 @@ PROPERTY_STANDARD_QUERY = 0  # value of enum STORAGE_QUERY_TYPE
 
 # noinspection PyPep8Naming
 class GET_LENGTH_INFORMATION(Structure):
-    """Input structure for ``IOCTL_DISK_GET_LENGTH_INFO``."""
+    """Input structure for `IOCTL_DISK_GET_LENGTH_INFO`."""
 
     _fields_ = [("Length", LARGE_INTEGER)]
     Length: int
@@ -73,7 +73,7 @@ class GET_LENGTH_INFORMATION(Structure):
 
 # noinspection PyPep8Naming
 class STORAGE_PROPERTY_QUERY(Structure):
-    """Input structure for ``IOCTL_STORAGE_QUERY_PROPERTY``."""
+    """Input structure for `IOCTL_STORAGE_QUERY_PROPERTY`."""
 
     _fields_ = [
         ("PropertyId", c_uint),  # enum STORAGE_PROPERTY_ID
@@ -84,10 +84,10 @@ class STORAGE_PROPERTY_QUERY(Structure):
 
 # noinspection PyPep8Naming
 class STORAGE_DESCRIPTOR_HEADER(Structure):
-    """Possible output structure for ``IOCTL_STORAGE_QUERY_PROPERTY`` when requesting
-    ``StorageDeviceProperty``.
+    """Possible output structure for `IOCTL_STORAGE_QUERY_PROPERTY` when requesting
+    `StorageDeviceProperty`.
 
-    Only used to determine the required buffer size for ``STORAGE_DEVICE_DESCRIPTOR``.
+    Only used to determine the required buffer size for `STORAGE_DEVICE_DESCRIPTOR`.
     """
 
     _fields_ = [
@@ -98,18 +98,18 @@ class STORAGE_DESCRIPTOR_HEADER(Structure):
 
 # noinspection PyPep8Naming
 def STORAGE_DEVICE_DESCRIPTOR(size: int) -> type[Structure]:
-    """Return the output structure for ``IOCTL_STORAGE_QUERY_PROPERTY`` of size
-    ``size`` when requesting ``StorageDeviceProperty``.
+    """Return the output structure for `IOCTL_STORAGE_QUERY_PROPERTY` of size `size`
+    when requesting `StorageDeviceProperty`.
     """
 
     def with_raw_properties_size(raw_properties_size: int) -> type[Structure]:
-        """Return the ``STORAGE_DEVICE_DESCRIPTOR`` structure with the field
-        ``RawDeviceProperties`` being of size ``raw_properties_size``.
+        """Return the `STORAGE_DEVICE_DESCRIPTOR` structure with the field
+        `RawDeviceProperties` being of size `raw_properties_size`.
         """
 
         # noinspection PyPep8Naming
         class STORAGE_DEVICE_DESCRIPTOR_(Structure):
-            """``STORAGE_DEVICE_DESCRIPTOR`` structure of dynamic size."""
+            """`STORAGE_DEVICE_DESCRIPTOR` structure of dynamic size."""
 
             _fields_ = [
                 ("Version", DWORD),
@@ -141,8 +141,8 @@ def STORAGE_DEVICE_DESCRIPTOR(size: int) -> type[Structure]:
 
 # noinspection PyPep8Naming
 class STORAGE_ACCESS_ALIGNMENT_DESCRIPTOR(Structure):
-    """Output structure for ``IOCTL_STORAGE_QUERY_PROPERTY`` when requesting
-    ``StorageAccessAlignmentProperty``.
+    """Output structure for `IOCTL_STORAGE_QUERY_PROPERTY` when requesting
+    `StorageAccessAlignmentProperty`.
     """
 
     _fields_ = [
@@ -181,7 +181,7 @@ def device_io_control(
     """Send a control code directly to a specified device driver, causing the
     corresponding device to perform the corresponding operation.
 
-    Wrapper for ``DeviceIoControl()``.
+    Wrapper for `DeviceIoControl()`.
     """
     handle = msvcrt.get_osfhandle(fd)
     in_buffer_size = len(in_buffer) if in_buffer is not None else 0
@@ -210,13 +210,13 @@ def storage_query_property(
     storage_property_query: STORAGE_PROPERTY_QUERY,
     out_structure_type: type[_S],
 ) -> _S:
-    """Wrapper for calling ``DeviceIoControl()`` with ``IOCTL_STORAGE_QUERY_PROPERTY``.
+    """Wrapper for calling `DeviceIoControl()` with `IOCTL_STORAGE_QUERY_PROPERTY`.
 
     :param fd: File descriptor for the block device.
-    :param storage_property_query: ``STORAGE_PROPERTY_QUERY`` to use as the input.
-    :param out_structure_type: ``Structure`` subclass used to parse the output.
+    :param storage_property_query: `STORAGE_PROPERTY_QUERY` to use as the input.
+    :param out_structure_type: `Structure` subclass used to parse the output.
 
-    Returns the parsed output as an instance of ``out_structure_type``.
+    Returns the parsed output as an instance of `out_structure_type`.
     """
     # noinspection PyTypeChecker
     in_buffer = create_string_buffer(bytes(storage_property_query))
@@ -242,10 +242,10 @@ def device_properties(fd: int, path: StrPath) -> DeviceProperties:
     properties = storage_query_property(fd, query, storage_device_descriptor)
 
     def unpack_ascii_string(offset: int) -> str | None:
-        """Unpack ASCII string starting at byte ``offset`` in ``out_buffer`` and
-        ``rstrip()`` the result.
+        """Unpack ASCII string starting at byte `offset` in `out_buffer` and
+        `rstrip()` the result.
 
-        Returns ``None`` if ``offset`` is 0 as this implies that the regarding
+        Returns `None` if `offset` is 0 as this implies that the regarding
         property is unavailable.
         """
         if offset == 0:

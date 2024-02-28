@@ -48,14 +48,14 @@ _T = TypeVar("_T", bound=CFTypeRef)
 
 @contextmanager
 def _releasing(cf_object: _T | None) -> Iterator[_T]:
-    """Context manager freeing the resources occupied by ``cf_object`` on
-    ``__exit__()`` via ``CFRelease()``.
+    """Context manager freeing the resources occupied by `cf_object` on
+    `__exit__()` via `CFRelease()`.
 
-    This context manager should be used on every ``CFTypeRef`` returned by any Darwin
-    framework function whose name contains ``Create`` or ``Copy``.
+    This context manager should be used on every `CFTypeRef` returned by any Darwin
+    framework function whose name contains `Create` or `Copy`.
 
-    A ``cf_object`` argument of ``None`` will raise ``ValueError`` on ``__enter__()``
-    as a last resort to avoid segmentation fault when calling ``CFRelease()``.
+    A `cf_object` argument of `None` will raise `ValueError` on `__enter__()`
+    as a last resort to avoid segmentation fault when calling `CFRelease()`.
     """
     if cf_object is None:
         raise ValueError("Cannot release null reference")
@@ -66,9 +66,9 @@ def _releasing(cf_object: _T | None) -> Iterator[_T]:
 
 
 def _unpack_cf_boolean(boolean: CFBoolean | None) -> bool | None:
-    """Convert a ``CFBoolean`` instance to ``bool``.
+    """Convert a `CFBoolean` instance to `bool`.
 
-    Returns ``None`` if ``boolean`` is ``None``.
+    Returns `None` if `boolean` is `None`.
     """
     if boolean is None:
         return None
@@ -76,9 +76,9 @@ def _unpack_cf_boolean(boolean: CFBoolean | None) -> bool | None:
 
 
 def _unpack_cf_string(string: CFString | None) -> str | None:
-    """Convert a ``CFString`` instance to ``str``.
+    """Convert a `CFString` instance to `str`.
 
-    Returns ``None`` if ``string`` is ``None``.
+    Returns `None` if `string` is `None`.
     """
     if string is None:
         return None

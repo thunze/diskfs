@@ -52,7 +52,7 @@ SECTOR_SIZE_MAX_SANE = 16 * 1024 * 1024
 @pytest.mark.privileged
 @pytest.mark.parametrize("block_device", [(SIZES[0], SECTOR_SIZES[0])], indirect=True)
 def test_device_properties(block_device) -> None:
-    """Test that the ``DeviceProperties`` tuple obtained from ``device_properties()``
+    """Test that the `DeviceProperties` tuple obtained from `device_properties()`
     contains the expected values.
     """
     with open(block_device, "rb") as f:
@@ -73,7 +73,7 @@ def test_device_properties(block_device) -> None:
 def test_device_size_sector_size(
     block_device, size_expected, sector_size_expected
 ) -> None:
-    """Test that ``device_size()`` and ``device_sector_size()`` return the expected
+    """Test that `device_size()` and `device_sector_size()` return the expected
     values.
     """
     with open(block_device, "rb") as f:
@@ -101,7 +101,7 @@ def test_device_size_sector_size(
 @pytest.mark.privileged
 @pytest.mark.parametrize("block_device", [(SIZES[0], SECTOR_SIZES[0])], indirect=True)
 def test_reread_partition_table(block_device):
-    """Test that correctly invoking ``reread_partition_table()`` does not raise an
+    """Test that correctly invoking `reread_partition_table()` does not raise an
     exception.
     """
     with open(block_device, "rb") as f:

@@ -1,4 +1,4 @@
-"""Tests for the ``base`` module of the ``fat`` package."""
+"""Tests for the `base` module of the `fat` package."""
 
 import pytest
 
@@ -15,6 +15,6 @@ from diskfs.filesystem import FsType
     ],
 )
 def test_fat_type_mapping(fs_type, fat_type):
-    """Test mapping between ``FatType`` and ``FsType``."""
+    """Test mapping between `FatType` and `FsType`."""
     assert FatType.from_fs_type(fs_type) is fat_type
     assert fat_type.fs_type is fs_type

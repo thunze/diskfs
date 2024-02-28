@@ -1,4 +1,4 @@
-"""Tests for the ``directory`` module of the ``fat`` package."""
+"""Tests for the `directory` module of the `fat` package."""
 
 from __future__ import annotations
 
@@ -61,7 +61,7 @@ E5 = b"\xE5".decode(DOS_FILENAME_OEM_ENCODING)
     ],
 )
 def test__split_filename(filename, name, ext):
-    """Test splitting of ``_split_filename()``."""
+    """Test splitting of `_split_filename()`."""
     assert _split_filename(filename) == (name, ext)
 
 
@@ -82,8 +82,8 @@ def test__split_filename(filename, name, ext):
     ],
 )
 def test__pack_unpack_dos_filename(filename, name_packed, ext_packed):
-    """Test DOS filename packing and unpacking via ``_pack_dos_filename()`` and
-    ``_unpack_dos_filename()``.
+    """Test DOS filename packing and unpacking via `_pack_dos_filename()` and
+    `_unpack_dos_filename()`.
     """
     assert _pack_dos_filename(filename) == (name_packed, ext_packed)
     assert _unpack_dos_filename(name_packed, ext_packed) == filename
@@ -132,7 +132,7 @@ def test__pack_unpack_dos_filename(filename, name_packed, ext_packed):
     ],
 )
 def test_valid_dos_filename(filename):
-    """Test that ``filename`` is considered a valid DOS filename."""
+    """Test that `filename` is considered a valid DOS filename."""
     assert _is_valid_dos_filename(filename)
     assert _is_valid_vfat_filename(filename)
     assert not _requires_vfat(filename)
@@ -188,7 +188,7 @@ def test_valid_dos_filename(filename):
     ],
 )
 def test_valid_vfat_but_invalid_dos_filename(filename, saved_as_vfat):
-    """Test that ``filename`` is considered a valid VFAT filename but not a valid DOS
+    """Test that `filename` is considered a valid VFAT filename but not a valid DOS
     filename and whether a VFAT LFN is required to store the filename.
     """
     assert _is_valid_vfat_filename(filename)
@@ -226,7 +226,7 @@ def test_valid_vfat_but_invalid_dos_filename(filename, saved_as_vfat):
     ],
 )
 def test_invalid_vfat_filename(filename):
-    """Test that ``filename`` is not considered a valid VFAT filename."""
+    """Test that `filename` is not considered a valid VFAT filename."""
     assert not _is_valid_vfat_filename(filename)
     assert not _is_valid_dos_filename(filename)
     with pytest.raises(ValidationError, match="Invalid filename.*"):
@@ -249,8 +249,8 @@ def test_invalid_vfat_filename(filename):
     ],
 )
 def test__get_case_info(filename, name_lower, ext_lower):
-    """Test that ``_get_case_info()`` returns the correct case information flags for
-    ``filename``.
+    """Test that `_get_case_info()` returns the correct case information flags for
+    `filename`.
     """
     assert _is_valid_dos_filename(filename.upper())  # internal check
     assert bool(_get_case_info(filename) & CASE_INFO_NAME_LOWER) is name_lower
@@ -280,8 +280,8 @@ def test__get_case_info(filename, name_lower, ext_lower):
     ],
 )
 def test__vfat_filename_checksum(filename, checksum):
-    """Test that ``_vfat_filename_checksum()`` returns the expected checksum for
-    ``filename``.
+    """Test that `_vfat_filename_checksum()` returns the expected checksum for
+    `filename`.
     """
     assert _vfat_filename_checksum(filename) == checksum
 
@@ -406,11 +406,11 @@ def test__vfat_to_dos_filename_single(filename, dos_filename):
 def test__vfat_to_dos_filename_multiple(pairs):
     """Test DOS filename generation from VFAT filenames for non-empty directories.
 
-    ``pairs`` is a list of ``(filename, dos_filename)`` tuples where ``dos_filename``
+    `pairs` is a list of `(filename, dos_filename)` tuples where `dos_filename`
     is successively added to the list of existing DOS filenames in an imaginary
     directory.
-    ``dos_filename`` is the DOS filename which is supposed to be assigned to the VFAT
-    filename ``filename``.
+    `dos_filename` is the DOS filename which is supposed to be assigned to the VFAT
+    filename `filename`.
     """
     existing_filenames: list[str] = []
     for filename, dos_filename in pairs:
@@ -465,8 +465,8 @@ def test__dos_filename_checksum(name_bytes, ext_bytes, expected):
     ],
 )
 def test_pack_unpack_dos_datetime(dt, packed):
-    """Test successful DOS datetime packing and unpacking via ``pack_dos_datetime()``
-    and ``unpack_dos_datetime()``.
+    """Test successful DOS datetime packing and unpacking via `pack_dos_datetime()`
+    and `unpack_dos_datetime()`.
     """
     assert pack_dos_datetime(dt) == packed
     assert unpack_dos_datetime(*packed) == dt
@@ -548,7 +548,7 @@ def test_pack_dos_datetime_fail_invalid_date(dt):
     ],
 )
 def test_unpack_dos_datetime_none(packed):
-    """Test that ``unpack_dos_datetime()`` returns ``None`` for invalid packed
+    """Test that `unpack_dos_datetime()` returns `None` for invalid packed
     datetimes.
     """
     assert unpack_dos_datetime(*packed) is None
@@ -572,7 +572,7 @@ EIGHT_DOT_THREE_ENTRY_EXAMPLE = EightDotThreeEntry(
 
 
 class TestEightDotThreeEntry:
-    """Tests for ``EightDotThreeEntry``."""
+    """Tests for `EightDotThreeEntry`."""
 
     @pytest.mark.parametrize(
         ["name", "extension", "case_info_vfat", "filename", "dos_filename"],
@@ -601,7 +601,7 @@ class TestEightDotThreeEntry:
     def test_filename_and_hint(
         self, name, extension, case_info_vfat, filename, dos_filename
     ):
-        """Test that ``filename()`` and the ``dos_filename`` property return the
+        """Test that `filename()` and the `dos_filename` property return the
         expected values.
         """
         entry = replace(
@@ -631,7 +631,7 @@ class TestEightDotThreeEntry:
         ],
     )
     def test_cluster(self, cluster_low, cluster_high, fat_32, cluster):
-        """Test that ``cluster()`` returns the correct cluster number based on the
+        """Test that `cluster()` returns the correct cluster number based on the
         file system type and the raw cluster values.
         """
         entry = replace(
@@ -653,7 +653,7 @@ class TestEightDotThreeEntry:
         ],
     )
     def test_hint(self, name, hint):
-        """Test that the ``hint`` property matches the expected value based on the
+        """Test that the `hint` property matches the expected value based on the
         raw filename.
         """
         entry = replace(EIGHT_DOT_THREE_ENTRY_EXAMPLE, name=name)
@@ -670,7 +670,7 @@ class TestEightDotThreeEntry:
         ],
     )
     def test_attributes(self, attributes_int, attributes, volume_label):
-        """Test that the ``attributes`` and ``volume_label`` properties match the
+        """Test that the `attributes` and `volume_label` properties match the
         expected values.
         """
         entry = replace(EIGHT_DOT_THREE_ENTRY_EXAMPLE, _attributes=attributes_int)
@@ -710,8 +710,8 @@ class TestEightDotThreeEntry:
     def test_datetime_properties(
         self, date, time, time_ten_ms, created, last_accessed, last_modified
     ):
-        """Test that the ``created``, ``last_accessed``, and ``last_modified``
-        properties match the expected datetimes.
+        """Test that the `created`, `last_accessed`, and `last_modified` properties
+        match the expected datetimes.
         """
         entry = replace(
             EIGHT_DOT_THREE_ENTRY_EXAMPLE,
@@ -740,7 +740,7 @@ VFAT_ENTRY_EXAMPLE = VfatEntry(
 
 
 class TestVfatEntry:
-    """Tests for ``VfatEntry``."""
+    """Tests for `VfatEntry`."""
 
     @pytest.mark.parametrize(
         "replace_kwargs",
@@ -889,7 +889,7 @@ ENTRY_EXAMPLE_MULTIPLE_VFAT = Entry(**ENTRY_KWARGS_EXAMPLE_MULTIPLE_VFAT, vfat=T
 
 
 class TestEntry:
-    """Tests for ``Entry``."""
+    """Tests for `Entry`."""
 
     @pytest.mark.parametrize(
         ["init_kwargs", "vfat"],
@@ -901,7 +901,7 @@ class TestEntry:
         ],
     )
     def test_init_success(self, init_kwargs, vfat):
-        """Test ``Entry`` initialization for succeeding cases."""
+        """Test `Entry` initialization for succeeding cases."""
         Entry(**init_kwargs, vfat=vfat)
 
     @pytest.mark.parametrize(
@@ -909,8 +909,8 @@ class TestEntry:
         [ENTRY_KWARGS_EXAMPLE_SINGLE_VFAT, ENTRY_KWARGS_EXAMPLE_MULTIPLE_VFAT],
     )
     def test_init_fail_vfat_support(self, init_kwargs):
-        """Test that ``Entry`` fails to initialize with VFAT entries if ``vfat`` is
-        ``False``.
+        """Test that `Entry` fails to initialize with VFAT entries if `vfat` is
+        `False`.
         """
         with pytest.raises(ValueError, match=".*VFAT support.*"):
             Entry(**init_kwargs, vfat=False)
@@ -927,7 +927,7 @@ class TestEntry:
     )
     @pytest.mark.parametrize("vfat", [False, True])
     def test_init_fail_edt_entry(self, replace_kwargs, msg_contains, vfat):
-        """Test that ``Entry`` fails to initialize with 8.3 entries with specific
+        """Test that `Entry` fails to initialize with 8.3 entries with specific
         filename hints or specific attributes.
         """
         edt_entry = replace(EIGHT_DOT_THREE_ENTRY_EXAMPLE, **replace_kwargs)
@@ -935,7 +935,7 @@ class TestEntry:
             Entry(edt_entry, vfat=vfat)
 
     def test_init_fail_too_many_vfat_entries(self):
-        """Test that ``Entry`` fails to initialize with more than 20 VFAT entries."""
+        """Test that `Entry` fails to initialize with more than 20 VFAT entries."""
         edt_entry = ENTRY_EXAMPLE_MULTIPLE_VFAT.eight_dot_three
         vfat_entries = (
             [ENTRY_EXAMPLE_MULTIPLE_VFAT.vfat_entries[0]]
@@ -978,7 +978,7 @@ class TestEntry:
         ],
     )
     def test_init_fail_vfat_entries(self, edt_entry, vfat_entries, msg_contains):
-        """Test that ``Entry`` fails to initialize with invalid VFAT entries."""
+        """Test that `Entry` fails to initialize with invalid VFAT entries."""
         with pytest.raises(ValidationError, match=f".*{msg_contains}.*"):
             Entry(edt_entry, vfat_entries, vfat=True)
 
@@ -1017,7 +1017,7 @@ class TestEntry:
         ],
     )
     def test_bytes(self, entry, expected_bytes):
-        """Test that converting an ``Entry`` to bytes returns the expected value."""
+        """Test that converting an `Entry` to bytes returns the expected value."""
         assert bytes(entry) == expected_bytes
 
     @pytest.mark.parametrize(
@@ -1095,7 +1095,7 @@ class TestEntry:
         eight_dot_three,
         vfat_entries,
     ):
-        """Test that properties defined on ``Entry`` match the expected values."""
+        """Test that properties defined on `Entry` match the expected values."""
         assert entry.filename(vfat=True) == filename
         assert entry.filename(vfat=False) == dos_filename
         assert entry.dos_filename == dos_filename
@@ -1136,7 +1136,7 @@ class TestEntry:
         ],
     )
     def test_eq(self, entry, other_entry, equal):
-        """Test that ``Entry`` equality works as expected."""
+        """Test that `Entry` equality works as expected."""
         assert (entry == other_entry) is equal
 
     @pytest.mark.parametrize(
@@ -1148,7 +1148,7 @@ class TestEntry:
         ],
     )
     def test_repr(self, entry):
-        """Test that the ``repr()`` of an ``Entry`` contains useful information."""
+        """Test that the `repr()` of an `Entry` contains useful information."""
         repr_ = repr(entry)
         assert "Entry" in repr_
         assert entry.filename(vfat=True) in repr_
@@ -1174,7 +1174,7 @@ class TestEntry:
     ],
 )
 def test_entry_match(entry, filename, vfat, result):
-    """Test that ``entry_match()`` returns the expected result."""
+    """Test that `entry_match()` returns the expected result."""
     assert entry_match(filename, entry, vfat=vfat) is result
 
 
@@ -1371,7 +1371,7 @@ def test_iter_entries(
     output_entries: list[tuple[Entry | EightDotThreeEntry, ...]],
     add_end_of_entries: bool,
 ):
-    """Test that ``iter_entries()`` yields the expected entries."""
+    """Test that `iter_entries()` yields the expected entries."""
     iter_bytes = [bytes(entry) for entry in input_edt_entries]
     if add_end_of_entries:
         iter_bytes.append(bytes(END_OF_ENTRIES_EXAMPLE))

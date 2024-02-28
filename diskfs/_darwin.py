@@ -52,8 +52,8 @@ FRAMEWORK_BASE = Path("/System/Library/Frameworks")
 
 
 def framework(name: str) -> CDLL:
-    """Return a ``ctypes`` shared library object for the framework available under the
-    name ``name``.
+    """Return a `ctypes` shared library object for the framework available under the
+    name `name`.
     """
     path = FRAMEWORK_BASE / f"{name}.framework" / name
     return CDLL(str(path))

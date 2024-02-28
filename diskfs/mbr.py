@@ -55,7 +55,7 @@ def _lba_to_chs(lba: int, heads: int, sectors_per_track: int) -> tuple[int, int,
     """Convert a logical block address to its cylinder-head-sector equivalent for a
     specific disk geometry.
 
-    Returns a ``tuple`` of (cylinder, head, sector).
+    Returns a `tuple` of (cylinder, head, sector).
     """
     if lba < 0:
         raise ValueError("LBA must be zero or positive")
@@ -74,7 +74,7 @@ def _lba_to_chs(lba: int, heads: int, sectors_per_track: int) -> tuple[int, int,
 def _pack_chs_address(
     cylinder: int, head: int, sector: int, *, check_validity: bool = True
 ) -> tuple[int, int, int]:
-    """Get ``tuple`` of ``int`` representation of a cylinder-head-sector address as
+    """Get `tuple` of `int` representation of a cylinder-head-sector address as
     used in MBR partition entries.
 
     +---+---+---+---+---+---+---+---+
@@ -85,7 +85,7 @@ def _pack_chs_address(
     |            cyl 7-0            |  byte 3
     +---+---+---+---+---+---+---+---+
 
-    If ``check_validity`` is not set, this function only checks the validity of
+    If `check_validity` is not set, this function only checks the validity of
     passed values in terms of whether they are technically able to be packed into the
     three-byte structure depicted above. Note that the following CHS addresses are
     also considered invalid:
@@ -94,7 +94,7 @@ def _pack_chs_address(
     - All addresses with a head value of 255 -- especially (1023, 255, 63)
     - (1023, 254, 63)
 
-    Returns a ``tuple`` of (byte 1, byte 2, byte 3), each expressed as an ``int``.
+    Returns a `tuple` of (byte 1, byte 2, byte 3), each expressed as an `int`.
 
     See https://en.wikipedia.org/wiki/Master_boot_record#Partition_table_entries.
     """
@@ -129,7 +129,7 @@ def _pack_chs_address(
 
 
 def _check_lss(lss: int) -> None:
-    """Check if a logical sector size of ``lss`` works with MBR partitioning."""
+    """Check if a logical sector size of `lss` works with MBR partitioning."""
     if lss < MIN_LSS:
         raise ValueError(
             f"MBR partitioning requires a logical sector size of at least "
@@ -170,8 +170,8 @@ class PartitionType(Enum):
 class PartitionEntry:
     """MBR partition entry.
 
-    Do not use ``__init__`` directly, use ``PartitionEntry.new()`` or
-    ``PartitionEntry.new_empty()`` instead.
+    Do not use `__init__` directly, use `PartitionEntry.new()` or
+    `PartitionEntry.new_empty()` instead.
     """
 
     SIZE = 16
@@ -194,8 +194,8 @@ class PartitionEntry:
     ) -> PartitionEntry:
         """New non-empty partition entry.
 
-        ``PartitionType.EMPTY`` must not be passed as ``type_``, use
-        ``PartitionEntry.new_empty()`` instead.
+        `PartitionType.EMPTY` must not be passed as `type_`, use
+        `PartitionEntry.new_empty()` instead.
         """
         if isinstance(type_, PartitionType):
             type_int = type_.value
@@ -235,7 +235,7 @@ class PartitionEntry:
 
     @classmethod
     def from_bytes(cls, b: bytes) -> PartitionEntry:
-        """Parse partition entry from ``bytes``.
+        """Parse partition entry from `bytes`.
 
         CHS addresses are ignored.
         """
@@ -258,7 +258,7 @@ class PartitionEntry:
         return cls(start_lba, length_lba, type_, bootable)
 
     def __bytes__(self) -> bytes:
-        """Get ``bytes`` representation of partition entry."""
+        """Get `bytes` representation of partition entry."""
         if self.empty:
             return b"\x00" * self.SIZE
         status = STATUS_ACTIVE if self._bootable else STATUS_INACTIVE
@@ -336,7 +336,7 @@ class PartitionEntry:
 class Table:
     """MBR partition table.
 
-    Do not use ``__init__`` directly, use ``Table.new()`` instead.
+    Do not use `__init__` directly, use `Table.new()` instead.
     """
 
     SIZE = 512
@@ -372,7 +372,7 @@ class Table:
 
     @classmethod
     def from_bytes(cls, b: bytes) -> Table:
-        """Parse partition table from ``bytes``."""
+        """Parse partition table from `bytes`."""
         if len(b) != cls.SIZE:
             raise ValueError(
                 f"MBR partition table must be {cls.SIZE} bytes long, got {len(b)} bytes"
@@ -391,7 +391,7 @@ class Table:
 
     @classmethod
     def from_disk(cls, disk: Disk) -> Table:
-        """Parse partition table from ``disk``."""
+        """Parse partition table from `disk`."""
         if disk.sector_size.logical < MIN_LSS:
             raise ValueError(
                 f"MBR partitioning requires a logical sector size of at least "
@@ -415,7 +415,7 @@ class Table:
         return table
 
     def __bytes__(self) -> bytes:
-        """Get ``bytes`` representation of MBR partition table."""
+        """Get `bytes` representation of MBR partition table."""
         # only warn to allow for hybrid MBRs
         check_overlapping(self._partitions, warn=True)
 
@@ -428,7 +428,7 @@ class Table:
         return struct.pack(self.FORMAT, self._boot_code, *entries_bytes, SIGNATURE)
 
     def _write_to_disk(self, disk: Disk) -> None:
-        """Write partition table to ``disk``."""
+        """Write partition table to `disk`."""
         _check_lss(disk.sector_size.logical)
         check_overlapping(self._partitions)
         first_usable, last_usable = self.usable_lba(disk.size, disk.sector_size)
@@ -442,7 +442,7 @@ class Table:
     # skipcq: PYL-R0201
     # noinspection PyMethodMayBeStatic
     def usable_lba(self, disk_size: int, sector_size: SectorSize) -> tuple[int, int]:
-        """Return a ``tuple`` of the first and last logical sector which may be used
+        """Return a `tuple` of the first and last logical sector which may be used
         by a partition of this partition table.
         """
         lss = sector_size.logical

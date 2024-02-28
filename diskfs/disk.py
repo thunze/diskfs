@@ -41,12 +41,12 @@ if hasattr(os, "pread") and hasattr(os, "pwrite"):
 else:
 
     def _read(fd: int, size: int, pos: int) -> bytes:
-        """Read ``size`` bytes from file descriptor ``fd`` starting at byte ``pos``."""
+        """Read `size` bytes from file descriptor `fd` starting at byte `pos`."""
         os.lseek(fd, pos, os.SEEK_SET)
         return os.read(fd, size)
 
     def _write(fd: int, b: ReadableBuffer, pos: int) -> int:
-        """Write raw bytes ``b`` to file descriptor ``fd`` starting at byte ``pos``."""
+        """Write raw bytes `b` to file descriptor `fd` starting at byte `pos`."""
         os.lseek(fd, pos, os.SEEK_SET)
         return os.write(fd, b)  # type: ignore[arg-type]
 
@@ -56,7 +56,7 @@ class Disk:
 
     Also serves as an accessor to the underlying file or block device.
 
-    Do not use ``__init__`` directly, use ``Disk.open()`` or ``Disk.new()`` instead.
+    Do not use `__init__` directly, use `Disk.open()` or `Disk.new()` instead.
     """
 
     def __init__(
@@ -84,7 +84,7 @@ class Disk:
 
     @classmethod
     def new(cls, path: StrPath, size: int, *, sector_size: int = 512) -> Disk:
-        """Create a new disk image at ``path``."""
+        """Create a new disk image at `path`."""
         if size <= 0:
             raise ValueError("Disk size must be greater than 0")
         if sector_size <= 0:
@@ -104,7 +104,7 @@ class Disk:
     def open(
         cls, path: StrPath, *, sector_size: int = None, readonly: bool = True
     ) -> Disk:
-        """Open block device or disk image at ``path``."""
+        """Open block device or disk image at `path`."""
         read_write_flag = os.O_RDONLY if readonly else os.O_RDWR
         flags = read_write_flag | getattr(os, "O_BINARY", 0)
         fd = os.open(path, flags)
@@ -139,7 +139,7 @@ class Disk:
             raise
 
     def read_at(self, pos: int, size: int) -> bytes:
-        """Read ``size`` sectors from the disk starting at sector ``pos``.
+        """Read `size` sectors from the disk starting at sector `pos`.
 
         Uses the logical sector size of the disk.
         """
@@ -170,7 +170,7 @@ class Disk:
     def write_at(
         self, pos: int, b: ReadableBuffer, *, fill_zeroes: bool = False
     ) -> None:
-        """Write raw bytes ``b`` to the disk starting at sector ``pos``.
+        """Write raw bytes `b` to the disk starting at sector `pos`.
 
         Uses the logical sector size of the disk.
 
@@ -220,7 +220,7 @@ class Disk:
         os.fsync(self._fd)
 
     def read_table(self) -> None:
-        """Try to read a partition table on the disk and update the ``Disk`` object
+        """Try to read a partition table on the disk and update the `Disk` object
         accordingly.
 
         If no partition table can be parsed, the disk is considered unpartitioned.
@@ -266,7 +266,7 @@ class Disk:
         likely be overwritten and thus be rendered unusable. Always create a backup
         of your data before (re-)partitioning a disk.
 
-        If the disk is already partitioned, ``ValueError`` will be raised.
+        If the disk is already partitioned, `ValueError` will be raised.
         """
         self.check_closed()
         self.check_writable()
@@ -287,9 +287,9 @@ class Disk:
             reread_partition_table(self._fd)
 
     def volume(self, partition: int = None) -> Volume:
-        """Get the volume corresponding to partition ``partition`` on the disk.
+        """Get the volume corresponding to partition `partition` on the disk.
 
-        If ``partition`` is not specified and the disk is unpartitioned, a volume
+        If `partition` is not specified and the disk is unpartitioned, a volume
         spanning the whole disk is returned.
         """
         self.check_closed()
@@ -364,7 +364,7 @@ class Disk:
     def table(self) -> Table | None:
         """Partition table last detected on the disk.
 
-        ``None`` if no partition table was detected at that time.
+        `None` if no partition table was detected at that time.
         """
         return self._table
 
@@ -380,12 +380,12 @@ class Disk:
         return self._writable
 
     def check_closed(self) -> None:
-        """Raise ``ValueError`` if the underlying file or block device is closed."""
+        """Raise `ValueError` if the underlying file or block device is closed."""
         if self._closed:
             raise ValueError("I/O operation on closed disk")
 
     def check_writable(self) -> None:
-        """Raise ``ValueError`` if the underlying file or block device is read-only."""
+        """Raise `ValueError` if the underlying file or block device is read-only."""
         if not self._writable:
             raise ValueError("Disk is not writable")
 

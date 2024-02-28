@@ -1,4 +1,4 @@
-"""Exception classes, data structures and helper functions used across ``diskfs``."""
+"""Exception classes, data structures and helper functions used across `diskfs`."""
 
 from __future__ import annotations
 
@@ -53,11 +53,11 @@ class AlignmentWarning(UserWarning):
 class DeviceProperties(NamedTuple):
     """Additional properties provided for block devices.
 
-    - ``removable``: Whether the device is removable.
-    - ``vendor``: Name of the vendor of the device (e.g. 'SanDisk').
-    - ``model``: Model or product name of the device (e.g. 'Ultra Fit').
+    - `removable`: Whether the device is removable.
+    - `vendor`: Name of the vendor of the device (e.g. 'SanDisk').
+    - `model`: Model or product name of the device (e.g. 'Ultra Fit').
 
-    A property is ``None`` if it could not be determined for the block device.
+    A property is `None` if it could not be determined for the block device.
     """
 
     removable: bool | None
@@ -66,18 +66,18 @@ class DeviceProperties(NamedTuple):
 
 
 class SectorSize(NamedTuple):
-    """``NamedTuple`` of the logical and physical sector size of a disk."""
+    """`NamedTuple` of the logical and physical sector size of a disk."""
 
     logical: int
     physical: int
 
 
 def is_power_of_two(value: int) -> bool:
-    """Check if ``value`` is a power of two.
+    """Check if `value` is a power of two.
 
-    ``value`` must be an ``int`` greater than zero.
+    `value` must be an `int` greater than zero.
 
-    Returns whether ``value`` can be expressed as 2 to the power of x, with x being
+    Returns whether `value` can be expressed as 2 to the power of x, with x being
     an integer greater than or equal to zero.
     """
     if value <= 0:

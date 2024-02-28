@@ -1,4 +1,4 @@
-"""Protocols implemented in the ``table`` package and various partition entry checks."""
+"""Protocols implemented in the `table` package and various partition entry checks."""
 
 from __future__ import annotations
 
@@ -39,11 +39,11 @@ class PartitionEntry(Protocol):
 
     @classmethod
     def from_bytes(cls, b: bytes) -> PartitionEntry:
-        """Parse partition entry from ``bytes``."""
+        """Parse partition entry from `bytes`."""
         ...
 
     def __bytes__(self) -> bytes:
-        """Get ``bytes`` representation of partition entry."""
+        """Get `bytes` representation of partition entry."""
         ...
 
     @property
@@ -78,15 +78,15 @@ class Table(Protocol):
 
     @classmethod
     def from_disk(cls, disk: Disk) -> Table:
-        """Parse partition table from ``disk``."""
+        """Parse partition table from `disk`."""
         ...
 
     def _write_to_disk(self, disk: Disk) -> None:
-        """Write partition table to ``disk``."""
+        """Write partition table to `disk`."""
         ...
 
     def usable_lba(self, disk_size: int, sector_size: SectorSize) -> tuple[int, int]:
-        """Return a ``tuple`` of the first and last logical sector which may be used
+        """Return a `tuple` of the first and last logical sector which may be used
         by a partition of this partition table.
         """
         ...
@@ -106,8 +106,8 @@ def check_overlapping(
 ) -> None:
     """Check if the partitions' bounds don't overlap with each other.
 
-    By default, ``BoundsError`` is raised if any partitions are found to overlap with
-    each other. If ``warn`` is ``True``, ``BoundsWarning`` is emitted instead of
+    By default, `BoundsError` is raised if any partitions are found to overlap with
+    each other. If `warn` is `True`, `BoundsWarning` is emitted instead of
     raising an exception.
     """
     partitions = tuple(partitions)
@@ -135,13 +135,13 @@ def check_overlapping(
 def check_bounds(
     partition: PartitionEntry, min_lba: int, max_lba: int, *, warn: bool = False
 ) -> None:
-    """Check if a partition's bounds fall within the range of ``(min_lba, max_lba)``.
+    """Check if a partition's bounds fall within the range of `(min_lba, max_lba)`.
 
-    Both ``min_lba`` and ``max_lba`` are *inclusive*.
+    Both `min_lba` and `max_lba` are *inclusive*.
 
-    By default, ``BoundsError`` is raised if the partition doesn't fall within the.
-    range of ``(min_lba, max_lba)``. If ``warn`` is ``True``, ``BoundsWarning`` is
-    emitted instead of raising an exception.
+    By default, `BoundsError` is raised if the partition doesn't fall within the.
+    range of `(min_lba, max_lba)`. If `warn` is `True`, `BoundsWarning` is emitted
+    instead of raising an exception.
     """
     start = partition.start_lba
     end = partition.end_lba
@@ -162,10 +162,9 @@ def check_alignment(
 ) -> bool:
     """Check if a partition's bounds align to the physical sector size of a disk.
 
-    Returns ``True`` or ``False`` depending on whether the partition is properly
-    aligned.
+    Returns `True` or `False` depending on whether the partition is properly aligned.
 
-    If ``warn`` is `True``, ``AlignmentWarning`` is emitted if the partition is not
+    If `warn` is `True`, `AlignmentWarning` is emitted if the partition is not
     properly aligned.
     """
     lss, pss = sector_size

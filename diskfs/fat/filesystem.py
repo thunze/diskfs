@@ -1,4 +1,4 @@
-"""FAT implementation of the ``FileSystem`` protocol."""
+"""FAT implementation of the `FileSystem` protocol."""
 
 from __future__ import annotations
 
@@ -112,7 +112,7 @@ class FdTableRow(NamedTuple):
 
 
 class DirEntry:
-    """Class with functionality similar to ``os.DirEntry``."""
+    """Class with functionality similar to `os.DirEntry`."""
 
     def __init__(
         self, fs: FileSystem, dirpath: PurePath, filename: str, stat: stat_result
@@ -155,7 +155,7 @@ class DirEntry:
 
 
 def _check_directory(node: Node | Root, *, hint: StrPath) -> None:
-    """Ensure that ``node`` is a directory node.
+    """Ensure that `node` is a directory node.
 
     :param hint: Path shown as a hint in the exception.
     """
@@ -164,7 +164,7 @@ def _check_directory(node: Node | Root, *, hint: StrPath) -> None:
 
 
 def _check_file(node: Node | Root, *, hint: StrPath) -> None:
-    """Ensure that ``node`` is a regular file node.
+    """Ensure that `node` is a regular file node.
 
     :param hint: Path shown as a hint in the exception.
     """
@@ -188,8 +188,8 @@ def locked(
 class FileSystem(FileSystemBase):
     """FAT file system.
 
-    Do not use ``__init__`` directly, use ``FileSystem.create()`` or
-    ``FileSystem.from_volume()`` instead.
+    Do not use `__init__` directly, use `FileSystem.create()` or
+    `FileSystem.from_volume()` instead.
     """
 
     def __init__(
@@ -218,7 +218,7 @@ class FileSystem(FileSystemBase):
         label: str = "",
         vfat: bool = True,
     ) -> FileSystem:
-        """Create new file system on ``volume``.
+        """Create new file system on `volume`.
 
         **Caution:** If any file system already resides on the volume, it will be
         overwritten and thus be rendered unusable. Always create a backup of your
@@ -235,9 +235,9 @@ class FileSystem(FileSystemBase):
 
     @classmethod
     def from_volume(cls, volume: Volume, *, vfat: bool = True) -> FileSystem:
-        """Get file system residing on partition ``partition`` of ``disk``.
+        """Get file system residing on partition `partition` of `disk`.
 
-        If ``partition`` is not specified, it is tried to parse a standalone file
+        If `partition` is not specified, it is tried to parse a standalone file
         system on the unpartitioned disk.
         """
         if volume.size_lba < MIN_VOLUME_SIZE_READ:
@@ -305,9 +305,9 @@ class FileSystem(FileSystemBase):
     def _scandir(
         self, entry: Entry = None, *, only_useful: Literal[False, True] = True
     ) -> Iterator[Entry | EightDotThreeEntry]:
-        """Yield directory entries found for directory with entry ``entry``.
+        """Yield directory entries found for directory with entry `entry`.
 
-        If ``entry`` is ``None``, the root directory is scanned.
+        If `entry` is `None`, the root directory is scanned.
         """
         if entry is not None:
             cluster = entry.cluster(fat_32=self._fat_32)
@@ -408,12 +408,12 @@ class FileSystem(FileSystemBase):
         parent_entry: Entry | None,
         parent_path: PurePath,
     ) -> None:
-        """Replace entry with file name of ``old_entry`` with ``new_entry_`` in
-        directory with entry ``parent_entry``.
+        """Replace entry with file name of `old_entry` with `new_entry_` in
+        directory with entry `parent_entry`.
 
-        If ``old_entry`` is ``None``, ``new_entry`` is created.
-        If ``new_entry`` is ``None``, ``old_entry`` is deleted.
-        If ``parent_entry`` is ``None``, the root directory is used as the parent
+        If `old_entry` is `None`, `new_entry` is created.
+        If `new_entry` is `None`, `old_entry` is deleted.
+        If `parent_entry` is `None`, the root directory is used as the parent
         directory.
         """
         if old_entry == new_entry:
@@ -539,7 +539,7 @@ class FileSystem(FileSystemBase):
         raise OSError(EBADF, os.strerror(EBADF), fd)
 
     def _stat_for_entry(self, entry: Entry = None) -> stat_result:
-        """Get ``stat_result`` for ``entry``."""
+        """Get `stat_result` for `entry`."""
         dev = getattr(self._boot_sector.bpb, "volume_id", 0)
         if entry is None:
             return stat_result((S_IFDIR | PERMISSIONS_DIR, 0, dev, 1, 0, 0, 0, 0, 0, 0))
@@ -839,25 +839,25 @@ class FileSystem(FileSystemBase):
         dst_parent.children_parsed.append(new_node)
 
     def rename(self, src: StrPath, dst: StrPath) -> None:
-        """Rename the file or directory ``src`` to ``dst``.
+        """Rename the file or directory `src` to `dst`.
 
-        If ``dst`` exists, ``FileExistsError`` is raised.
+        If `dst` exists, `FileExistsError` is raised.
 
-        Note that, in contrast to ``os.rename()``, the behavior of this method is
+        Note that, in contrast to `os.rename()`, the behavior of this method is
         consistent over all platforms.
         """
         # noinspection PyTypeChecker
         self._move(src, dst, replace=False)
 
     def replace(self, src: StrPath, dst: StrPath) -> None:
-        """Rename the file or directory ``src`` to ``dst``.
+        """Rename the file or directory `src` to `dst`.
 
-        If ``src`` is a file and ``dst`` is a directory or vice-versa, an
-        ``IsADirectoryError`` or a ``NotADirectoryError`` will be raised respectively.
-        If ``dst`` is a non-empty directory, ``FileExistsError`` is raised.
-        In all other cases, ``dst`` will be replaced silently if it exists.
+        If `src` is a file and `dst` is a directory or vice-versa, an
+        `IsADirectoryError` or a `NotADirectoryError` will be raised respectively.
+        If `dst` is a non-empty directory, `FileExistsError` is raised.
+        In all other cases, `dst` will be replaced silently if it exists.
 
-        Note that, in contrast to ``os.replace()``, the behavior of this method is
+        Note that, in contrast to `os.replace()`, the behavior of this method is
         consistent over all platforms.
         """
         # noinspection PyTypeChecker

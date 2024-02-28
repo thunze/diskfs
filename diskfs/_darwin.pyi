@@ -1,4 +1,4 @@
-"""Stub for the ``_darwin`` module."""
+"""Stub for the `_darwin` module."""
 
 # noinspection PyUnresolvedReferences, PyProtectedMember
 from ctypes import _CData, c_void_p

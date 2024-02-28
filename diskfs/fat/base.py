@@ -1,4 +1,4 @@
-"""Classes used across the ``fat`` package."""
+"""Classes used across the `fat` package."""
 
 from __future__ import annotations
 
@@ -18,13 +18,13 @@ class FatType(Enum):
 
     @classmethod
     def from_fs_type(cls, fs_type: FsType) -> FatType:
-        """Return the ``FatType`` corresponding to ``fs_type``.
+        """Return the `FatType` corresponding to `fs_type`.
 
-        If ``fs_type`` represents a non-FAT file system type, ``KeyError`` is raised.
+        If `fs_type` represents a non-FAT file system type, `KeyError` is raised.
         """
         return cls[fs_type.name]
 
     @property
     def fs_type(self) -> FsType:
-        """``FsType`` corresponding to the ``FatType``."""
+        """`FsType` corresponding to the `FatType`."""
         return FsType[self.name]

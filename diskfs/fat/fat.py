@@ -37,7 +37,7 @@ CLUSTER_AVOID_DATA = {
 class Fat:
     """FAT region management.
 
-    Choose a different FAT via ``main_fat`` if the first one is (partially)
+    Choose a different FAT via `main_fat` if the first one is (partially)
     unreadable because of bad sectors.
     """
 
@@ -97,19 +97,19 @@ class Fat:
             )
 
     def _check_cluster_key(self, cluster: int) -> None:
-        """Raise ``IndexError`` if ``cluster`` not a valid cluster index for the FAT."""
+        """Raise `IndexError` if `cluster` not a valid cluster index for the FAT."""
         key_max = self._entries - 1
         if not 0 <= cluster <= key_max:
             raise IndexError(f"Cluster index must not exceed FAT bounds (0, {key_max})")
 
     def _check_cluster_value(self, cluster: int) -> None:
-        """Raise ``ValueError`` if ``cluster`` not a valid cluster value for the FAT."""
+        """Raise `ValueError` if `cluster` not a valid cluster value for the FAT."""
         value_max = CLUSTER_EOC[self._fat_type]
         if not 0 <= cluster <= value_max:
             raise ValueError(f"Cluster value must be in range (0, {value_max})")
 
     def _check_cluster_data_read(self, cluster: int) -> None:
-        """Raise ``ValueError`` if ``cluster`` is not the number of a readable cluster
+        """Raise `ValueError` if `cluster` is not the number of a readable cluster
         with respect to the FAT.
         """
         read_max = self._entries - 1
@@ -119,7 +119,7 @@ class Fat:
             )
 
     def _check_cluster_data_write(self, cluster: int) -> None:
-        """Raise ``ValueError`` if ``cluster`` is not the number of a writable cluster
+        """Raise `ValueError` if `cluster` is not the number of a writable cluster
         with respect to the FAT.
         """
         write_max = min(self._entries, CLUSTER_AVOID_DATA[self._fat_type]) - 1
@@ -134,7 +134,7 @@ class Fat:
 
     def _ensure_buffer(self, sector_offset: int) -> None:
         """Ensure that the internal buffer holds the data (usually one sector)
-        found at the start sector of the selected main FAT + ``sector_offset``.
+        found at the start sector of the selected main FAT + `sector_offset`.
 
         If a data range other than the one already held by the buffer is requested,
         the buffer is flushed before data is read from the disk.
@@ -170,7 +170,7 @@ class Fat:
             self._buffer = (buffer, sector_offset, False)
 
     def _get_io_info(self, key: int) -> tuple[int, int, int]:
-        """Return a ``tuple`` of ``(sector_offset, bytes_offset_sector, byte_count)``
+        """Return a `tuple` of `(sector_offset, bytes_offset_sector, byte_count)`
         to be used for read and write operations on the FAT table.
         """
         if self._fat_type is FatType.FAT_12:
@@ -188,7 +188,7 @@ class Fat:
         return sector_offset, bytes_offset_sector, byte_count
 
     def __getitem__(self, key: int) -> int:
-        """Read the FAT entry with index ``key``."""
+        """Read the FAT entry with index `key`."""
         self._check_cluster_key(key)
         sector_offset, bytes_offset_buffer, byte_count = self._get_io_info(key)
 
@@ -210,7 +210,7 @@ class Fat:
         return value
 
     def __setitem__(self, key: int, value: int) -> None:
-        """Set value of the FAT entry with index ``key``."""
+        """Set value of the FAT entry with index `key`."""
         self._volume.check_writable()
 
         self._check_cluster_key(key)
@@ -241,16 +241,16 @@ class Fat:
         self._buffer = (buffer, sector_offset, True)  # We altered the buffer
 
     def set_eoc(self, key: int) -> None:
-        """Mark FAT entry with index ``key`` as the end of a cluster chain."""
+        """Mark FAT entry with index `key` as the end of a cluster chain."""
         eoc = CLUSTER_EOC[self._fat_type]
         self[key] = eoc
 
     def set_empty(self, key: int) -> None:
-        """Mark FAT entry with index ``key`` as unused."""
+        """Mark FAT entry with index `key` as unused."""
         self[key] = CLUSTER_EMPTY
 
     def get_chain(self, start_cluster: int) -> Iterator[int]:
-        """Yield cluster numbers of cluster chain starting with ``start_cluster``."""
+        """Yield cluster numbers of cluster chain starting with `start_cluster`."""
         bad_cluster = BAD_CLUSTER[self._fat_type]
         cluster = start_cluster
 
@@ -262,7 +262,7 @@ class Fat:
             cluster = self[cluster]
 
     def next_free_clusters(self, count: int) -> Iterator[int]:
-        """Yield the numbers of the next ``count`` free clusters."""
+        """Yield the numbers of the next `count` free clusters."""
         avoid_data = CLUSTER_AVOID_DATA[self._fat_type]
         found = 0  # Count of free clusters already found
         # noinspection PyTypeChecker

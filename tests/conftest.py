@@ -14,7 +14,7 @@ import pytest
 def tempdir():
     """Fixture providing a new temporary directory for testing purposes.
 
-    Returns a ``pathlib.Path`` object representing the path of the temporary directory.
+    Returns a `pathlib.Path` object representing the path of the temporary directory.
     """
     path = Path(mkdtemp())
     yield path
@@ -25,7 +25,7 @@ def tempdir():
 def tempfile():
     """Fixture providing a new temporary file for testing purposes.
 
-    Returns a ``pathlib.Path`` object representing the path of the temporary file.
+    Returns a `pathlib.Path` object representing the path of the temporary file.
     """
     fd, path_str = mkstemp()
     os.close(fd)  # we are going to use a Path object instead
@@ -133,7 +133,7 @@ else:
 
 block_device.__doc__ = """Fixture providing a virtual block device for testing purposes.
 
-Parametrized using a ``tuple`` of (desired size of the block device, desired
+Parametrized using a `tuple` of (desired size of the block device, desired
 sector size pair for the block device). Some platforms do not support setting the
 logical or physical sector size for a virtual block device. In that case,
 values which cannot be used are ignored.

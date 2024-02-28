@@ -37,8 +37,8 @@ def device_properties(fd: int, path: StrPath) -> DeviceProperties:
     sysfs_base = Path(f"/sys/dev/block/{major}:{minor}")
 
     def read_text_or_none(path_: Path) -> str | None:
-        """Return text of file at ``path`` and ``rstrip()`` the resulting text or
-        return ``None`` if ``path`` is not a file.
+        """Return text of file at `path` and `rstrip()` the resulting text or
+        return `None` if `path` is not a file.
         """
         try:
             return path_.read_text(encoding="utf-8").rstrip()
