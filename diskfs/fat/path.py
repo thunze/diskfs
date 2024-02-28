@@ -18,7 +18,7 @@ __all__ = ["Path", "PurePath"]
 
 
 # noinspection PyMethodMayBeStatic
-class _Flavour(_PosixFlavour):
+class _Flavour(_PosixFlavour):  # type: ignore[misc]
     """POSIX flavour, but case-insensitive."""
 
     is_supported = True  # OS-independent

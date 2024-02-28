@@ -96,7 +96,7 @@ class _BpbMeta(_ProtocolMeta):  # pragma: no cover
     """Meta-protocol to enable structural subtyping of BIOS parameter block classes."""
 
     # noinspection PyMethodParameters
-    def __len__(cls) -> int:
+    def __len__(cls) -> int:  # type: ignore[empty-body]
         """Size of the BPB in bytes."""
         ...
 
