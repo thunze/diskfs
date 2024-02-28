@@ -3,9 +3,12 @@
 import os
 import subprocess
 import sys
+import warnings
 from pathlib import Path
 from shutil import copyfileobj, rmtree
+from subprocess import CalledProcessError
 from tempfile import mkdtemp, mkstemp
+from typing import Sequence
 
 import pytest
 
@@ -32,6 +35,21 @@ def tempfile():
     path = Path(path_str)
     yield path
     path.unlink(missing_ok=True)  # clean up
+
+
+class CalledProcessWarning(UserWarning):
+    """Warning issued when a non-critical subprocess returns a non-zero exit status."""
+
+
+def _run_dismount(command: Sequence[str]) -> None:
+    """Execute a dismount command and issue a warning if it fails."""
+    try:
+        subprocess.run(command, check=True)
+    except CalledProcessError as e:
+        warnings.warn(
+            f"Failed to dismount virtual hard disk: {e}",
+            category=CalledProcessWarning,
+        )
 
 
 # Platform-specific implementation
@@ -70,7 +88,7 @@ if sys.platform == "win32":
 
         # Clean up
         dismount_command = f'Dismount-DiskImage -DevicePath "{device_path}"'
-        subprocess.run(["powershell.exe", "-Command", dismount_command])
+        _run_dismount(["powershell.exe", "-Command", dismount_command])
 
 elif sys.platform == "linux":
 
@@ -94,7 +112,7 @@ elif sys.platform == "linux":
         yield device_path
 
         # Clean up
-        subprocess.run(["losetup", "-d", device_path])
+        _run_dismount(["losetup", "-d", device_path])
 
 elif sys.platform == "darwin":
 
@@ -125,7 +143,7 @@ elif sys.platform == "darwin":
         yield device_path
 
         # Clean up
-        subprocess.run(["hdiutil", "detach", device_path])
+        _run_dismount(["hdiutil", "detach", device_path])
 
 else:
     raise RuntimeError(f"Unspported platform {sys.platform!r}")
