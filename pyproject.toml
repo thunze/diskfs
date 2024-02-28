@@ -52,9 +52,12 @@ exclude_lines = [
 
 [tool.mypy]
 disallow_any_generics = true
+disallow_subclassing_any = true
 disallow_untyped_defs = true
+extra_checks = true
 strict_equality = true
 warn_redundant_casts = true
+warn_unused_configs = true
 warn_unused_ignores = true
 warn_return_any = true
 warn_unreachable = true
