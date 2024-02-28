@@ -67,7 +67,7 @@ PROPERTY_STANDARD_QUERY = 0  # value of enum STORAGE_QUERY_TYPE
 class GET_LENGTH_INFORMATION(Structure):
     """Input structure for `IOCTL_DISK_GET_LENGTH_INFO`."""
 
-    _fields_ = [("Length", LARGE_INTEGER)]
+    _fields_ = (("Length", LARGE_INTEGER),)
     Length: int
 
 
@@ -75,11 +75,11 @@ class GET_LENGTH_INFORMATION(Structure):
 class STORAGE_PROPERTY_QUERY(Structure):
     """Input structure for `IOCTL_STORAGE_QUERY_PROPERTY`."""
 
-    _fields_ = [
+    _fields_ = (
         ("PropertyId", c_uint),  # enum STORAGE_PROPERTY_ID
         ("QueryType", c_uint),  # enum STORAGE_QUERY_TYPE
         ("AdditionalParameters", BYTE * 1),
-    ]
+    )
 
 
 # noinspection PyPep8Naming
@@ -90,10 +90,10 @@ class STORAGE_DESCRIPTOR_HEADER(Structure):
     Only used to determine the required buffer size for `STORAGE_DEVICE_DESCRIPTOR`.
     """
 
-    _fields_ = [
+    _fields_ = (
         ("Version", DWORD),
         ("Size", DWORD),
-    ]
+    )
 
 
 # noinspection PyPep8Naming
@@ -111,7 +111,7 @@ def STORAGE_DEVICE_DESCRIPTOR(size: int) -> type[Structure]:
         class STORAGE_DEVICE_DESCRIPTOR_(Structure):
             """`STORAGE_DEVICE_DESCRIPTOR` structure of dynamic size."""
 
-            _fields_ = [
+            _fields_ = (
                 ("Version", DWORD),
                 ("Size", DWORD),
                 ("DeviceType", BYTE),
@@ -125,7 +125,7 @@ def STORAGE_DEVICE_DESCRIPTOR(size: int) -> type[Structure]:
                 ("BusType", c_uint),  # enum STORAGE_BUS_TYPE
                 ("RawPropertiesLength", DWORD),
                 ("RawDeviceProperties", BYTE * raw_properties_size),
-            ]
+            )
 
         return STORAGE_DEVICE_DESCRIPTOR_
 
@@ -145,7 +145,7 @@ class STORAGE_ACCESS_ALIGNMENT_DESCRIPTOR(Structure):
     `StorageAccessAlignmentProperty`.
     """
 
-    _fields_ = [
+    _fields_ = (
         ("Version", DWORD),
         ("Size", DWORD),
         ("BytesPerCacheLine", DWORD),
@@ -153,7 +153,7 @@ class STORAGE_ACCESS_ALIGNMENT_DESCRIPTOR(Structure):
         ("BytesPerLogicalSector", DWORD),
         ("BytesPerPhysicalSector", DWORD),
         ("BytesOffsetForSectorAlignment", DWORD),
-    ]
+    )
 
 
 _DeviceIoControl = windll.kernel32.DeviceIoControl
