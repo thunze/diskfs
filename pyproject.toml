@@ -74,9 +74,13 @@ markers = [
 target-version = "py38"  # minimum
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I"]
+select = [
+    "E", "F", "W", "I",
+    "ASYNC", "C4", "PLC", "PLE", "PLW", "RUF", "S", "UP",
+]
 
 [tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S"]
 "diskfs/darwin.py" = ["E402"]
 "diskfs/linux.py" = ["E402"]
 "diskfs/win32.py" = ["E402"]
