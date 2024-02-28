@@ -187,7 +187,6 @@ FS_INFO_SECTOR_EXAMPLE = FsInfoSector(
 class TestBpbDos200:
     """Tests for `BpbDos200`."""
 
-    # noinspection PyTypeChecker
     @pytest.mark.parametrize(
         "replace_kwargs",
         [{"lss": 1 << (exp + 5), "rootdir_entries": 1 << exp} for exp in range(0, 9)]
@@ -1351,7 +1350,6 @@ class TestBootSector:
         Also test the behavior of `__bytes__()` for these cases.
         """
         b = (bytes(BOOT_SECTOR_START_EXAMPLE) + bytes(bpb)).ljust(510) + SIGNATURE
-        # noinspection PyTypeChecker
         boot_sector = BootSector.from_bytes(b, custom_bpb_type)
         assert isinstance(boot_sector.bpb, custom_bpb_type)
         assert bytes(boot_sector) == b
@@ -1565,7 +1563,6 @@ class TestBootSector:
         with pytest.raises(ValidationError, match=".*(volume|disk).*"):
             boot_sector.validate_for_volume(volume_meta)
 
-    # noinspection PyTypeChecker
     @pytest.mark.parametrize(
         [
             "bpb",

@@ -265,7 +265,7 @@ class Fat:
         """Yield the numbers of the next `count` free clusters."""
         avoid_data = CLUSTER_AVOID_DATA[self._fat_type]
         found = 0  # Count of free clusters already found
-        # noinspection PyTypeChecker
+
         for key, value in enumerate(iter(self)):
             if found == count:
                 return
@@ -282,7 +282,6 @@ class Fat:
         Currently very inefficient, even for FAT32 because the FS info sector is not
         utilized.
         """
-        # noinspection PyTypeChecker
         return sum(1 for value in iter(self) if value == CLUSTER_EMPTY)
 
     @property

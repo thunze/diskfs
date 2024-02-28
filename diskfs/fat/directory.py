@@ -584,7 +584,6 @@ class Entry:
         """`bytes` form of all directory entries represented by this generalized
         entry in physical order.
         """
-        # noinspection PyTypeChecker
         return b"".join(map(bytes, self._vfat_entries)) + bytes(self._eight_dot_three)
 
     def filename(self, *, vfat: bool) -> str:

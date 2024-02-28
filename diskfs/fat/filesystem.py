@@ -184,7 +184,6 @@ def locked(
     return locked_wrapper
 
 
-# noinspection PyAbstractClass
 class FileSystem(FileSystemBase):
     """FAT file system.
 

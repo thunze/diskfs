@@ -218,7 +218,6 @@ def storage_query_property(
 
     Returns the parsed output as an instance of `out_structure_type`.
     """
-    # noinspection PyTypeChecker
     in_buffer = create_string_buffer(bytes(storage_property_query))
     out_buffer = create_string_buffer(sizeof(out_structure_type))
     device_io_control(fd, IOCTL_STORAGE_QUERY_PROPERTY, in_buffer, out_buffer)
@@ -250,7 +249,7 @@ def device_properties(fd: int, path: StrPath) -> DeviceProperties:
         """
         if offset == 0:
             return None
-        # noinspection PyTypeChecker
+
         null_terminated = bytes(properties)[offset:]
         string_bytes = c_char_p(null_terminated).value  # cut off after \x00
 

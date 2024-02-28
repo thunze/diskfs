@@ -1216,7 +1216,6 @@ ENTRY_PARTS_EXAMPLE_MULTIPLE_VFAT_INIT_FAIL_AS_EDT = tuple(
 )
 
 
-# noinspection DuplicatedCode
 @pytest.mark.parametrize(
     ["input_edt_entries", "output_entries"],
     [
