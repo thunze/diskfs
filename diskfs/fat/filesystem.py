@@ -212,7 +212,7 @@ class FileSystem(FileSystemBase):
     def create(
         cls,
         volume: Volume,
-        size_lba: int = None,
+        size_lba: int | None = None,
         *,
         cluster_size: int = CLUSTER_SIZE_DEFAULT,
         label: str = "",
