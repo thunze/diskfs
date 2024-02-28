@@ -192,7 +192,7 @@ class FileSystem(FileSystemBase):
     """
 
     def __init__(
-        self, volume: Volume, boot_sector: BootSector, fat: Fat, vfat: bool = True
+        self, volume: Volume, boot_sector: BootSector, fat: Fat, *, vfat: bool = True
     ):
         self._volume = volume
         self._boot_sector = boot_sector
@@ -254,7 +254,7 @@ class FileSystem(FileSystemBase):
         #     fsinfo = FsInfo.from_bytes(fsinfo_bytes)
 
         fat = Fat(volume, boot_sector)
-        return cls(volume, boot_sector, fat, vfat)
+        return cls(volume, boot_sector, fat, vfat=vfat)
 
     @property
     def type(self) -> FsType:

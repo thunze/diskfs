@@ -17,7 +17,9 @@ if sys.platform == "win32":
     # Only combinations allowed by New-VHD
     SECTOR_SIZES = [SectorSize(512, 512), SectorSize(512, 4096), SectorSize(4096, 4096)]
     SECTOR_SIZE_CUSTOMIZABLE = (True, True)  # LSS and PSS customizable
-    DEVICE_PROPERTIES = DeviceProperties(False, "Msft", "Virtual Disk")
+    DEVICE_PROPERTIES = DeviceProperties(
+        removable=False, vendor="Msft", model="Virtual Disk"
+    )
 
 elif sys.platform == "linux":
     from diskfs import linux as platform_specific
@@ -29,7 +31,7 @@ elif sys.platform == "linux":
         SectorSize(4096, 4096),
     ]
     SECTOR_SIZE_CUSTOMIZABLE = (True, False)  # only LSS customizable
-    DEVICE_PROPERTIES = DeviceProperties(False, None, None)
+    DEVICE_PROPERTIES = DeviceProperties(removable=False, vendor=None, model=None)
 
 elif sys.platform == "darwin":
     from diskfs import darwin as platform_specific
@@ -37,7 +39,9 @@ elif sys.platform == "darwin":
     SIZES = [2 * 4096, 3 * 4096]
     SECTOR_SIZES = [SectorSize(512, 512)]
     SECTOR_SIZE_CUSTOMIZABLE = (False, False)  # not customizable at all
-    DEVICE_PROPERTIES = DeviceProperties(True, "Apple", "Disk Image")
+    DEVICE_PROPERTIES = DeviceProperties(
+        removable=True, vendor="Apple", model="Disk Image"
+    )
 
 else:
     raise RuntimeError(f"Unspported platform {sys.platform!r}")

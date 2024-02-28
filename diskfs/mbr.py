@@ -177,7 +177,7 @@ class PartitionEntry:
     SIZE = 16
     FORMAT = "<BBBBBBBBII"
 
-    def __init__(self, start_lba: int, length_lba: int, type_: int, bootable: bool):
+    def __init__(self, start_lba: int, length_lba: int, type_: int, *, bootable: bool):
         self._start_lba = start_lba
         self._length_lba = length_lba
         self._type = type_
@@ -226,12 +226,12 @@ class PartitionEntry:
                 f"Invalid partition length {length_lba} sectors, must be a 4-byte "
                 f"value greater than 0"
             )
-        return cls(start_lba, length_lba, type_int, bootable)
+        return cls(start_lba, length_lba, type_int, bootable=bootable)
 
     @classmethod
     def new_empty(cls) -> PartitionEntry:
         """New empty / unused partition entry."""
-        return cls(0, 0, PartitionType.EMPTY.value, False)
+        return cls(0, 0, PartitionType.EMPTY.value, bootable=False)
 
     @classmethod
     def from_bytes(cls, b: bytes) -> PartitionEntry:
@@ -255,7 +255,7 @@ class PartitionEntry:
             raise ValidationError("Starting sector of partition must not be 0")
 
         bootable = bool(status & STATUS_ACTIVE)  # only check bit 7
-        return cls(start_lba, length_lba, type_, bootable)
+        return cls(start_lba, length_lba, type_, bootable=bootable)
 
     def __bytes__(self) -> bytes:
         """Get `bytes` representation of partition entry."""

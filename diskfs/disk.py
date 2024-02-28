@@ -65,6 +65,7 @@ class Disk:
         path: StrPath,
         size: int,
         sector_size: SectorSize,
+        *,
         device: bool,
         writable: bool,
     ):
@@ -95,7 +96,9 @@ class Disk:
         try:
             os.truncate(fd, size)
             simulated_sector_size = SectorSize(sector_size, sector_size)
-            return cls(fd, path, size, simulated_sector_size, False, True)
+            return cls(
+                fd, path, size, simulated_sector_size, device=False, writable=True
+            )
         except BaseException:
             os.close(fd)
             raise
@@ -120,7 +123,9 @@ class Disk:
 
                 size = device_size(fd)
                 real_sector_size = device_sector_size(fd)
-                return cls(fd, path, size, real_sector_size, True, not readonly)
+                return cls(
+                    fd, path, size, real_sector_size, device=True, writable=not readonly
+                )
 
             if regular_file:
                 if sector_size is None:
@@ -130,7 +135,14 @@ class Disk:
 
                 size = stat.st_size
                 simulated_sector_size = SectorSize(sector_size, sector_size)
-                return cls(fd, path, size, simulated_sector_size, False, not readonly)
+                return cls(
+                    fd,
+                    path,
+                    size,
+                    simulated_sector_size,
+                    device=False,
+                    writable=not readonly,
+                )
 
             raise ValueError("File is neither a block device nor a regular file")
 
