@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import sys
 
-assert sys.platform == "linux"  # skipcq: BAN-B101
+assert sys.platform == "linux"
 
 import os
 from ctypes import c_uint

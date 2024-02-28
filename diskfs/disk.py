@@ -277,7 +277,6 @@ class Disk:
             )
         log.info(f"{self} - Partitioning disk using partition table {table}")
 
-        # skipcq: PYL-W0212
         # noinspection PyProtectedMember
         table._write_to_disk(self)
         self.flush()

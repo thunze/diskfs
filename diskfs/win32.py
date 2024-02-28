@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import sys
 
-assert sys.platform == "win32"  # skipcq: BAN-B101
+assert sys.platform == "win32"
 
 # noinspection PyCompatibility
 import msvcrt

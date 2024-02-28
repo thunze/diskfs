@@ -439,7 +439,6 @@ class Table:
 
         disk.write_at(0, bytes(self), fill_zeroes=True)
 
-    # skipcq: PYL-R0201
     # noinspection PyMethodMayBeStatic
     def usable_lba(self, disk_size: int, sector_size: SectorSize) -> tuple[int, int]:
         """Return a `tuple` of the first and last logical sector which may be used

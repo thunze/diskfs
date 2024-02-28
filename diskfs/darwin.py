@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import sys
 
-assert sys.platform == "darwin"  # skipcq: BAN-B101
+assert sys.platform == "darwin"
 
 import os
 from contextlib import contextmanager
@@ -154,7 +154,6 @@ def device_sector_size(fd: int) -> SectorSize:
     return SectorSize(logical.value, physical.value)
 
 
-# skipcq: PYL-W0613
 # noinspection PyUnusedLocal
 def reread_partition_table(fd: int) -> None:
     """Update the operating system's view of a block device's partition table.
