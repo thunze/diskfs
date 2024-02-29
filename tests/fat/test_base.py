@@ -1,5 +1,7 @@
 """Tests for the `base` module of the `fat` package."""
 
+from __future__ import annotations
+
 import pytest
 
 from diskfs.fat.base import FatType

@@ -1,5 +1,7 @@
 """Fixtures used across the test suite."""
 
+from __future__ import annotations
+
 import os
 import subprocess
 import sys

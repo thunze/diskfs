@@ -1,5 +1,7 @@
 """Tests for the `bytestruct` module."""
 
+from __future__ import annotations
+
 import sys
 from dataclasses import InitVar, dataclass
 from functools import lru_cache

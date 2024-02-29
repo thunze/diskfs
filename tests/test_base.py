@@ -1,5 +1,7 @@
 """Tests for the `base` module."""
 
+from __future__ import annotations
+
 import pytest
 
 from diskfs.base import is_power_of_two

@@ -1,5 +1,7 @@
 """Generalized tests for the platform-specific modules."""
 
+from __future__ import annotations
+
 import sys
 
 import pytest

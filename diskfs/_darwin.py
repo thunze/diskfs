@@ -1,5 +1,7 @@
 """Wrapper module for types, functions and constants exported by Darwin libraries."""
 
+from __future__ import annotations
+
 from ctypes import CDLL, c_bool, c_char_p, c_int, c_uint32, c_void_p
 from pathlib import Path
 from typing import NewType
