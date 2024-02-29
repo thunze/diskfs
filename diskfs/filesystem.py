@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import os
-import sys
 import warnings
 from enum import Enum
 from errno import EISDIR
@@ -21,15 +20,7 @@ from io import (
 from os import stat_result
 from pathlib import Path
 from stat import S_ISDIR
-from typing import (
-    TYPE_CHECKING,
-    Callable,
-    Iterator,
-    Literal,
-    NamedTuple,
-    Protocol,
-    overload,
-)
+from typing import TYPE_CHECKING, Iterator, Literal, NamedTuple, Protocol, overload
 
 from .typing_ import (
     BufferedAny,
@@ -43,19 +34,6 @@ from .typing_ import (
 if TYPE_CHECKING:
     from .typing_ import ReadableBuffer, StrPath, WriteableBuffer
     from .volume import Volume
-
-if sys.version_info >= (3, 10):
-    import io
-
-    text_encoding: Callable[[str | None], str] = io.text_encoding
-else:
-    # noinspection PyUnusedLocal
-    def text_encoding(encoding: str | None, stacklevel: int = 2) -> str | None:
-        """A helper function to choose the text encoding.
-
-        Returns `encoding` for Python <3.10.
-        """
-        return encoding
 
 
 __all__ = [
@@ -650,7 +628,6 @@ class FileSystem(Protocol):
             if binary:
                 return result
 
-            encoding = text_encoding(encoding)
             text_io = TextIOWrapper(buffer, encoding, errors, newline, line_buffering)
             result = text_io
 
