@@ -34,6 +34,7 @@ jobs:
       - name: Install dependencies
         run: poetry install
 
+      # Ruff
       - name: Run linter
         run: poetry run ruff check . --output-format github
 
@@ -41,51 +42,79 @@ jobs:
         if: ${{ success() || failure() }}
         run: poetry run ruff format --check .
 
-      - name: Run mypy for Python 3.8
+      # mypy for Linux
+      - name: Run mypy for Linux / 3.8
         if: ${{ success() || failure() }}
-        run: |
-          poetry run mypy . --python-version 3.8 --platform linux
-          poetry run mypy . --python-version 3.8 --platform darwin
-          poetry run mypy . --python-version 3.8 --platform win32
+        run: poetry run mypy . --python-version 3.8 --platform linux
 
-      - name: Run mypy for Python 3.9
+      - name: Run mypy for Linux / 3.9
         if: ${{ success() || failure() }}
-        run: |
-          poetry run mypy . --python-version 3.9 --platform linux
-          poetry run mypy . --python-version 3.9 --platform darwin
-          poetry run mypy . --python-version 3.9 --platform win32
+        run: poetry run mypy . --python-version 3.9 --platform linux
 
-      - name: Run mypy for Python 3.10
+      - name: Run mypy for Linux / 3.10
         if: ${{ success() || failure() }}
-        run: |
-          poetry run mypy . --python-version 3.10 --platform linux
-          poetry run mypy . --python-version 3.10 --platform darwin
-          poetry run mypy . --python-version 3.10 --platform win32
+        run: poetry run mypy . --python-version 3.10 --platform linux
 
-      - name: Run mypy for Python 3.11
+      - name: Run mypy for Linux / 3.11
         if: ${{ success() || failure() }}
-        run: |
-          poetry run mypy . --python-version 3.11 --platform linux
-          poetry run mypy . --python-version 3.11 --platform darwin
-          poetry run mypy . --python-version 3.11 --platform win32
+        run: poetry run mypy . --python-version 3.11 --platform linux
 
-      - name: Run mypy for Python 3.12
+      - name: Run mypy for Linux / 3.12
         if: ${{ success() || failure() }}
-        run: |
-          poetry run mypy . --python-version 3.12 --platform linux
-          poetry run mypy . --python-version 3.12 --platform darwin
-          poetry run mypy . --python-version 3.12 --platform win32
+        run: poetry run mypy . --python-version 3.12 --platform linux
+
+      # mypy for macOS
+      - name: Run mypy for macOS / 3.8
+        if: ${{ success() || failure() }}
+        run: poetry run mypy . --python-version 3.8 --platform darwin
+
+      - name: Run mypy for macOS / 3.9
+        if: ${{ success() || failure() }}
+        run: poetry run mypy . --python-version 3.9 --platform darwin
+
+      - name: Run mypy for macOS / 3.10
+        if: ${{ success() || failure() }}
+        run: poetry run mypy . --python-version 3.10 --platform darwin
+
+      - name: Run mypy for macOS / 3.11
+        if: ${{ success() || failure() }}
+        run: poetry run mypy . --python-version 3.11 --platform darwin
+
+      - name: Run mypy for macOS / 3.12
+        if: ${{ success() || failure() }}
+        run: poetry run mypy . --python-version 3.12 --platform darwin
+
+      # mypy for Windows
+      - name: Run mypy for Windows / 3.8
+        if: ${{ success() || failure() }}
+        run: poetry run mypy . --python-version 3.8 --platform win32
+
+      - name: Run mypy for Windows / 3.9
+        if: ${{ success() || failure() }}
+        run: poetry run mypy . --python-version 3.9 --platform win32
+
+      - name: Run mypy for Windows / 3.10
+        if: ${{ success() || failure() }}
+        run: poetry run mypy . --python-version 3.10 --platform win32
+
+      - name: Run mypy for Windows / 3.11
+        if: ${{ success() || failure() }}
+        run: poetry run mypy . --python-version 3.11 --platform win32
+
+      - name: Run mypy for Windows / 3.12
+        if: ${{ success() || failure() }}
+        run: poetry run mypy . --python-version 3.12 --platform win32
 
   tests:
     strategy:
       matrix:
-        os: ['macOS', 'Ubuntu', 'Windows']
+        os: ['Linux', 'macOS', 'Windows']
         python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
         include:
+          - os: Linux
+            image: ubuntu-latest
           - os: macOS
             image: macos-latest
-          - os: Ubuntu
-            image: ubuntu-latest
           - os: Windows
             image: windows-latest
     name: ${{ matrix.os }} / ${{ matrix.python-version }}
@@ -121,11 +150,11 @@ jobs:
         run: poetry run pip install pytest-github-actions-annotate-failures
 
       - name: Run tests with coverage
-        if: ${{ matrix.os != 'Ubuntu' }}
+        if: ${{ matrix.os != 'Linux' }}
         run: poetry run pytest --cov
 
-      - name: Run tests with coverage (Ubuntu)
-        if: ${{ matrix.os == 'Ubuntu' }}
+      - name: Run tests with coverage (Linux)
+        if: ${{ matrix.os == 'Linux' }}
         run: sudo -E env "PATH=$PATH" poetry run pytest --cov
 
       - name: Upload coverage data to Coveralls
