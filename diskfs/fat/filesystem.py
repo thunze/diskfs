@@ -606,8 +606,9 @@ class FileSystem(FileSystemBase):
 
     @locked
     def closefd(self, fd: int) -> None:
-        stream, _, path = self._find_in_fd_table(fd)
-        self._update_entry_by_stream(stream, path)
+        stream, flags, path = self._find_in_fd_table(fd)
+        if flags.writable:
+            self._update_entry_by_stream(stream, path)
 
         # free file descriptor
         del self._fd_table[fd]
@@ -658,8 +659,9 @@ class FileSystem(FileSystemBase):
 
     @locked
     def flushfd(self, fd: int) -> None:
-        stream, _, path = self._find_in_fd_table(fd)
-        self._update_entry_by_stream(stream, path)
+        stream, flags, path = self._find_in_fd_table(fd)
+        if flags.writable:
+            self._update_entry_by_stream(stream, path)
 
     @locked
     def isattyfd(self, fd: int) -> bool:
