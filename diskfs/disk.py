@@ -35,7 +35,7 @@ __all__ = ["Disk"]
 log = logging.getLogger(__name__)
 
 
-if hasattr(os, "pread") and hasattr(os, "pwrite"):
+if sys.platform != "win32":
     _read = os.pread
     _write = os.pwrite
 else:
