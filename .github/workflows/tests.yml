@@ -35,73 +35,73 @@ jobs:
         run: poetry install
 
       # Ruff
-      - name: Run linter
+      - name: Ruff / Linter
         run: poetry run ruff check . --output-format github
 
-      - name: Run formatter
+      - name: Ruff / Formatter
         if: ${{ success() || failure() }}
         run: poetry run ruff format --check .
 
       # mypy for Linux
-      - name: Run mypy for Linux / 3.8
+      - name: mypy / Linux / 3.8
         if: ${{ success() || failure() }}
         run: poetry run mypy . --python-version 3.8 --platform linux
 
-      - name: Run mypy for Linux / 3.9
+      - name: mypy / Linux / 3.9
         if: ${{ success() || failure() }}
         run: poetry run mypy . --python-version 3.9 --platform linux
 
-      - name: Run mypy for Linux / 3.10
+      - name: mypy / Linux / 3.10
         if: ${{ success() || failure() }}
         run: poetry run mypy . --python-version 3.10 --platform linux
 
-      - name: Run mypy for Linux / 3.11
+      - name: mypy / Linux / 3.11
         if: ${{ success() || failure() }}
         run: poetry run mypy . --python-version 3.11 --platform linux
 
-      - name: Run mypy for Linux / 3.12
+      - name: mypy / Linux / 3.12
         if: ${{ success() || failure() }}
         run: poetry run mypy . --python-version 3.12 --platform linux
 
       # mypy for macOS
-      - name: Run mypy for macOS / 3.8
+      - name: mypy / macOS / 3.8
         if: ${{ success() || failure() }}
         run: poetry run mypy . --python-version 3.8 --platform darwin
 
-      - name: Run mypy for macOS / 3.9
+      - name: mypy / macOS / 3.9
         if: ${{ success() || failure() }}
         run: poetry run mypy . --python-version 3.9 --platform darwin
 
-      - name: Run mypy for macOS / 3.10
+      - name: mypy / macOS / 3.10
         if: ${{ success() || failure() }}
         run: poetry run mypy . --python-version 3.10 --platform darwin
 
-      - name: Run mypy for macOS / 3.11
+      - name: mypy / macOS / 3.11
         if: ${{ success() || failure() }}
         run: poetry run mypy . --python-version 3.11 --platform darwin
 
-      - name: Run mypy for macOS / 3.12
+      - name: mypy / macOS / 3.12
         if: ${{ success() || failure() }}
         run: poetry run mypy . --python-version 3.12 --platform darwin
 
       # mypy for Windows
-      - name: Run mypy for Windows / 3.8
+      - name: mypy / Windows / 3.8
         if: ${{ success() || failure() }}
         run: poetry run mypy . --python-version 3.8 --platform win32
 
-      - name: Run mypy for Windows / 3.9
+      - name: mypy / Windows / 3.9
         if: ${{ success() || failure() }}
         run: poetry run mypy . --python-version 3.9 --platform win32
 
-      - name: Run mypy for Windows / 3.10
+      - name: mypy / Windows / 3.10
         if: ${{ success() || failure() }}
         run: poetry run mypy . --python-version 3.10 --platform win32
 
-      - name: Run mypy for Windows / 3.11
+      - name: mypy / Windows / 3.11
         if: ${{ success() || failure() }}
         run: poetry run mypy . --python-version 3.11 --platform win32
 
-      - name: Run mypy for Windows / 3.12
+      - name: mypy / Windows / 3.12
         if: ${{ success() || failure() }}
         run: poetry run mypy . --python-version 3.12 --platform win32
 
