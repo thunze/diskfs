@@ -8,7 +8,7 @@ from math import isnan
 from typing import ClassVar
 
 import pytest
-from typing_extensions import Annotated, get_args
+from typing_extensions import Annotated, TypeAlias, get_args
 
 from diskfs.base import ValidationError
 from diskfs.bytestruct import ByteStruct
@@ -131,7 +131,7 @@ class TestByteStructMeta:
     @pytest.mark.parametrize(
         "annotation", [dict, str, int, float, bytes, None, ArbitraryClass, ByteStruct]
     )
-    def test_analysis_fail_unannotated(self, annotation):
+    def test_analysis_fail_unannotated(self, annotation: TypeAlias):
         """Test that analysis fails when a field has an unannotated type which is not
         a subclass of `ByteStruct`.
         """
@@ -139,12 +139,12 @@ class TestByteStructMeta:
             # noinspection PyUnusedLocal
             @dataclass(frozen=True)
             class B(ByteStruct):
-                field: annotation  # type: ignore[valid-type]
+                field: annotation
 
     @pytest.mark.parametrize(
         "annotated_type", [dict, str, ByteStruct, ArbitraryByteStruct]
     )
-    def test_analysis_fail_annotated_unsupported(self, annotated_type):
+    def test_analysis_fail_annotated_unsupported(self, annotated_type: TypeAlias):
         """Test that analysis fails when a field has an annotated type which is
         unsupported.
         """
@@ -152,11 +152,11 @@ class TestByteStructMeta:
             # noinspection PyUnusedLocal
             @dataclass(frozen=True)
             class B(ByteStruct):
-                field: Annotated[annotated_type, 4]  # type: ignore[valid-type]
+                field: Annotated[annotated_type, 4]
 
     @pytest.mark.parametrize("type_", [int, float, bytes, None])
     @pytest.mark.parametrize("size", [(), "1", "4", 0, -10, 4.1])
-    def test_analysis_fail_annotated_size(self, type_, size):
+    def test_analysis_fail_annotated_size(self, type_: TypeAlias, size):
         """Test that analysis fails when a field has a type annotated with an invalid
         field size.
         """
@@ -165,11 +165,11 @@ class TestByteStructMeta:
             # noinspection PyUnusedLocal
             @dataclass(frozen=True)
             class B(ByteStruct):
-                field: Annotated[type_, size]  # type: ignore[valid-type]
+                field: Annotated[type_, size]
 
     @pytest.mark.parametrize("type_", [int, float])
     @pytest.mark.parametrize("size", [3, 5, 6, 7, 9, 16])
-    def test_analysis_fail_annotated_size_int_float(self, type_, size):
+    def test_analysis_fail_annotated_size_int_float(self, type_: TypeAlias, size):
         """Test that analysis fails when a field has an `int` or `float` type
         annotated with a field size specifically invalid for both of these types.
         """
@@ -177,13 +177,13 @@ class TestByteStructMeta:
             # noinspection PyUnusedLocal
             @dataclass(frozen=True)
             class B(ByteStruct):
-                field: Annotated[type_, size]  # type: ignore[valid-type]
+                field: Annotated[type_, size]
 
     @pytest.mark.parametrize(
         "annotation",
         [Annotated[float, 1], Annotated[int, 4, "test"], Annotated[int, 4, 10]],
     )
-    def test_analysis_fail_annotated_specific(self, annotation):
+    def test_analysis_fail_annotated_specific(self, annotation: TypeAlias):
         """Test that analysis fails when a field has a type annotated with specific
         combinations of values invalid for that type.
         """
@@ -191,7 +191,7 @@ class TestByteStructMeta:
             # noinspection PyUnusedLocal
             @dataclass(frozen=True)
             class B(ByteStruct):
-                field: annotation  # type: ignore[valid-type]
+                field: annotation
 
     @pytest.mark.parametrize(
         ["type_", "size", "signed", "expected_format", "expected_size"],
@@ -217,11 +217,11 @@ class TestByteStructMeta:
         ],
     )
     def test_analysis_success_annotated(
-        self, type_, size, signed, expected_format, expected_size
+        self, type_: TypeAlias, size, signed, expected_format, expected_size
     ):
         """Test the result of the analysis of different valid annotated field types."""
         if signed is None:
-            annotation = Annotated[type_, size]  # type: ignore[valid-type]
+            annotation = Annotated[type_, size]
         else:
             annotation = Annotated[type_, size, signed]  # type: ignore[misc]
 
